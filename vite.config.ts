@@ -1,0 +1,10 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+// base "./" lets the built site work under https://<you>.github.io/<repo>/
+export default defineConfig({
+  base: "./",
+  plugins: [react()],
+  // Spotify only allows http for 127.0.0.1 (not "localhost")
+  server: { host: "127.0.0.1", port: 5173 },
+});
