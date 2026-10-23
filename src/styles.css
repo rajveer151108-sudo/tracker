@@ -42,3 +42,10 @@ h3 { font-size: 1.3rem; margin-bottom: 16px; }
 .rank { width: 20px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
 .count { color: var(--muted); font-size: 0.9rem; }
 .note { background: var(--surface); border-radius: 12px; padding: 14px 16px; margin-bottom: 32px; color: var(--muted); }
+.drop { display: block; position: relative; border: 2px dashed var(--muted); border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; margin: 24px 0; }
+.drop:hover, .drop:focus-within { border-color: var(--accent); }
+.drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.bar-track { height: 8px; background: var(--surface); border-radius: 999px; overflow: hidden; margin: 16px 0; }
+.bar-fill { height: 100%; background: var(--accent); transition: width 0.2s; }
+.result { background: var(--surface); border-radius: 12px; padding: 16px 20px; line-height: 1.8; margin-top: 16px; }
+.back { color: var(--muted); display: inline-block; margin-bottom: 24px; }
