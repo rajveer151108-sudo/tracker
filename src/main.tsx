@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import ImportHistory from "./ImportHistory";
-import ImportLastfm from "./ImportLastfm";
 import "./styles.css";
 
 function Root() {
@@ -12,9 +11,7 @@ function Root() {
     window.addEventListener("hashchange", onChange);
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
-  if (hash === "#lastfm") return <ImportLastfm />;
-  if (hash === "#import") return <ImportHistory />;
-  return <App />;
+  return hash === "#import" ? <ImportHistory /> : <App />;
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
