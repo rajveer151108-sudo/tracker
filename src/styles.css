@@ -38,3 +38,7 @@ h3 { font-size: 1.3rem; margin-bottom: 16px; }
 .meta strong, .meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meta span, time, .muted { color: var(--muted); font-size: 0.9rem; }
 .error { color: #ffb3c6; margin-top: 20px; }
+.card { margin-bottom: 40px; }
+.rank { width: 20px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+.count { color: var(--muted); font-size: 0.9rem; }
+.note { background: var(--surface); border-radius: 12px; padding: 14px 16px; margin-bottom: 32px; color: var(--muted); }
