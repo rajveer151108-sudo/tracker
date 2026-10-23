@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import Stats from "./Stats";
 import ImportLastfm from "./ImportLastfm";
 import "./styles.css";
+
+type Route = "home" | "stats" | "import";
+
+function routeFor(hash: string): Route {
+  if (hash === "#stats") return "stats";
+  if (hash === "#lastfm") return "import";
+  return "home";
+}
 
 function Root() {
   const [hash, setHash] = useState(window.location.hash);
@@ -11,7 +20,17 @@ function Root() {
     window.addEventListener("hashchange", onChange);
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
-  return hash === "#lastfm" ? <ImportLastfm /> : <App />;
+  const route = routeFor(hash);
+  return (
+    <>
+      <nav className="nav" aria-label="Main">
+        <a href="#" aria-current={route === "home" ? "page" : undefined}>Dashboard</a>
+        <a href="#stats" aria-current={route === "stats" ? "page" : undefined}>Stats</a>
+        <a href="#lastfm" aria-current={route === "import" ? "page" : undefined}>Import</a>
+      </nav>
+      {route === "stats" ? <Stats /> : route === "import" ? <ImportLastfm /> : <App />}
+    </>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
