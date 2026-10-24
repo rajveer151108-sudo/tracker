@@ -65,3 +65,11 @@ h3 { font-size: 1.3rem; margin-bottom: 16px; }
 .list li.ranked { position: relative; overflow: hidden; }
 .fill { position: absolute; inset: 0 auto 0 0; background: var(--surface); opacity: 0.7; z-index: 0; border-radius: 10px; }
 .list li.ranked > *:not(.fill) { position: relative; z-index: 1; }
+.upload { display: grid; gap: 4px; margin: 24px 0 40px; }
+.upload label { color: var(--muted); font-size: 0.9rem; }
+.upload input[type="file"] { color: var(--muted); margin: 6px 0 16px; max-width: 100%; }
+.player { width: 100%; margin: 4px 0 28px; }
+.nowplaying { color: var(--muted); margin: 0 0 8px; }
+.iconbtn { background: transparent; border: 1px solid var(--muted); color: var(--text); border-radius: 999px; padding: 6px 14px; cursor: pointer; font: 500 0.9rem "DM Sans", system-ui, sans-serif; }
+.iconbtn:hover { border-color: var(--accent); }
+.iconbtn:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
