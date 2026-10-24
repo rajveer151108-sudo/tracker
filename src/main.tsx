@@ -3,14 +3,16 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import Stats from "./Stats";
 import OwnFiles from "./OwnFiles";
+import Playlists from "./Playlists";
 import ImportLastfm from "./ImportLastfm";
 import "./styles.css";
 
-type Route = "home" | "stats" | "files" | "import";
+type Route = "home" | "stats" | "files" | "playlists" | "import";
 
 function routeFor(hash: string): Route {
   if (hash === "#stats") return "stats";
   if (hash === "#files") return "files";
+  if (hash === "#playlists") return "playlists";
   if (hash === "#lastfm") return "import";
   return "home";
 }
@@ -29,9 +31,14 @@ function Root() {
         <a href="#" aria-current={route === "home" ? "page" : undefined}>Dashboard</a>
         <a href="#stats" aria-current={route === "stats" ? "page" : undefined}>Stats</a>
         <a href="#files" aria-current={route === "files" ? "page" : undefined}>My files</a>
+        <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}>Playlists</a>
         <a href="#lastfm" aria-current={route === "import" ? "page" : undefined}>Import</a>
       </nav>
-      {route === "stats" ? <Stats /> : route === "files" ? <OwnFiles /> : route === "import" ? <ImportLastfm /> : <App />}
+      {route === "stats" ? <Stats />
+        : route === "files" ? <OwnFiles />
+        : route === "playlists" ? <Playlists />
+        : route === "import" ? <ImportLastfm />
+        : <App />}
     </>
   );
 }
