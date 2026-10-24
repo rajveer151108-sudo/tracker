@@ -5,14 +5,16 @@ import App from "./App";
 import Stats from "./Stats";
 import OwnFiles from "./OwnFiles";
 import Playlists from "./Playlists";
+import Host from "./Host";
 import ImportLastfm from "./ImportLastfm";
 import { supabase } from "./supabase";
 import "./styles.css";
 
-type Route = "home" | "stats" | "files" | "playlists" | "import";
+type Route = "home" | "stats" | "host" | "files" | "playlists" | "import";
 
 function routeFor(hash: string): Route {
   if (hash === "#stats") return "stats";
+  if (hash === "#host") return "host";
   if (hash === "#files") return "files";
   if (hash === "#playlists") return "playlists";
   if (hash === "#lastfm") return "import";
@@ -77,12 +79,14 @@ function Root() {
       <nav className="nav" aria-label="Main">
         <a href="#" aria-current={route === "home" ? "page" : undefined}>Dashboard</a>
         <a href="#stats" aria-current={route === "stats" ? "page" : undefined}>Stats</a>
+        <a href="#host" aria-current={route === "host" ? "page" : undefined}>Host</a>
         <a href="#files" aria-current={route === "files" ? "page" : undefined}>My files</a>
         <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}>Playlists</a>
         <a href="#lastfm" aria-current={route === "import" ? "page" : undefined}>Import</a>
         <SyncButton onDone={() => setTick((t) => t + 1)} />
       </nav>
       {route === "stats" ? <Stats key={tick} />
+        : route === "host" ? <Host />
         : route === "files" ? <OwnFiles key={tick} />
         : route === "playlists" ? <Playlists key={tick} />
         : route === "import" ? <ImportLastfm key={tick} />
