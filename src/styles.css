@@ -73,3 +73,12 @@ h3 { font-size: 1.3rem; margin-bottom: 16px; }
 .iconbtn { background: transparent; border: 1px solid var(--muted); color: var(--text); border-radius: 999px; padding: 6px 14px; cursor: pointer; font: 500 0.9rem "DM Sans", system-ui, sans-serif; }
 .iconbtn:hover { border-color: var(--accent); }
 .iconbtn:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+.plhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.plhead h3 { margin: 0; }
+.picker { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0 16px; }
+.picker .field { margin: 0; }
+.list li.active { background: var(--surface); }
+.rowbtn { all: unset; display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; cursor: pointer; }
+.rowbtn:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; border-radius: 10px; }
+.iconbtn:disabled, .btn:disabled { opacity: 0.4; cursor: default; }
+select.field { background: var(--surface); }
