@@ -1,0 +1,16 @@
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  #edge { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.2s ease; }
+  #edge.on { opacity: 1; animation: breathe 5s ease-in-out infinite; }
+  @keyframes breathe { 0%, 100% { filter: brightness(.88); } 50% { filter: brightness(1.15); } }
+
+  #glowbox { position: absolute; inset: 0; }                         /* soft inner glow */
+
+  /* the moving light: a coloured gradient seen only through a thin frame, then blurred */
+  #ringwrap { position: absolute; inset: 0; display: none; filter: blur(var(--rb, 22px)); }
+  #ring { position: absolute; inset: 0; padding: var(--rt, 14px); overflow: hidden;
+          -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor; }
+  #spin { position: absolute; left: 50%; top: 50%; width: 125vmax; height: 125vmax; margin: -62.5vmax 0 0 -62.5vmax; }
+  #spin.rotate { animation: spin 9s linear infinite; }
+  #spin.comet { animation: spin 5s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }

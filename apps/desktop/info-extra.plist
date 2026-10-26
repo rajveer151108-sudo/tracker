@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>This app talks to Spotify to read what is playing and to play, pause and skip songs.</string>
+  <key>NSAudioCaptureUsageDescription</key>
+  <string>This app listens to the audio your Mac is playing so the screen glow can pulse with the beat.</string>
+</dict>
+</plist>

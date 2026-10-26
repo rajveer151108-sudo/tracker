@@ -1,0 +1,13 @@
+/* ---- fullscreen / immersive mode ---- */
+  body.immersive header { position: absolute; top: 0; left: 0; right: 0; z-index: 5; opacity: 0;
+                          transition: opacity .35s; pointer-events: none; }
+  body.immersive #controls { position: absolute; left: 0; right: 0; bottom: 26px; z-index: 5; opacity: 0;
+                             transition: opacity .35s; pointer-events: none; }
+  body.immersive.awake header, body.immersive.awake #controls { opacity: 1; pointer-events: auto; }
+  body.immersive #hint, body.immersive #time { display: none; }
+  body.immersive:not(.awake) { cursor: none; }
+  body.immersive .line { font-size: calc(var(--lyric-size) * 1.6); }
+  body.immersive #lines { padding: 0 8%; }
+  body.immersive footer { padding-bottom: 10px; }
+
+

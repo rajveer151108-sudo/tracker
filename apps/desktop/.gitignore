@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+npm-debug.log*
+
+# Local Electron/runtime data
+settings.json
+genres.json
+history.json
+spotify-auth.json
+

@@ -3,6 +3,17 @@
 A Last.fm-style listening tracker on top of Spotify. This is build step 1:
 site scaffold, GitHub Pages deploy, Spotify login, and a "last 15 songs" preview.
 
+The repository now also contains **Afterglow**, the macOS Spotify companion player that will become the desktop side of Tracker.
+
+## Repository layout
+
+- `src/` - Tracker web application.
+- `scripts/` - scheduled Spotify history collector.
+- `sql/` - Supabase schema.
+- `apps/desktop/` - Afterglow Electron application.
+
+The website remains at the repository root so the existing GitHub Pages workflow continues to deploy without changes.
+
 ## Set up (about 15 minutes)
 
 ### 1. GitHub repo

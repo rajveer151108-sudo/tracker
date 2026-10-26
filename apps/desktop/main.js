@@ -1,0 +1,126 @@
+const path = require("path");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  session,
+  desktopCapturer,
+  shell,
+  safeStorage,
+} = require("electron");
+const { createSettingsStore } = require("./src/main/settings-store");
+const { createSpotifyDesktop } = require("./src/main/spotify-desktop");
+const { createLyricsService } = require("./src/main/lyrics-service");
+const { createGenreService } = require("./src/main/genre-service");
+const { createSpotifyLibrary } = require("./src/main/spotify-library");
+const { createGlowManager } = require("./src/main/glow-manager");
+
+const rootDir = __dirname;
+const settingsStore = createSettingsStore(app);
+const lyrics = createLyricsService(settingsStore.get);
+const genre = createGenreService(app);
+
+let mainWindow = null;
+let immersive = false;
+
+const spotifyDesktop = createSpotifyDesktop({ app, getWindow: () => mainWindow });
+const spotifyLibrary = createSpotifyLibrary({
+  app,
+  safeStorage,
+  shell,
+  isSpotifyUri: spotifyDesktop.isSpotifyUri,
+});
+const glow = createGlowManager({
+  app,
+  BrowserWindow,
+  screen,
+  getSettings: settingsStore.get,
+  rootDir,
+});
+
+function setImmersive(on) {
+  if (!mainWindow || mainWindow.isDestroyed() || on === immersive) return;
+  immersive = on;
+  if (process.platform === "darwin") mainWindow.setSimpleFullScreen(on);
+  else mainWindow.setFullScreen(on);
+  mainWindow.webContents.send("fullscreen", on);
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 520,
+    height: 800,
+    title: "Afterglow",
+    backgroundColor: "#0b0b0f",
+    frame: false,
+    webPreferences: {
+      preload: path.join(rootDir, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false,
+    },
+  });
+  mainWindow.loadFile(path.join(rootDir, "index.html"));
+  glow.setMainWindow(mainWindow);
+}
+
+function registerMediaCapture() {
+  session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
+    desktopCapturer
+      .getSources({ types: ["screen"] })
+      .then((sources) => callback({ video: sources[0], audio: "loopback" }))
+      .catch(() => {
+        try { callback({}); } catch {}
+      });
+  });
+}
+
+function registerIpc() {
+  ipcMain.handle("now-playing", spotifyDesktop.readSpotify);
+  ipcMain.handle("control", (_event, action) => spotifyDesktop.control(action));
+  ipcMain.handle("play-uri", (_event, uri, context) => spotifyDesktop.playUri(uri, context));
+
+  ipcMain.handle("lyrics", (_event, info) => lyrics.fetchLyrics(info || {}));
+  ipcMain.handle("lyrics-diag", (_event, info) => lyrics.diagnose(info || {}));
+  ipcMain.handle("genre", (_event, info) => genre.fetchGenre(info || {}));
+
+  ipcMain.handle("history-get", spotifyLibrary.loadHistory);
+  ipcMain.on("history-add", (_event, track) => spotifyLibrary.addHistory(track));
+  ipcMain.handle("sp-login", spotifyLibrary.login);
+  ipcMain.handle("sp-logout", spotifyLibrary.logout);
+  ipcMain.handle("sp-status", spotifyLibrary.status);
+  ipcMain.handle("sp-api", (_event, requestPath) => spotifyLibrary.api(requestPath));
+
+  ipcMain.handle("settings-get", settingsStore.get);
+  ipcMain.on("settings-set", (_event, patch) => {
+    const { before, settings } = settingsStore.update(patch);
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("settings", settings);
+    if (settings.glowDisplays !== before.glowDisplays) glow.createOverlays();
+    else glow.refresh();
+  });
+
+  ipcMain.on("glow-update", (_event, patch) => glow.update(patch));
+  ipcMain.on("beat", (_event, value) => {
+    if (typeof value === "number") glow.beat(value);
+  });
+  ipcMain.on("fullscreen-toggle", () => setImmersive(!immersive));
+  ipcMain.on("win-minimize", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
+  });
+  ipcMain.on("win-close", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.close();
+  });
+}
+
+app.whenReady().then(() => {
+  settingsStore.load();
+  spotifyLibrary.loadAuth();
+  registerMediaCapture();
+  registerIpc();
+  createWindow();
+  glow.createOverlays();
+  glow.watchDisplays();
+});
+
+app.on("window-all-closed", () => app.quit());

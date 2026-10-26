@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Afterglow</title>
+<link rel="stylesheet" href="src/renderer/styles.css" />
+</head>
+<body>
+  <div id="backdrop"></div>
+  <div id="glow"></div>
+  <header>
+    <img id="cover" alt="" crossorigin="anonymous" />
+    <div id="meta">
+      <div id="title">Nothing playing</div>
+      <div id="artist"></div>
+      <div id="album"></div>
+      <div id="genre"></div>
+    </div>
+    <button id="libBtn" class="wbtn" title="Library (L)">&#9835;&#xFE0E;</button>
+    <button id="gear" title="Settings (S)">&#9881;&#xFE0E;</button>
+    <div id="winbtns">
+      <button class="wbtn" id="minBtn" title="Minimize">&#8211;</button>
+      <button class="wbtn" id="closeBtn" title="Quit">&#10005;</button>
+    </div>
+  </header>
+  <div id="stage">
+    <div id="lines"></div>
+    <div id="estimate"></div>
+    <div id="notice"></div>
+  </div>
+  <footer>
+    <div id="bar"><div id="fill"></div></div>
+    <div id="time"><span id="pos">0:00</span><span id="dur">0:00</span></div>
+    <div id="controls">
+      <button class="ctl" id="previous" title="Previous">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M6 6h2v12H6zM9.5 12L18 6v12z"/></svg>
+      </button>
+      <button class="ctl" id="playpause" title="Play / pause"></button>
+      <button class="ctl" id="next" title="Next">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/></svg>
+      </button>
+    </div>
+    <div id="hint">Space play/pause &middot; &larr; &rarr; shift lyrics <span id="offs"></span> &middot; G glow &middot; F fullscreen &middot; S settings &middot; L library</div>
+  </footer>
+
+  <div id="library">
+    <div class="libTop"><h2>Library</h2><button class="btn" id="closeLibrary">Close</button></div>
+    <div id="tabs"></div>
+    <div id="libBody"></div>
+  </div>
+  <div id="toast"></div>
+
+  <div id="settings">
+    <h2>Settings</h2>
+    <div class="sub">Changes apply straight away and are remembered.</div>
+    <div id="settingsRows"></div>
+    <pre class="testOut" id="diagOut" style="display:none"></pre>
+    <button id="closeSettings">Done</button>
+  </div>
+
+<script src="src/renderer/components/core.js"></script>
+<script src="src/renderer/components/settings-panel.js"></script>
+<script src="src/renderer/components/backdrop.js"></script>
+<script src="src/renderer/components/lyrics.js"></script>
+<script src="src/renderer/components/beat.js"></script>
+<script src="src/renderer/components/frame-loop.js"></script>
+<script src="src/renderer/components/controls.js"></script>
+<script src="src/renderer/components/library.js"></script>
+<script src="src/renderer/components/init.js"></script>
+</body>
+</html>

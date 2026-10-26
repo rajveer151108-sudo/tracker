@@ -1,0 +1,14 @@
+{
+  "name": "afterglow-desktop",
+  "version": "0.1.0",
+  "description": "Afterglow: an enhanced Spotify desktop player for immersive listening",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "bash make-app.sh",
+    "check": "node --check main.js && node --check preload.js && node --check overlay-preload.js && node --check lyricsparse.js && find src -name '*.js' -print0 | xargs -0 -n1 node --check"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0"
+  }
+}

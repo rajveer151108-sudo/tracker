@@ -1,0 +1,8 @@
+:root { --glow: 29, 185, 84; --pulse: 0; --lyric-size: 30px; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: -apple-system, system-ui, sans-serif; background: #08080b; color: #fff;
+         display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  button { font-family: inherit; color: inherit; }
+
+

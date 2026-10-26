@@ -1,0 +1,25 @@
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("tracker", {
+  nowPlaying: () => ipcRenderer.invoke("now-playing"),
+  lyrics: (info) => ipcRenderer.invoke("lyrics", info),
+  genre: (info) => ipcRenderer.invoke("genre", info),
+  lyricsDiag: (info) => ipcRenderer.invoke("lyrics-diag", info),
+  control: (action) => ipcRenderer.invoke("control", action),
+  getSettings: () => ipcRenderer.invoke("settings-get"),
+  setSettings: (patch) => ipcRenderer.send("settings-set", patch),
+  onSettings: (cb) => ipcRenderer.on("settings", (_e, s) => cb(s)),
+  sendGlow: (p) => ipcRenderer.send("glow-update", p),
+  sendBeat: (v) => ipcRenderer.send("beat", v),
+  toggleFullscreen: () => ipcRenderer.send("fullscreen-toggle"),
+  playUri: (uri, ctx) => ipcRenderer.invoke("play-uri", uri, ctx),
+  historyGet: () => ipcRenderer.invoke("history-get"),
+  historyAdd: (t) => ipcRenderer.send("history-add", t),
+  spLogin: () => ipcRenderer.invoke("sp-login"),
+  spLogout: () => ipcRenderer.invoke("sp-logout"),
+  spStatus: () => ipcRenderer.invoke("sp-status"),
+  spApi: (p) => ipcRenderer.invoke("sp-api", p),
+  minimize: () => ipcRenderer.send("win-minimize"),
+  quit: () => ipcRenderer.send("win-close"),
+  onFullscreen: (cb) => ipcRenderer.on("fullscreen", (_e, on) => cb(on)),
+});
