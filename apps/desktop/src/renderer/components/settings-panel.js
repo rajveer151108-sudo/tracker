@@ -14,6 +14,9 @@
     { key: "lyricsLayout", label: "Layout", type: "choice",
       hint: "Word stream turns every timed word into a separate high-impact line—made for fast verses.",
       options: [["scroll", "Scrolling"], ["flash", "Flash line"], ["wordstream", "Word stream"]] },
+    { key: "lyricsMotion", label: "Word transition", type: "choice",
+      hint: "Punch hits immediately. Slide and Glide blend each word into the next more smoothly.",
+      options: [["punch", "Punch"], ["slide", "Slide"], ["glide", "Glide"]] },
     { key: "lyricsFit", label: "Make short lines bigger", type: "toggle",
       hint: "Flash and Word stream layouts grow short lines to fill the screen." },
     { key: "lyricsEstimate", label: "Estimate timing for unsynced songs", type: "toggle",
@@ -133,6 +136,7 @@
     document.body.classList.toggle("noblur", !settings.lyricsBlur);
     document.body.classList.toggle("center", settings.lyricsAlign === "center");
     document.body.dataset.font = settings.lyricsFont;
+    document.body.dataset.motion = settings.lyricsMotion || "slide";
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
     appliedLyricsLayout = settings.lyricsLayout;

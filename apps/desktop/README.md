@@ -2,6 +2,8 @@
 
 Afterglow is an enhanced Spotify desktop player for macOS. It wraps the Spotify desktop app with word-synced lyrics, kinetic Word stream mode, album-art atmosphere, screen-edge glow, beat reaction, and a lightweight Spotify library/search view.
 
+Word stream offers Punch, Slide, and Glide transitions. Slide is the default balance between readable timing and smooth motion.
+
 ## Project Layout
 
 - `main.js` - small Electron bootstrap and IPC wiring layer.

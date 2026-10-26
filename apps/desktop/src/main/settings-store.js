@@ -5,6 +5,7 @@ const DEFAULTS = {
   showLyrics: true,
   lyricsHighlight: "word",
   lyricsLayout: "scroll",
+  lyricsMotion: "slide",
   lyricsWordSource: true,
   genreFeel: true,
   lyricsFit: true,
@@ -40,6 +41,7 @@ const LIMITS = {
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
   lyricsLayout: ["scroll", "flash", "wordstream"],
+  lyricsMotion: ["punch", "slide", "glide"],
   lyricsAlign: ["center", "left"],
   lyricsFont: ["sans", "serif", "round"],
   backdropStyle: ["blur", "album"],
