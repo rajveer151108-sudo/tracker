@@ -29,9 +29,12 @@ function formatSync(value: string | null) {
 
 export default function Account() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [email, setEmail] = useState("");
   const [status, setStatus] = useState<TrackingStatus | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   async function load() {
     try {
@@ -45,6 +48,7 @@ export default function Account() {
     supabase.auth.getSession().then(({ data }) => {
       const active = !!data.session;
       setLoggedIn(active);
+      setEmail(data.session?.user.email ?? "");
       if (active) load();
     });
   }, []);
@@ -64,10 +68,31 @@ export default function Account() {
   }
 
   async function disconnect() {
-    if (!window.confirm("Stop scheduled Spotify tracking and log out? Your existing stats will stay.")) return;
-    await run("Tracking disconnected", "disconnect");
-    await supabase.auth.signOut();
-    setLoggedIn(false);
+    if (!window.confirm("Disconnect optional Spotify API background sync? Your Tracker account and existing stats will stay.")) return;
+    await run("Spotify API disconnected", "disconnect");
+  }
+
+  async function savePassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    if (password.length < 8) {
+      setMessage("Use at least 8 characters for your password.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setMessage("The passwords do not match.");
+      return;
+    }
+    setBusy("Saving password");
+    const { error } = await supabase.auth.updateUser({ password });
+    setBusy(null);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+    setPassword("");
+    setConfirmPassword("");
+    setMessage("Password saved. You can now sign in without Spotify.");
   }
 
   async function clearHistory() {
@@ -143,11 +168,25 @@ export default function Account() {
     <main className="shell">
       <h2>Account & privacy</h2>
       <section className="card account-card">
-        <h3>Tracking status</h3>
-        <p>{status?.connected ? "Spotify tracking is connected." : "Spotify tracking is disconnected."}</p>
+        <h3>Tracker login</h3>
+        <p className="muted">{email || "Your signed-in account"}</p>
+        <p>Your Tracker login is independent from Spotify. Setting a password keeps this account and all its existing history.</p>
+        <form className="password-form" onSubmit={savePassword}>
+          <label htmlFor="new-password">New password</label>
+          <input id="new-password" className="field" type="password" minLength={8} autoComplete="new-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+          <label htmlFor="confirm-password">Confirm new password</label>
+          <input id="confirm-password" className="field" type="password" minLength={8} autoComplete="new-password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+          <button className="btn" disabled={!!busy}>Save password</button>
+        </form>
+      </section>
+
+      <section className="card account-card">
+        <h3>Spotify API connection</h3>
+        <p>{status?.connected ? "Optional Spotify background sync is connected." : "Optional Spotify background sync is not connected."}</p>
+        <p className="muted">Afterglow's local listening tracker works independently and does not require this connection.</p>
         <p className="muted">Last background sync: {formatSync(status?.last_synced_at ?? null)}</p>
         {status && !status.healthy && <p className="error">The last background sync failed. Reconnect Spotify to refresh permission.</p>}
-        <button className="btn ghost" disabled={!!busy} onClick={disconnect}>Disconnect tracking</button>
+        {status?.connected && <button className="btn ghost" disabled={!!busy} onClick={disconnect}>Disconnect Spotify API</button>}
       </section>
 
       <section className="card account-card">

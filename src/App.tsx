@@ -50,6 +50,11 @@ export default function App() {
   const [songs, setSongs] = useState<Ranked[]>([]);
   const [recent, setRecent] = useState<Recent[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -96,11 +101,39 @@ export default function App() {
     })();
   }, [session?.user.id]);
 
-  const login = () =>
+  const spotifyLogin = () =>
     supabase.auth.signInWithOAuth({
       provider: "spotify",
       options: { redirectTo: window.location.origin + window.location.pathname, scopes: SCOPES },
     });
+
+  async function submitAccount(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setAuthNotice(null);
+    if (password.length < 8) {
+      setError("Use at least 8 characters for your password.");
+      return;
+    }
+    setAuthBusy(true);
+    try {
+      if (authMode === "signin") {
+        const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (authError) throw authError;
+      } else {
+        const { data, error: authError } = await supabase.auth.signUp({ email: email.trim(), password });
+        if (authError) throw authError;
+        if (!data.session) {
+          setAuthNotice("Account created. Check your email to confirm it, then sign in.");
+          setAuthMode("signin");
+        }
+      }
+    } catch (authError) {
+      setError(authError instanceof Error ? authError.message : "Could not continue");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
 
   if (!ready) return <main className="shell"><p className="muted">Loading…</p></main>;
 
@@ -109,10 +142,25 @@ export default function App() {
       <main className="shell hero">
         <h1>Every song you play, kept.</h1>
         <p className="lede">
-          Connect Spotify and Tracker starts recording what you listen to, so your stats
-          grow for as long as you use it.
+          Create a Tracker account and Afterglow records what you listen to locally. Your
+          history stays yours, and Spotify API access is optional.
         </p>
-        <button className="btn" onClick={login}>Connect Spotify</button>
+        <div className="auth-tabs" role="group" aria-label="Account action">
+          <button className="chip" aria-pressed={authMode === "signin"} onClick={() => setAuthMode("signin")}>Sign in</button>
+          <button className="chip" aria-pressed={authMode === "signup"} onClick={() => setAuthMode("signup")}>Create account</button>
+        </div>
+        <form className="auth-form" onSubmit={submitAccount}>
+          <label htmlFor="auth-email">Email</label>
+          <input id="auth-email" className="field" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <label htmlFor="auth-password">Password</label>
+          <input id="auth-password" className="field" type="password" minLength={8} autoComplete={authMode === "signin" ? "current-password" : "new-password"} required value={password} onChange={(event) => setPassword(event.target.value)} />
+          <button className="btn" disabled={authBusy}>{authBusy ? "Working…" : authMode === "signin" ? "Sign in" : "Create account"}</button>
+        </form>
+        <div className="optional-login">
+          <span>Optional for the limited Spotify API beta</span>
+          <button className="btn ghost" onClick={spotifyLogin}>Continue with Spotify</button>
+        </div>
+        {authNotice && <p className="note" role="status">{authNotice}</p>}
         {error && <p className="error" role="alert">{error}</p>}
       </main>
     );

@@ -64,17 +64,27 @@ function routeFor(hash: string): Route {
 }
 
 function SyncButton({ onDone }: { onDone: () => void }) {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setLoggedIn(!!s));
+    async function check(session: Session | null) {
+      if (!session) {
+        setConnected(false);
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke("spotify", { body: { action: "status" } });
+      setConnected(!error && !!(data as { connected?: boolean } | null)?.connected);
+    }
+    supabase.auth.getSession().then(({ data }) => check(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => check(session), 0);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  if (!loggedIn) return null;
+  if (!connected) return null;
 
   async function sync() {
     setBusy(true);
