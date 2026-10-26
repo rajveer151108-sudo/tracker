@@ -104,6 +104,7 @@ function SyncButton({ onDone }: { onDone: () => void }) {
 function Root() {
   const [hash, setHash] = useState(window.location.hash);
   const [tick, setTick] = useState(0);
+  const embeddedInAfterglow = !!window.afterglowDesktop;
   useEffect(() => {
     const onChange = () => setHash(window.location.hash);
     window.addEventListener("hashchange", onChange);
@@ -114,13 +115,14 @@ function Root() {
     const { data: auth } = supabase.auth.onAuthStateChange((_event, session) => connectAfterglow(session));
     return () => auth.subscription.unsubscribe();
   }, []);
-  const route = routeFor(hash);
+  const requestedRoute = routeFor(hash);
+  const route = embeddedInAfterglow && requestedRoute === "host" ? "home" : requestedRoute;
   return (
     <>
       <nav className="nav" aria-label="Main">
         <a href="#" aria-current={route === "home" ? "page" : undefined}>Dashboard</a>
         <a href="#stats" aria-current={route === "stats" ? "page" : undefined}>Stats</a>
-        <a href="#host" aria-current={route === "host" ? "page" : undefined}>Host</a>
+        {!embeddedInAfterglow && <a href="#host" aria-current={route === "host" ? "page" : undefined}>Host</a>}
         <a href="#files" aria-current={route === "files" ? "page" : undefined}>My files</a>
         <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}>Playlists</a>
         <a href="#lastfm" aria-current={route === "import" ? "page" : undefined}>Import</a>
