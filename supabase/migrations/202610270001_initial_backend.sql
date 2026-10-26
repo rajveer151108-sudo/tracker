@@ -58,6 +58,19 @@ create table if not exists public.spotify_tokens (
   last_error text
 );
 
+alter table public.spotify_tokens add column if not exists last_synced_at timestamptz;
+alter table public.spotify_tokens add column if not exists last_error text;
+-- Preserve the timestamp used by the pre-migration backend, when present.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'spotify_tokens' and column_name = 'last_sync_at'
+  ) then
+    execute 'update public.spotify_tokens set last_synced_at = coalesce(last_synced_at, last_sync_at)';
+  end if;
+end $$;
+
 create table if not exists public.own_files (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
@@ -80,6 +93,8 @@ create table if not exists public.playlists (
   updated_at timestamptz not null default now()
 );
 
+alter table public.playlists add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists playlists_profile_created on public.playlists (profile_id, created_at desc);
 
 create table if not exists public.playlist_items (
@@ -90,6 +105,17 @@ create table if not exists public.playlist_items (
   created_at timestamptz not null default now(),
   unique (playlist_id, file_id)
 );
+
+alter table public.playlist_items add column if not exists created_at timestamptz not null default now();
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'playlist_items' and column_name = 'added_at'
+  ) then
+    execute 'update public.playlist_items set created_at = added_at where added_at is not null';
+  end if;
+end $$;
 
 create index if not exists playlist_items_order on public.playlist_items (playlist_id, position, created_at);
 
