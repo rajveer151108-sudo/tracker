@@ -4,6 +4,8 @@ Afterglow is an enhanced Spotify desktop player for macOS. It wraps the Spotify 
 
 Word stream offers Punch, Slide, and Glide transitions. Slide is the default balance between readable timing and smooth motion.
 
+Word timing uses a tiered resolver across BetterLyrics, LyricsPlus, BiniLyrics, and lrc.red. Providers are tried in parallel pairs, with LRCLIB retained as the line-synced fallback.
+
 ## Project Layout
 
 - `main.js` - small Electron bootstrap and IPC wiring layer.

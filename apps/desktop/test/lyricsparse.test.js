@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { parseTTML, parseKpoe, parseAny, parseTime } = require("../lyricsparse");
+const { normalizeInfo, spotifyTrackId, wordStats } = require("../src/main/lyrics-service");
 
 test("parseTime accepts TTML clock and unit formats", () => {
   assert.equal(parseTime("01:02.500"), 62.5);
@@ -45,4 +46,25 @@ test("parseAny finds TTML nested inside a provider JSON response", () => {
   const response = JSON.stringify({ payload: '<tt><body><p begin="2s" end="3s"><span begin="2s" end="3s">Go</span></p></body></tt>' });
   const result = parseAny(response);
   assert.equal(result.lines[0].words[0].text, "Go");
+});
+
+test("provider matching removes badges and version suffixes without changing the original object", () => {
+  const info = { title: "Song® (feat. Guest) - Remastered 2011", artist: "Artist" };
+  assert.equal(normalizeInfo(info).title, "Song");
+  assert.equal(info.title, "Song® (feat. Guest) - Remastered 2011");
+});
+
+test("Spotify track IDs are extracted for exact provider matching", () => {
+  assert.equal(spotifyTrackId("spotify:track:4uLU6hMCjMI75M1A2tKUQC"), "4uLU6hMCjMI75M1A2tKUQC");
+  assert.equal(spotifyTrackId("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=test"), "4uLU6hMCjMI75M1A2tKUQC");
+});
+
+test("wordStats rejects mostly line-timed provider responses", () => {
+  const parsed = { lines: [
+    { words: [{ text: "one" }, { text: "two" }, { text: "three" }, { text: "four" }] },
+    { words: [] },
+    { words: [] },
+    { words: [] },
+  ] };
+  assert.equal(wordStats(parsed).usable, false);
 });
