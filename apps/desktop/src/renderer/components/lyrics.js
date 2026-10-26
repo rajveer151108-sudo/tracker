@@ -93,49 +93,6 @@
     });
   }
 
-  const WORD_EFFECTS = {
-    love: ["\u2764\ufe0f", "hot"], heart: ["\u2764\ufe0f", "hot"], kiss: ["\ud83d\udc8b", "hot"], baby: [null, "hot"],
-    fire: ["\ud83d\udd25", "fire"], flame: ["\ud83d\udd25", "fire"], burn: ["\ud83d\udd25", "fire"], hot: ["\ud83d\udd25", "fire"],
-    ice: ["\ud83e\uddca", "ice"], cold: ["\u2744\ufe0f", "ice"], frozen: ["\u2744\ufe0f", "ice"],
-    money: ["\ud83d\udcb8", "gold"], cash: ["\ud83d\udcb8", "gold"], rich: ["\ud83d\udcb0", "gold"], racks: ["\ud83d\udcb8", "gold"], bands: [null, "gold"],
-    star: ["\u2b50", "sky"], moon: ["\ud83c\udf19", "sky"], night: ["\ud83c\udf19", "sky"], sun: ["\u2600\ufe0f", "gold"],
-    angel: ["\ud83d\ude07", "sky"], devil: ["\ud83d\ude08", "violet"], dream: ["\u2728", "violet"], magic: ["\u2728", "violet"],
-    king: ["\ud83d\udc51", "gold"], queen: ["\ud83d\udc51", "gold"], world: ["\ud83c\udf0d", "sky"],
-    rain: ["\ud83c\udf27\ufe0f", "ice"], cry: ["\ud83d\ude22", "ice"], tears: ["\ud83d\udca7", "ice"], smile: ["\ud83d\ude0a", "gold"],
-    car: ["\ud83c\udfce\ufe0f", "fire"], ride: ["\ud83c\udfce\ufe0f", "fire"], phone: ["\ud83d\udcf1", "violet"], party: ["\ud83c\udf89", "hot"], dance: ["\ud83d\udc83", "hot"],
-    girl: ["\ud83d\udc67", "hot"], boy: ["\ud83d\udc66", "sky"], home: ["\ud83c\udfe0", "gold"], house: ["\ud83c\udfe0", "gold"],
-    eyes: ["\ud83d\udc40", "sky"], eye: ["\ud83d\udc41\ufe0f", "sky"], look: ["\ud83d\udc40", "sky"], watch: ["\ud83d\udc40", "sky"],
-    time: ["\u23f3", "gold"], clock: ["\u23f0", "gold"], fast: ["\u26a1", "fire"], lightning: ["\u26a1", "fire"],
-    music: ["\ud83c\udfb5", "violet"], song: ["\ud83c\udfb6", "violet"], mic: ["\ud83c\udfa4", "violet"], smoke: ["\ud83d\udca8", "ice"],
-    ghost: ["\ud83d\udc7b", "violet"], dead: ["\ud83d\udc80", "violet"], kill: ["\ud83d\udc80", "fire"], blood: ["\ud83e\ude78", "hot"],
-    wave: ["\ud83c\udf0a", "sky"], water: ["\ud83d\udca7", "ice"], ocean: ["\ud83c\udf0a", "sky"], sky: ["\u2601\ufe0f", "sky"],
-    fly: ["\ud83e\udeb6", "sky"], high: ["\ud83d\ude80", "violet"], up: ["\u2b06\ufe0f", "sky"], down: ["\u2b07\ufe0f", "ice"],
-    diamond: ["\ud83d\udc8e", "ice"], gold: ["\ud83e\ude99", "gold"], bag: ["\ud83d\udcb0", "gold"], drink: ["\ud83e\udd42", "gold"],
-  };
-
-  const HIGHLIGHT_FILLERS = new Set([
-    "a", "an", "and", "are", "as", "at", "be", "been", "but", "by", "for", "from", "had", "has", "have",
-    "he", "her", "hers", "him", "his", "i", "if", "in", "is", "it", "its", "me", "my", "of", "on", "or",
-    "our", "she", "so", "than", "that", "the", "their", "them", "then", "there", "these", "they", "this", "to",
-    "was", "we", "were", "with", "you", "your", "am", "do", "does", "did", "not", "no", "yeah", "uh", "oh",
-  ]);
-
-  function cleanWord(text) {
-    return String(text || "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
-  }
-
-  function stableScore(text) {
-    let hash = 2166136261;
-    for (const char of text) hash = Math.imul(hash ^ char.codePointAt(0), 16777619);
-    return hash >>> 0;
-  }
-
-  function effectForWord(text) {
-    const key = cleanWord(text);
-    const effect = WORD_EFFECTS[key];
-    return effect ? { emoji: effect[0], tone: effect[1] } : null;
-  }
-
   function wordStreamRows(input) {
     const rows = input.flatMap((line, index) => {
       const words = timedWords(line, input[index + 1]?.t);
@@ -147,27 +104,7 @@
         wordStream: true,
       }));
     }).sort((a, b) => a.t - b.t);
-    const highlighted = new Set();
-    for (let start = 0; start < rows.length; start += 10) {
-      const window = rows.slice(start, start + 10);
-      const eligible = window
-        .map((row, offset) => ({ index: start + offset, key: cleanWord(row.text) }))
-        .filter(({ key }) => key.length > 2 && !HIGHLIGHT_FILLERS.has(key));
-      const target = Math.min(eligible.length, 2 + (stableScore(window.map((row) => row.text).join("|")) % 3));
-      eligible
-        .sort((a, b) => stableScore(`${a.key}:${a.index}`) - stableScore(`${b.key}:${b.index}`))
-        .slice(0, target)
-        .forEach(({ index }) => highlighted.add(index));
-    }
-
-    let lastEmoji = -4;
-    return rows.map((row, index) => {
-      const effect = effectForWord(row.text);
-      const emoji = effect?.emoji && index - lastEmoji >= 3 ? effect.emoji : null;
-      if (emoji) lastEmoji = index;
-      const tone = effect?.tone || (["hot", "fire", "ice", "gold", "sky", "violet"][stableScore(`${row.text}:${index}`) % 6]);
-      return { ...row, emoji, tone: highlighted.has(index) ? tone : null };
-    });
+    return window.LyricEffects.decorateRows(rows);
   }
 
   function updateTimingInfo() {

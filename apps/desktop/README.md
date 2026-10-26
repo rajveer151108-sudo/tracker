@@ -25,6 +25,7 @@ Word timing uses a tiered resolver across BetterLyrics, LyricsPlus, BiniLyrics, 
 - `src/renderer/components/` - player UI behavior split by responsibility:
   - `settings-panel.js` - settings UI and live setting application.
   - `lyrics.js` - lyric parsing/rendering, timing, genre feel, album colors.
+  - `lyric-effects.js` - semantic emoji vocabulary and deterministic, spaced keyword accents.
   - `beat.js` - system-audio capture and beat pulse logic.
   - `library.js` - Spotify library/search/history UI.
   - `controls.js` - playback controls, keyboard shortcuts, fullscreen behavior.
