@@ -85,6 +85,9 @@ select.field { background: var(--surface); }
 .nav { flex-wrap: wrap; align-items: center; }
 .syncwrap { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .syncnote { color: var(--muted); font-size: 0.85rem; }
+.account-card { margin-top: 32px; padding: 20px; background: var(--surface); border-radius: 16px; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn.danger { background: #ff6b7d; color: #28080d; }
 .hostbar { display: flex; gap: 8px; margin: 16px 0 8px; align-items: center; }
 .hostbar .field { margin: 0; max-width: none; flex: 1; }
 .hits { margin-bottom: 24px; }

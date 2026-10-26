@@ -8,10 +8,11 @@ import OwnFiles from "./OwnFiles";
 import Playlists from "./Playlists";
 import Host from "./Host";
 import ImportLastfm from "./ImportLastfm";
+import Account from "./Account";
 import { supabase } from "./supabase";
 import "./styles.css";
 
-type Route = "home" | "stats" | "host" | "files" | "playlists" | "import";
+type Route = "home" | "stats" | "host" | "files" | "playlists" | "import" | "account";
 
 declare global {
   interface Window {
@@ -54,6 +55,7 @@ function routeFor(hash: string): Route {
   if (hash === "#files") return "files";
   if (hash === "#playlists") return "playlists";
   if (hash === "#lastfm") return "import";
+  if (hash === "#account") return "account";
   return "home";
 }
 
@@ -126,6 +128,7 @@ function Root() {
         <a href="#files" aria-current={route === "files" ? "page" : undefined}>My files</a>
         <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}>Playlists</a>
         <a href="#lastfm" aria-current={route === "import" ? "page" : undefined}>Import</a>
+        <a href="#account" aria-current={route === "account" ? "page" : undefined}>Account</a>
         <SyncButton onDone={() => setTick((t) => t + 1)} />
       </nav>
       {route === "stats" ? <Stats key={tick} />
@@ -133,6 +136,7 @@ function Root() {
         : route === "files" ? <OwnFiles key={tick} />
         : route === "playlists" ? <Playlists key={tick} />
         : route === "import" ? <ImportLastfm key={tick} />
+        : route === "account" ? <Account />
         : <App key={tick} />}
     </>
   );

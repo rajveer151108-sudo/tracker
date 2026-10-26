@@ -57,6 +57,30 @@ async function refreshSpotifyToken(refreshToken: string) {
   return response.json() as Promise<{ access_token: string; expires_in: number; refresh_token?: string }>;
 }
 
+async function removeUserStorage(admin: any, userId: string) {
+  const bucket = admin.storage.from("own-files");
+  const files: string[] = [];
+  async function walk(prefix: string) {
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await bucket.list(prefix, { limit: 1000, offset });
+      if (error) throw error;
+      const entries = data ?? [];
+      for (const entry of entries) {
+        const fullPath = `${prefix}/${entry.name}`;
+        if (entry.id) files.push(fullPath);
+        else await walk(fullPath);
+      }
+      if (entries.length < 1000) break;
+    }
+  }
+  await walk(userId);
+  for (let index = 0; index < files.length; index += 100) {
+    const { error } = await bucket.remove(files.slice(index, index + 100));
+    if (error) throw error;
+  }
+  return files.length;
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -96,6 +120,37 @@ Deno.serve(async (request) => {
       const { error } = await admin.from("spotify_tokens").delete().eq("user_id", user.id);
       if (error) throw error;
       return json({ connected: false });
+    }
+
+    if (action === "status") {
+      const { data, error } = await admin.from("spotify_tokens")
+        .select("last_synced_at, last_error")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return json({
+        connected: !!data,
+        last_synced_at: data?.last_synced_at ?? null,
+        healthy: !data?.last_error,
+      });
+    }
+
+    if (action === "delete_history") {
+      const { data: profile, error: profileError } = await admin.from("profiles")
+        .select("id").eq("user_id", user.id).maybeSingle();
+      if (profileError) throw profileError;
+      if (profile?.id) {
+        const { error } = await admin.from("plays").delete().eq("profile_id", profile.id);
+        if (error) throw error;
+      }
+      return json({ deleted: true });
+    }
+
+    if (action === "delete_account") {
+      const removedFiles = await removeUserStorage(admin, user.id);
+      const { error } = await admin.auth.admin.deleteUser(user.id);
+      if (error) throw error;
+      return json({ deleted: true, removed_files: removedFiles });
     }
 
     if (action !== "token" && action !== "sync") throw new HttpError(400, "Unknown Spotify action");

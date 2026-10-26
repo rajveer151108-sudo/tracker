@@ -33,7 +33,7 @@ for (const [label, pattern] of requirements) {
   if (!pattern.test(sql)) throw new Error(`Backend migration is missing ${label}`);
 }
 
-for (const action of ["connect", "disconnect", "token", "sync"]) {
+for (const action of ["connect", "disconnect", "status", "delete_history", "delete_account", "token", "sync"]) {
   if (!edge.includes(`action === "${action}"`) && !edge.includes(`action !== "${action}"`)) {
     throw new Error(`Spotify function is missing the ${action} action`);
   }

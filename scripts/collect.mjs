@@ -20,12 +20,26 @@ const sbHeaders = {
   ...(SUPABASE_SERVICE_KEY.startsWith("eyJ") ? { Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } : {}),
 };
 
+async function fetchWithRetry(url, options, label) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const response = await fetch(url, options);
+    if (response.ok || (response.status !== 429 && response.status < 500)) return response;
+    if (attempt === 3) return response;
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const delayMs = Number.isFinite(retryAfter)
+      ? Math.min(15_000, retryAfter * 1000)
+      : Math.min(8_000, 1000 * (2 ** attempt));
+    console.warn(`${label} returned ${response.status}; retrying in ${delayMs / 1000}s.`);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}
+
 async function sb(method, path, { prefer, body } = {}) {
-  const res = await fetch(`${base}/rest/v1/${path}`, {
+  const res = await fetchWithRetry(`${base}/rest/v1/${path}`, {
     method,
     headers: { ...sbHeaders, ...(prefer ? { Prefer: prefer } : {}) },
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, `Supabase ${path}`);
   if (!res.ok) throw new Error(`Supabase ${path} failed (${res.status}): ${await res.text()}`);
   const text = await res.text();
   return text ? JSON.parse(text) : null;
@@ -40,19 +54,19 @@ async function refreshAccess(refreshToken, useSecret) {
   } else {
     params.client_id = SPOTIFY_CLIENT_ID;
   }
-  const res = await fetch("https://accounts.spotify.com/api/token", {
+  const res = await fetchWithRetry("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers,
     body: new URLSearchParams(params),
-  });
+  }, "Spotify token refresh");
   if (!res.ok) throw new Error(`Spotify token refresh failed (${res.status}): ${await res.text()}`);
   return res.json();
 }
 
 async function spotify(token, path) {
-  const res = await fetch(`https://api.spotify.com/v1${path}`, {
+  const res = await fetchWithRetry(`https://api.spotify.com/v1${path}`, {
     headers: { Authorization: `Bearer ${token}` },
-  });
+  }, `Spotify ${path}`);
   if (!res.ok) throw new Error(`Spotify ${path} failed (${res.status}): ${await res.text()}`);
   return res.json();
 }
@@ -111,6 +125,11 @@ async function collect(account) {
     saved = inserted.length;
   }
   console.log(`${profileRow.display_name}: checked ${rows.length}, saved ${saved} new.`);
+  if (account.userId) {
+    await sb("PATCH", `spotify_tokens?user_id=eq.${account.userId}`, {
+      body: { last_synced_at: new Date().toISOString(), last_error: null },
+    });
+  }
 }
 
 // Everyone who logged in on the site, plus the old single-account token if it is still set.
@@ -143,6 +162,13 @@ for (const account of accounts) {
   } catch (e) {
     failed++;
     console.error(e.message);
+    if (account.userId) {
+      try {
+        await sb("PATCH", `spotify_tokens?user_id=eq.${account.userId}`, {
+          body: { last_error: String(e.message || e).slice(0, 500) },
+        });
+      } catch {}
+    }
   }
 }
 process.exit(failed ? 1 : 0);
