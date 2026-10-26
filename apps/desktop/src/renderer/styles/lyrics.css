@@ -57,32 +57,29 @@
   body[data-layout="wordstream"][data-motion="glide"] .line { transition-timing-function: cubic-bezier(.22,.65,.3,1); }
   body[data-layout="wordstream"] .line.active { transform: scale(calc(1 + var(--pulse) * .045)); }
 
-  /* Invisible cube: adjacent words act like faces hinged around a shared edge. */
+  /* Invisible cube: squash each word toward its shared edge instead of drawing/skewing a 3D face. */
   body[data-layout="wordstream"][data-motion="cube"] #lines {
-    transform-style: preserve-3d;
     transition-timing-function: cubic-bezier(.32,.02,.2,1);
   }
   body[data-layout="wordstream"][data-motion="cube"] .line {
     text-align: center;
     transform-origin: center center;
-    transform-style: preserve-3d;
     transition-timing-function: cubic-bezier(.32,.02,.2,1);
   }
   body[data-layout="wordstream"][data-motion="cube"] .line .w {
-    backface-visibility: hidden;
     transition: transform var(--word-step-ms, 160ms) cubic-bezier(.32,.02,.2,1);
   }
   body[data-layout="wordstream"][data-motion="cube"] .line[data-side="past"] .w {
     transform-origin: center bottom;
-    transform: perspective(700px) translateY(-.04em) rotateX(48deg) scale(.96);
+    transform: translateY(-.16em) scaleX(.96) scaleY(.12);
   }
   body[data-layout="wordstream"][data-motion="cube"] .line[data-side="next"] .w {
     transform-origin: center top;
-    transform: perspective(700px) translateY(.04em) rotateX(-48deg) scale(.96);
+    transform: translateY(.16em) scaleX(.96) scaleY(.12);
   }
   body[data-layout="wordstream"][data-motion="cube"] .line[data-side="current"] .w {
     transform-origin: center center;
-    transform: perspective(700px) translateY(0) rotateX(0deg) scale(calc(1 + var(--pulse) * .025));
+    transform: translateY(0) scaleX(1) scaleY(1);
   }
   body[data-layout="wordstream"][data-motion="cube"] .line:not([data-d="0"]) { opacity: 0; filter: blur(1px); }
   body[data-layout="wordstream"][data-motion="cube"] .line[data-d="0"] {

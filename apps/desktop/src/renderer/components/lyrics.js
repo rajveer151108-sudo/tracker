@@ -192,13 +192,17 @@
     if (!words || !(text || "").replace(/[\u266A\s]/g, "")) return;       // empty or just a note symbol
     const stage = $("stage");
     const immersiveNow = document.body.classList.contains("immersive");
-    const boxW = stage.clientWidth * (immersiveNow ? 0.95 : 0.9);
+    const cubeNow = settings.lyricsLayout === "wordstream" && settings.lyricsMotion === "cube";
+    const boxW = stage.clientWidth * (cubeNow ? (immersiveNow ? 0.84 : 0.82) : (immersiveNow ? 0.95 : 0.9));
     const boxH = stage.clientHeight * 0.62;
     const base = parseFloat(getComputedStyle(el).fontSize);
     // how much this line may grow, by number of words
     const boost = words >= 7 ? 1 : words >= 5 ? 1.25 : words >= 3 ? 1.8 : words === 2 ? 2.6 : 4.5;
     el.style.maxWidth = boxW + "px";
-    if (document.body.classList.contains("center")) { el.style.marginLeft = "auto"; el.style.marginRight = "auto"; }
+    if (cubeNow || document.body.classList.contains("center")) {
+      el.style.marginLeft = "auto";
+      el.style.marginRight = "auto";
+    }
     const fits = (s) => {
       el.style.fontSize = s + "px";
       return el.scrollWidth <= el.clientWidth + 1 && el.offsetHeight <= boxH;
