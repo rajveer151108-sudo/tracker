@@ -13,8 +13,9 @@
   // Curated around words that actually recur in songs. Synonyms and common
   // inflections are explicit so the same lyric always produces the same effect.
   add("love loves loved loving lover romance romantic heart hearts heartbeat", "❤️", "hot");
+  add("heartbreak heartbroken broken breakup", "💔", "hot");
   add("kiss kisses kissed kissing lips", "💋", "hot");
-  add("crush adore desire passion sexy", "😍", "hot");
+  add("crush adore desire passion sexy beautiful gorgeous pretty", "😍", "hot");
   add("baby babies", "🫶", "hot");
   add("smile smiles smiling happy happiness joy", "😊", "gold");
   add("laugh laughs laughing lol", "😂", "gold");
@@ -22,6 +23,11 @@
   add("cry cries cried crying tears teardrop", "😢", "ice");
   add("mad angry anger rage furious", "😡", "fire");
   add("crazy insane psycho", "🤪", "violet");
+  add("scared afraid fear fears fearful", "😨", "violet");
+  add("shock shocked shocking surprise surprised", "😱", "violet");
+  add("nervous anxiety anxious worried worry", "😰", "ice");
+  add("tired exhausted yawn yawning", "🥱", "violet");
+  add("confused confusion", "😵‍💫", "violet");
   add("cool chill relaxed", "😎", "ice");
   add("shy blush blushing", "☺️", "hot");
   add("sick ill pain hurt hurting", "🤕", "ice");
@@ -29,6 +35,11 @@
   add("think thinks thinking thought thoughts mind brain", "🧠", "violet");
   add("pray prays praying prayer prayers", "🙏", "sky");
   add("promise promises promised swear", "🤞", "sky");
+  add("truth true honest honesty", "💯", "sky");
+  add("lie lies lied lying liar liars fake", "🤥", "violet");
+  add("hello hi goodbye bye farewell", "👋", "gold");
+  add("alone solo", "🥀", "ice");
+  add("miss misses missed missing remember remembers remembered memory memories", "💭", "violet");
   add("friend friends friendship", "🤝", "sky");
   add("family families", "👨‍👩‍👧‍👦", "gold");
   add("girl girls woman women", "👩", "hot");
@@ -36,10 +47,17 @@
   add("child children kid kids", "🧒", "gold");
   add("eyes eye look looks looking watch watching", "👀", "sky");
   add("face faces", "🙂", "gold");
+  add("head heads", "🗣️", "sky");
+  add("hair hairs", "💇", "hot");
+  add("mouth mouths", "👄", "hot");
+  add("ear ears hear hears heard hearing listen listens listening", "👂", "sky");
+  add("nose noses smell smells", "👃", "gold");
   add("hand hands touch touches touching", "🤲", "hot");
   add("finger fingers point points pointing", "👉", "gold");
   add("tongue tongues taste tastes tasting", "👅", "hot");
   add("soul souls spirit spirits", "🕊️", "sky");
+  add("body bodies skin", "🕺", "hot");
+  add("breathe breath breathing lungs", "🫁", "sky");
 
   add("fire fires flame flames burn burns burned burning lit", "🔥", "fire");
   add("hot heat", "🥵", "fire");
@@ -54,6 +72,7 @@
   add("electric electricity lightning thunder", "⚡", "fire");
   add("boom explode explodes exploded explosion", "💥", "fire");
   add("smoke smokes smoking", "💨", "ice");
+  add("dust dusty", "🌫️", "ice");
 
   add("money cash dollar dollars paid pay paycheck", "💸", "gold");
   add("rich richer richest wealth wealthy bag bags", "💰", "gold");
@@ -63,6 +82,9 @@
   add("card cards credit", "💳", "gold");
   add("shopping shop shops bought buy buying", "🛍️", "hot");
   add("gift gifts present presents", "🎁", "hot");
+  add("work works worked working job jobs office", "💼", "gold");
+  add("boss bosses business", "🧑‍💼", "gold");
+  add("deal deals dealin", "🤝", "gold");
 
   add("king kings", "👑", "gold");
   add("queen queens", "👸", "gold");
@@ -76,6 +98,9 @@
   add("dream dreams dreamed dreaming fantasy", "💭", "violet");
   add("monster monsters", "👹", "fire");
   add("alien aliens", "👽", "sky");
+  add("dragon dragons", "🐉", "fire");
+  add("fairy fairies", "🧚", "violet");
+  add("vampire vampires", "🧛", "violet");
 
   add("sun sunny sunshine", "☀️", "gold");
   add("moon moons moonlight", "🌙", "sky");
@@ -90,6 +115,14 @@
   add("water waters wet drop drops", "💧", "ice");
   add("flower flowers rose roses", "🌹", "hot");
   add("tree trees forest woods", "🌲", "sky");
+  add("beach beaches", "🏖️", "gold");
+  add("mountain mountains", "🏔️", "ice");
+  add("desert deserts sand", "🏜️", "fire");
+  add("island islands", "🏝️", "sky");
+  add("summer summers", "🌴", "gold");
+  add("winter winters", "☃️", "ice");
+  add("spring springs", "🌸", "hot");
+  add("autumn fallin", "🍂", "gold");
 
   add("car cars ride rides riding drive drives driving", "🏎️", "fire");
   add("truck trucks", "🛻", "fire");
@@ -109,6 +142,9 @@
   add("bed beds", "🛏️", "violet");
   add("door doors", "🚪", "gold");
   add("window windows", "🪟", "sky");
+  add("map maps lost location", "🗺️", "sky");
+  add("north south east west", "🧭", "gold");
+  add("space universe galaxy galaxies", "🌌", "violet");
 
   add("music musical song songs melody melodies", "🎵", "violet");
   add("sing sings sang sung singing", "🎤", "violet");
@@ -120,11 +156,17 @@
   add("drum drums beat beats rhythm", "🥁", "fire");
   add("headphones headphone", "🎧", "violet");
   add("stage stages show shows concert concerts", "🎭", "violet");
+  add("dj remix mixtape", "🎛️", "violet");
+  add("vinyl record records", "💿", "violet");
 
   add("phone phones call calls called calling text texts texting", "📱", "violet");
   add("camera cameras picture pictures photo photos", "📸", "sky");
   add("movie movies film films", "🎬", "violet");
   add("game games gaming play playing player players", "🎮", "violet");
+  add("computer computers laptop laptops", "💻", "sky");
+  add("internet online wifi", "🌐", "sky");
+  add("email emails message messages", "💌", "hot");
+  add("screen screens television tv", "📺", "violet");
   add("watch watches clock clocks time times", "⏳", "gold");
   add("book books read reads reading", "📖", "sky");
   add("write writes writing letter letters", "✍️", "sky");
@@ -133,22 +175,36 @@
   add("knife knives blade blades", "🔪", "ice");
   add("bomb bombs", "💣", "fire");
   add("chain chains", "⛓️", "ice");
+  add("ring rings", "💍", "ice");
+  add("crown crowns", "👑", "gold");
+  add("sword swords", "⚔️", "ice");
+  add("shield shields protect protects protected", "🛡️", "sky");
+  add("war wars battle battles", "⚔️", "fire");
+  add("peace peaceful", "☮️", "sky");
+  add("free freedom", "🕊️", "sky");
   add("police cop cops", "🚔", "sky");
   add("jail prison", "🔒", "ice");
   add("doctor doctors hospital", "🏥", "sky");
   add("pill pills medicine", "💊", "hot");
   add("weed marijuana", "🌿", "sky");
+  add("drug drugs", "💊", "hot");
+  add("syrup lean", "🥤", "violet");
 
   add("drink drinks drinking drank bottle bottles", "🥂", "gold");
   add("wine wines", "🍷", "hot");
   add("beer beers", "🍺", "gold");
   add("coffee coffees", "☕", "gold");
+  add("drunk wasted", "🥴", "violet");
   add("food foods eat eats eating ate", "🍽️", "gold");
   add("cake cakes birthday birthdays", "🎂", "hot");
   add("candy candies sweet sweets", "🍬", "hot");
   add("apple apples", "🍎", "hot");
   add("cherry cherries", "🍒", "hot");
   add("peach peaches", "🍑", "hot");
+  add("lemon lemons", "🍋", "gold");
+  add("banana bananas", "🍌", "gold");
+  add("pizza pizzas", "🍕", "hot");
+  add("burger burgers", "🍔", "gold");
 
   add("dog dogs puppy puppies", "🐶", "gold");
   add("cat cats kitten kittens", "🐱", "violet");
@@ -159,13 +215,26 @@
   add("wolf wolves", "🐺", "ice");
   add("bird birds", "🐦", "sky");
   add("butterfly butterflies", "🦋", "violet");
+  add("fish fishes", "🐟", "sky");
+  add("shark sharks", "🦈", "ice");
+  add("horse horses", "🐎", "gold");
+  add("bear bears", "🐻", "gold");
+  add("rat rats mouse mice", "🐀", "violet");
+  add("bee bees", "🐝", "gold");
 
   add("win wins winner winners winning won", "🏆", "gold");
   add("goal goals score scores scored", "🥅", "sky");
   add("ball balls", "⚽", "sky");
+  add("basketball", "🏀", "fire");
+  add("football", "🏈", "gold");
+  add("baseball", "⚾", "sky");
+  add("tennis", "🎾", "gold");
   add("fight fights fighting fighter fighters", "🥊", "fire");
   add("strong stronger strongest power powerful", "💪", "fire");
   add("run runs ran running", "🏃", "fire");
+  add("walk walks walked walking", "🚶", "sky");
+  add("jump jumps jumped jumping", "🤸", "fire");
+  add("swim swims swam swimming", "🏊", "sky");
   add("fast faster fastest speed", "💨", "ice");
   add("up rise rises rising", "⬆️", "sky");
   add("down fall falls falling fell", "⬇️", "ice");
@@ -179,6 +248,14 @@
   add("black", "⚫", "violet");
   add("white", "⚪", "sky");
 
+  add("shirt shirts clothes clothing fashion", "👕", "sky");
+  add("dress dresses", "👗", "hot");
+  add("shoe shoes sneaker sneakers kicks", "👟", "gold");
+  add("boot boots", "🥾", "gold");
+  add("hat hats cap caps", "🧢", "sky");
+  add("glasses shades", "🕶️", "violet");
+  add("coat coats jacket jackets", "🧥", "ice");
+
   add("yes yep", "✅", "sky");
   add("nope wrong", "❌", "hot");
   add("stop stops stopped", "🛑", "fire");
@@ -186,6 +263,11 @@
   add("question questions why", "❓", "violet");
   add("shit bullshit", "💩", "gold");
   add("clown clowns", "🤡", "hot");
+  add("luck lucky", "🍀", "sky");
+  add("perfect perfection", "💯", "fire");
+  add("secret secrets", "🤫", "violet");
+  add("silence silent quiet", "🤫", "ice");
+  add("loud louder loudest noise", "🔊", "fire");
 
   // Articles, conjunctions, prepositions, pronouns, auxiliaries, particles,
   // determiners, quantifiers and common lyric ad-libs should never be accented.

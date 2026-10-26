@@ -29,5 +29,8 @@ test("emoji accents are semantic, spaced out and avoid immediate repeats", () =>
   assert.ok(emojiIndexes.length >= 2);
   for (let i = 1; i < emojiIndexes.length; i += 1) assert.ok(emojiIndexes[i] - emojiIndexes[i - 1] >= 4);
   assert.equal(effects.effectForWord("diamonds").emoji, "💎");
+  assert.equal(effects.effectForWord("heartbroken").emoji, "💔");
+  assert.equal(effects.effectForWord("sneakers").emoji, "👟");
+  assert.equal(effects.effectForWord("midnight").emoji, "🌙");
   assert.equal(effects.effectForWord("ordinary"), null);
 });
