@@ -6,6 +6,8 @@ const DEFAULTS = {
   lyricsHighlight: "word",
   lyricsLayout: "scroll",
   lyricsMotion: "slide",
+  lyricsEmoji: true,
+  lyricsKeywords: true,
   lyricsWordSource: true,
   genreFeel: true,
   lyricsFit: true,

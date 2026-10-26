@@ -93,8 +93,26 @@
     });
   }
 
+  const WORD_EFFECTS = {
+    love: ["\u2764\ufe0f", "hot"], heart: ["\u2764\ufe0f", "hot"], kiss: ["\ud83d\udc8b", "hot"], baby: [null, "hot"],
+    fire: ["\ud83d\udd25", "fire"], flame: ["\ud83d\udd25", "fire"], burn: ["\ud83d\udd25", "fire"], hot: ["\ud83d\udd25", "fire"],
+    ice: ["\ud83e\uddca", "ice"], cold: ["\u2744\ufe0f", "ice"], frozen: ["\u2744\ufe0f", "ice"],
+    money: ["\ud83d\udcb8", "gold"], cash: ["\ud83d\udcb8", "gold"], rich: ["\ud83d\udcb0", "gold"], racks: ["\ud83d\udcb8", "gold"], bands: [null, "gold"],
+    star: ["\u2b50", "sky"], moon: ["\ud83c\udf19", "sky"], night: ["\ud83c\udf19", "sky"], sun: ["\u2600\ufe0f", "gold"],
+    angel: ["\ud83d\ude07", "sky"], devil: ["\ud83d\ude08", "violet"], dream: ["\u2728", "violet"], magic: ["\u2728", "violet"],
+    king: ["\ud83d\udc51", "gold"], queen: ["\ud83d\udc51", "gold"], world: ["\ud83c\udf0d", "sky"],
+    rain: ["\ud83c\udf27\ufe0f", "ice"], cry: ["\ud83d\ude22", "ice"], tears: ["\ud83d\udca7", "ice"], smile: ["\ud83d\ude0a", "gold"],
+    car: ["\ud83c\udfce\ufe0f", "fire"], ride: ["\ud83c\udfce\ufe0f", "fire"], phone: ["\ud83d\udcf1", "violet"], party: ["\ud83c\udf89", "hot"], dance: ["\ud83d\udc83", "hot"],
+  };
+
+  function effectForWord(text) {
+    const key = String(text || "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+    const effect = WORD_EFFECTS[key];
+    return effect ? { emoji: effect[0], tone: effect[1] } : null;
+  }
+
   function wordStreamRows(input) {
-    return input.flatMap((line, index) => {
+    const rows = input.flatMap((line, index) => {
       const words = timedWords(line, input[index + 1]?.t);
       return words.map((word) => ({
         t: word.t,
@@ -104,6 +122,14 @@
         wordStream: true,
       }));
     }).sort((a, b) => a.t - b.t);
+    let lastEmoji = -10;
+    return rows.map((row, index) => {
+      const effect = effectForWord(row.text);
+      if (!effect) return row;
+      const emoji = effect.emoji && index - lastEmoji >= 8 ? effect.emoji : null;
+      if (emoji) lastEmoji = index;
+      return { ...row, emoji, tone: effect.tone };
+    });
   }
 
   function updateTimingInfo() {
@@ -137,6 +163,10 @@
     lineEls = lines.map((l) => {
       const div = document.createElement("div");
       div.className = "line";
+      if (l.wordStream && l.tone) {
+        div.classList.add("keyword");
+        div.dataset.tone = l.tone;
+      }
       const timed = Array.isArray(l.words) && l.words.length > 0;
       const words = timed ? l.words.map((w) => w.text) : (l.text || "\u266A").split(/\s+/).filter(Boolean);
       const spans = words.map((w, i) => {
@@ -148,6 +178,14 @@
         return s;
       });
       const W = { spans, cache: spans.map(() => -1), cur: -1, timed };
+      if (l.wordStream && l.emoji) {
+        const emoji = document.createElement("span");
+        emoji.className = "lyric-emoji";
+        emoji.textContent = l.emoji;
+        emoji.setAttribute("aria-hidden", "true");
+        div.appendChild(document.createTextNode(" "));
+        div.appendChild(emoji);
+      }
       if (timed) {
         W.wt = l.words.map((w) => w.t);
         W.we = l.words.map((w) => w.end);

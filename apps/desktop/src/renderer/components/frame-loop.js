@@ -28,6 +28,14 @@
         });
         clearFit();
         const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
+        if (settings.lyricsLayout === "wordstream" && idx >= 0) {
+          const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
+          const motion = settings.lyricsMotion || "slide";
+          const factor = motion === "glide" ? 850 : motion === "slide" ? 700 : 450;
+          const min = motion === "glide" ? 110 : motion === "slide" ? 75 : 55;
+          const max = motion === "glide" ? 320 : motion === "slide" ? 220 : 110;
+          root.style.setProperty("--word-step-ms", Math.round(Math.max(min, Math.min(max, gap * factor))) + "ms");
+        }
         if (impactLayout && settings.lyricsFit) {
           const fi = Math.max(idx, 0);
           fitLine(lineEls[fi], lines[fi].text);

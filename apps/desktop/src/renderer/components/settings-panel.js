@@ -17,6 +17,10 @@
     { key: "lyricsMotion", label: "Word transition", type: "choice",
       hint: "Punch hits immediately. Slide and Glide blend each word into the next more smoothly.",
       options: [["punch", "Punch"], ["slide", "Slide"], ["glide", "Glide"]] },
+    { key: "lyricsEmoji", label: "Emoji accents", type: "toggle",
+      hint: "Adds occasional emojis to expressive words without changing the lyric text." },
+    { key: "lyricsKeywords", label: "Highlight keywords", type: "toggle",
+      hint: "Gives words like love, fire, ice, and money a visual accent in Word stream." },
     { key: "lyricsFit", label: "Make short lines bigger", type: "toggle",
       hint: "Flash and Word stream layouts grow short lines to fill the screen." },
     { key: "lyricsEstimate", label: "Estimate timing for unsynced songs", type: "toggle",
@@ -137,6 +141,8 @@
     document.body.classList.toggle("center", settings.lyricsAlign === "center");
     document.body.dataset.font = settings.lyricsFont;
     document.body.dataset.motion = settings.lyricsMotion || "slide";
+    document.body.classList.toggle("word-emoji", !!settings.lyricsEmoji);
+    document.body.classList.toggle("word-keywords", !!settings.lyricsKeywords);
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
     appliedLyricsLayout = settings.lyricsLayout;
