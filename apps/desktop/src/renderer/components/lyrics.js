@@ -8,7 +8,7 @@
   let lineEls = [];
   let activeIdx = -2;
   let prevActive = -1;
-  let posSec = 0, syncAt = performance.now(), playing = false, durSec = 0;
+  let posSec = 0, syncAt = performance.now(), playing = false, durSec = 0, seeking = false;
   let offset = 0;            // user lyric shift, seconds
 
   function parseLrc(text) {
@@ -357,8 +357,10 @@
         if (settings.backdrop) setBackdrop(np.artwork);
       }
       durSec = np.durationMs / 1000;
-      posSec = np.positionSec;
-      syncAt = performance.now();
+      if (!seeking) {
+        posSec = np.positionSec;
+        syncAt = performance.now();
+      }
       playing = np.state === "playing";
       sendActive(playing);
       $("dur").textContent = fmt(durSec);

@@ -9,7 +9,11 @@
 
     const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0);
     const t = now + offset;
-    $("fill").style.width = durSec ? Math.min(100, (now / durSec) * 100) + "%" : "0%";
+    const seekPercent = durSec ? Math.max(0, Math.min(100, (now / durSec) * 100)) : 0;
+    $("fill").style.width = seekPercent + "%";
+    $("bar").setAttribute("aria-valuemax", String(Math.round(durSec)));
+    $("bar").setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
+    $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
     $("pos").textContent = fmt(now);
 
     if (lines.length) {

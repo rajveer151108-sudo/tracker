@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("tracker", {
   genre: (info) => ipcRenderer.invoke("genre", info),
   lyricsDiag: (info) => ipcRenderer.invoke("lyrics-diag", info),
   control: (action) => ipcRenderer.invoke("control", action),
+  seek: (positionSec) => ipcRenderer.invoke("seek", positionSec),
   getSettings: () => ipcRenderer.invoke("settings-get"),
   setSettings: (patch) => ipcRenderer.send("settings-set", patch),
   onSettings: (cb) => ipcRenderer.on("settings", (_e, s) => cb(s)),
@@ -21,5 +22,6 @@ contextBridge.exposeInMainWorld("tracker", {
   spApi: (p) => ipcRenderer.invoke("sp-api", p),
   minimize: () => ipcRenderer.send("win-minimize"),
   quit: () => ipcRenderer.send("win-close"),
+  openTrackerExternal: () => ipcRenderer.send("tracker-open-external"),
   onFullscreen: (cb) => ipcRenderer.on("fullscreen", (_e, on) => cb(on)),
 });

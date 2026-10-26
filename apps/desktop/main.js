@@ -15,6 +15,7 @@ const { createLyricsService } = require("./src/main/lyrics-service");
 const { createGenreService } = require("./src/main/genre-service");
 const { createSpotifyLibrary } = require("./src/main/spotify-library");
 const { createGlowManager } = require("./src/main/glow-manager");
+const { TRACKER_URL } = require("./src/shared/config");
 
 const rootDir = __dirname;
 const settingsStore = createSettingsStore(app);
@@ -59,6 +60,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       backgroundThrottling: false,
+      webviewTag: true,
     },
   });
   mainWindow.loadFile(path.join(rootDir, "index.html"));
@@ -79,6 +81,7 @@ function registerMediaCapture() {
 function registerIpc() {
   ipcMain.handle("now-playing", spotifyDesktop.readSpotify);
   ipcMain.handle("control", (_event, action) => spotifyDesktop.control(action));
+  ipcMain.handle("seek", (_event, positionSec) => spotifyDesktop.seek(positionSec));
   ipcMain.handle("play-uri", (_event, uri, context) => spotifyDesktop.playUri(uri, context));
 
   ipcMain.handle("lyrics", (_event, info) => lyrics.fetchLyrics(info || {}));
@@ -111,6 +114,7 @@ function registerIpc() {
   ipcMain.on("win-close", () => {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.close();
   });
+  ipcMain.on("tracker-open-external", () => shell.openExternal(TRACKER_URL));
 }
 
 app.whenReady().then(() => {

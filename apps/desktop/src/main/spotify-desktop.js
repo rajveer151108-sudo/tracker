@@ -61,6 +61,19 @@ async function control(action) {
   return !error;
 }
 
+async function seek(positionSec) {
+  const seconds = Number(positionSec);
+  if (!Number.isFinite(seconds) || seconds < 0 || seconds > 86400) {
+    return { ok: false, error: "Invalid seek position" };
+  }
+  const { error, stderr } = await runAppleScript(
+    `tell application "Spotify" to set player position to ${seconds.toFixed(3)}`
+  );
+  return error
+    ? { ok: false, error: (stderr || error.message || "Could not seek").trim() }
+    : { ok: true, positionSec: seconds };
+}
+
 function createSpotifyDesktop({ app, getWindow }) {
   function refocus() {
     [60, 300, 800, 1600].forEach((ms) => setTimeout(() => {
@@ -84,7 +97,7 @@ function createSpotifyDesktop({ app, getWindow }) {
     return error ? { ok: false, error: (stderr || error.message).trim() } : { ok: true };
   }
 
-  return { readSpotify, control, playUri, isSpotifyUri: (value) => URI_RE.test(String(value || "")) };
+  return { readSpotify, control, seek, playUri, isSpotifyUri: (value) => URI_RE.test(String(value || "")) };
 }
 
 module.exports = { createSpotifyDesktop };

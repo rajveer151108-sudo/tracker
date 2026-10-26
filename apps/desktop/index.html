@@ -17,6 +17,11 @@
       <div id="genre"></div>
     </div>
     <button id="libBtn" class="wbtn" title="Library (L)">&#9835;&#xFE0E;</button>
+    <button id="trackerBtn" class="wbtn" title="Tracker (T)" aria-label="Open Tracker">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <path d="M4 19V10M10 19V5M16 19v-7M22 19V2" />
+      </svg>
+    </button>
     <button id="gear" title="Settings (S)">&#9881;&#xFE0E;</button>
     <div id="winbtns">
       <button class="wbtn" id="minBtn" title="Minimize">&#8211;</button>
@@ -29,7 +34,7 @@
     <div id="notice"></div>
   </div>
   <footer>
-    <div id="bar"><div id="fill"></div></div>
+    <div id="bar" role="slider" tabindex="0" aria-label="Song position" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><div id="fill"></div></div>
     <div id="time"><span id="pos">0:00</span><span id="dur">0:00</span></div>
     <div id="controls">
       <button class="ctl" id="previous" title="Previous">
@@ -40,13 +45,29 @@
         <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/></svg>
       </button>
     </div>
-    <div id="hint">Space play/pause &middot; &larr; &rarr; shift lyrics <span id="offs"></span> &middot; G glow &middot; F fullscreen &middot; S settings &middot; L library</div>
+    <div id="hint">Space play/pause &middot; &larr; &rarr; shift lyrics <span id="offs"></span> &middot; G glow &middot; F fullscreen &middot; S settings &middot; L library &middot; T tracker</div>
   </footer>
 
   <div id="library">
     <div class="libTop"><h2>Library</h2><button class="btn" id="closeLibrary">Close</button></div>
     <div id="tabs"></div>
     <div id="libBody"></div>
+  </div>
+
+  <div id="trackerPanel" aria-hidden="true">
+    <div class="trackerTop">
+      <div>
+        <h2>Tracker</h2>
+        <span>Your listening stats, inside Afterglow.</span>
+      </div>
+      <div class="trackerActions">
+        <button class="btn" id="reloadTracker">Reload</button>
+        <button class="btn" id="externalTracker">Open in browser</button>
+        <button class="btn primary" id="closeTracker">Close</button>
+      </div>
+    </div>
+    <div id="trackerLoading">Loading Tracker…</div>
+    <webview id="trackerView" data-src="https://rajveer151108-sudo.github.io/tracker/" partition="persist:afterglow-tracker" webpreferences="contextIsolation=yes, nodeIntegration=no, sandbox=yes"></webview>
   </div>
   <div id="toast"></div>
 
@@ -67,6 +88,7 @@
 <script src="src/renderer/components/frame-loop.js"></script>
 <script src="src/renderer/components/controls.js"></script>
 <script src="src/renderer/components/library.js"></script>
+<script src="src/renderer/components/tracker-panel.js"></script>
 <script src="src/renderer/components/init.js"></script>
 </body>
 </html>
