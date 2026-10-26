@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "backend:check": "node scripts/check-backend.mjs",
     "desktop:start": "npm --prefix apps/desktop start",
     "desktop:check": "npm --prefix apps/desktop run check"
   },

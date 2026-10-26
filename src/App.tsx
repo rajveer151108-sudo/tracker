@@ -59,12 +59,10 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (s?.provider_refresh_token) {
-        // Save the Spotify permission so the collector can keep tracking while the site is closed.
+        // Hand the permission to the server; refresh tokens are never readable from public tables.
         setTimeout(async () => {
-          const { error: e } = await supabase.from("spotify_tokens").upsert({
-            user_id: s.user.id,
-            refresh_token: s.provider_refresh_token,
-            updated_at: new Date().toISOString(),
+          const { error: e } = await supabase.functions.invoke("spotify", {
+            body: { action: "connect", refresh_token: s.provider_refresh_token },
           });
           if (e) setError(`Could not save tracking permission: ${e.message}`);
         }, 0);
