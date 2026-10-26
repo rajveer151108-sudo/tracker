@@ -29,15 +29,16 @@
         lineEls.forEach((el, i) => {
           el.classList.toggle("active", i === idx);
           el.dataset.d = Math.min(Math.abs(i - Math.max(idx, 0)), 4);
+          el.dataset.side = i < idx ? "past" : i > idx ? "next" : "current";
         });
         clearFit();
         const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
         if (settings.lyricsLayout === "wordstream" && idx >= 0) {
           const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
           const motion = settings.lyricsMotion || "slide";
-          const factor = motion === "glide" ? 850 : motion === "slide" ? 700 : 450;
-          const min = motion === "glide" ? 110 : motion === "slide" ? 75 : 55;
-          const max = motion === "glide" ? 320 : motion === "slide" ? 220 : 110;
+          const factor = motion === "cube" ? 900 : motion === "glide" ? 850 : motion === "slide" ? 700 : 450;
+          const min = motion === "cube" ? 120 : motion === "glide" ? 110 : motion === "slide" ? 75 : 55;
+          const max = motion === "cube" ? 280 : motion === "glide" ? 320 : motion === "slide" ? 220 : 110;
           root.style.setProperty("--word-step-ms", Math.round(Math.max(min, Math.min(max, gap * factor))) + "ms");
         }
         if (impactLayout && settings.lyricsFit) {
