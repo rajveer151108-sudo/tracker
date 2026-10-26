@@ -18,6 +18,17 @@ const requirements = [
   ["user-scoped storage", /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/i],
 ];
 
+const desktopMigration = await readFile(
+  new URL("../supabase/migrations/202610270002_desktop_ingestion.sql", import.meta.url),
+  "utf8"
+);
+if (!/function public\.ingest_desktop_play\b/i.test(desktopMigration)) {
+  throw new Error("Backend migration is missing desktop play ingestion");
+}
+if (!/trigger plays_suppress_near_duplicate\b/i.test(desktopMigration)) {
+  throw new Error("Backend migration is missing cross-source duplicate protection");
+}
+
 for (const [label, pattern] of requirements) {
   if (!pattern.test(sql)) throw new Error(`Backend migration is missing ${label}`);
 }

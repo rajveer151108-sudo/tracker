@@ -352,6 +352,7 @@
   async function poll() {
     const np = await window.tracker.nowPlaying();
     if (np.state === "playing" || np.state === "paused") {
+      window.tracker.observeForTracker(np);
       $("title").textContent = np.title;
       $("artist").textContent = np.artist;
       $("album").textContent = np.album;
@@ -373,6 +374,7 @@
         loadTrack(np);
       }
     } else {
+      window.tracker.observeForTracker(null);
       playing = false;
       sendActive(false);
       trackId = null; clearLyrics();

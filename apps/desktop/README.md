@@ -17,6 +17,7 @@ Word timing uses a tiered resolver across BetterLyrics, LyricsPlus, BiniLyrics, 
   - `lyrics-service.js` - word-timed and line-timed lyric lookup.
   - `genre-service.js` - genre lookup and caching.
   - `spotify-library.js` - Spotify OAuth, Web API, and local play history.
+  - `tracker-sync.js` - encrypted Tracker session, realtime play ingestion, and offline retry queue.
   - `glow-manager.js` - screen-edge overlay lifecycle and state.
 - `preload.js` - safe renderer IPC bridge for the main player window.
 - `overlay-preload.js` - safe IPC bridge for screen-edge glow overlays.
@@ -27,6 +28,7 @@ Word timing uses a tiered resolver across BetterLyrics, LyricsPlus, BiniLyrics, 
   - `lyrics.js` - lyric parsing/rendering, timing, genre feel, album colors.
   - `lyric-effects.js` - semantic emoji vocabulary and deterministic, spaced keyword accents.
   - `tracker-panel.js` - persistent in-app view of the deployed Tracker dashboard.
+  - `tracker-webview-preload.js` - origin-locked account handoff from the embedded dashboard.
   - `beat.js` - system-audio capture and beat pulse logic.
   - `library.js` - Spotify library/search/history UI.
   - `controls.js` - playback controls, keyboard shortcuts, fullscreen behavior.

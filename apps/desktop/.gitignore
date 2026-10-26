@@ -9,4 +9,6 @@ settings.json
 genres.json
 history.json
 spotify-auth.json
+tracker-auth.json
+tracker-sync-queue.json
 

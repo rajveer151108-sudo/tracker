@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
 import App from "./App";
 import Stats from "./Stats";
 import OwnFiles from "./OwnFiles";
@@ -11,6 +12,41 @@ import { supabase } from "./supabase";
 import "./styles.css";
 
 type Route = "home" | "stats" | "host" | "files" | "playlists" | "import";
+
+declare global {
+  interface Window {
+    afterglowDesktop?: {
+      connect: (session: {
+        supabaseUrl: string;
+        publishableKey: string;
+        accessToken: string;
+        refreshToken: string;
+        expiresAt: number;
+      }) => void;
+      disconnect: () => void;
+    };
+  }
+}
+
+let lastDesktopAccessToken = "";
+
+function connectAfterglow(session: Session | null) {
+  if (!window.afterglowDesktop) return;
+  if (!session) {
+    lastDesktopAccessToken = "";
+    window.afterglowDesktop.disconnect();
+    return;
+  }
+  if (session.access_token === lastDesktopAccessToken) return;
+  lastDesktopAccessToken = session.access_token;
+  window.afterglowDesktop.connect({
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+    publishableKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    accessToken: session.access_token,
+    refreshToken: session.refresh_token,
+    expiresAt: session.expires_at ?? 0,
+  });
+}
 
 function routeFor(hash: string): Route {
   if (hash === "#stats") return "stats";
@@ -72,6 +108,11 @@ function Root() {
     const onChange = () => setHash(window.location.hash);
     window.addEventListener("hashchange", onChange);
     return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => connectAfterglow(data.session));
+    const { data: auth } = supabase.auth.onAuthStateChange((_event, session) => connectAfterglow(session));
+    return () => auth.subscription.unsubscribe();
   }, []);
   const route = routeFor(hash);
   return (

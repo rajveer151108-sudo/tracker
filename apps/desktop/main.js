@@ -14,6 +14,7 @@ const { createSpotifyDesktop } = require("./src/main/spotify-desktop");
 const { createLyricsService } = require("./src/main/lyrics-service");
 const { createGenreService } = require("./src/main/genre-service");
 const { createSpotifyLibrary } = require("./src/main/spotify-library");
+const { createTrackerSync } = require("./src/main/tracker-sync");
 const { createGlowManager } = require("./src/main/glow-manager");
 const { TRACKER_URL } = require("./src/shared/config");
 
@@ -39,6 +40,7 @@ const glow = createGlowManager({
   getSettings: settingsStore.get,
   rootDir,
 });
+const trackerSync = createTrackerSync({ app, safeStorage, getWindow: () => mainWindow });
 
 function setImmersive(on) {
   if (!mainWindow || mainWindow.isDestroyed() || on === immersive) return;
@@ -62,6 +64,17 @@ function createWindow() {
       backgroundThrottling: false,
       webviewTag: true,
     },
+  });
+  mainWindow.webContents.on("will-attach-webview", (event, webPreferences, params) => {
+    try {
+      if (params.partition !== "persist:afterglow-tracker") throw new Error("Unexpected webview partition");
+      webPreferences.preload = path.join(rootDir, "tracker-webview-preload.js");
+      webPreferences.nodeIntegration = false;
+      webPreferences.contextIsolation = true;
+      webPreferences.sandbox = true;
+    } catch {
+      event.preventDefault();
+    }
   });
   mainWindow.loadFile(path.join(rootDir, "index.html"));
   glow.setMainWindow(mainWindow);
@@ -94,6 +107,10 @@ function registerIpc() {
   ipcMain.handle("sp-logout", spotifyLibrary.logout);
   ipcMain.handle("sp-status", spotifyLibrary.status);
   ipcMain.handle("sp-api", (_event, requestPath) => spotifyLibrary.api(requestPath));
+  ipcMain.handle("tracker-connect", (_event, trackerSession) => trackerSync.connect(trackerSession));
+  ipcMain.handle("tracker-disconnect", trackerSync.disconnect);
+  ipcMain.handle("tracker-sync-status", trackerSync.status);
+  ipcMain.on("tracker-observe", (_event, track) => trackerSync.observe(track));
 
   ipcMain.handle("settings-get", settingsStore.get);
   ipcMain.on("settings-set", (_event, patch) => {
@@ -120,6 +137,7 @@ function registerIpc() {
 app.whenReady().then(() => {
   settingsStore.load();
   spotifyLibrary.loadAuth();
+  trackerSync.load();
   registerMediaCapture();
   registerIpc();
   createWindow();

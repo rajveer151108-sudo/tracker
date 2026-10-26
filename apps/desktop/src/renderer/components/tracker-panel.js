@@ -36,6 +36,27 @@ trackerView.addEventListener("did-fail-load", (event) => {
   $("trackerLoading").textContent = "Tracker couldn't load. Check your internet connection, then press Reload.";
   $("trackerLoading").classList.add("show");
 });
+trackerView.addEventListener("ipc-message", async (event) => {
+  if (event.channel === "tracker-disconnect") {
+    await window.tracker.disconnectTracker();
+    return;
+  }
+  if (event.channel !== "tracker-session") return;
+  const result = await window.tracker.connectTracker(event.args[0]);
+  if (result?.ok) showToast("Live Tracker connected");
+  else if (result?.error) showToast(result.error);
+});
+
+window.tracker.onTrackerSyncStatus((status) => {
+  const label = $("trackerSyncState");
+  if (!label) return;
+  if (status.error) label.textContent = status.error;
+  else if (!status.connected) label.textContent = "Open Tracker and log in to enable live tracking.";
+  else if (status.queued) label.textContent = `${status.queued} play${status.queued === 1 ? "" : "s"} waiting to sync`;
+  else label.textContent = "Live tracking connected";
+});
+
+window.tracker.trackerSyncStatus();
 
 $("trackerBtn").addEventListener("click", openTracker);
 $("closeTracker").addEventListener("click", closeTracker);
