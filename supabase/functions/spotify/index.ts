@@ -162,6 +162,12 @@ Deno.serve(async (request) => {
       .maybeSingle();
     if (savedError) throw savedError;
     if (!saved?.refresh_token) throw new HttpError(409, "Reconnect Spotify to enable tracking");
+    if (action === "sync" && saved.last_synced_at) {
+      const elapsed = Date.now() - Date.parse(saved.last_synced_at);
+      if (Number.isFinite(elapsed) && elapsed >= 0 && elapsed < 45_000) {
+        return json({ checked: 0, saved: 0, skipped: true });
+      }
+    }
 
     let refreshed;
     try {

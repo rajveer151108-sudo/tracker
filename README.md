@@ -64,3 +64,9 @@ npm run dev                    # open http://127.0.0.1:5173/
 ```
 
 Run `npm run backend:check` to verify that all backend objects required by the app remain versioned.
+
+## Product direction
+
+Afterglow is built around user freedom. New visual and listening features should expose meaningful controls, presets, safe defaults, accessibility options, and a clear reset path. See `docs/CUSTOMIZATION.md` for the design rules used when adding effects.
+
+Users can download a JSON backup of their listening history and metadata from **Account -> Export my data**. Uploaded audio files remain private in Supabase Storage and are not included in that JSON export.

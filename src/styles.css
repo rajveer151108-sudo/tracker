@@ -88,6 +88,10 @@ select.field { background: var(--surface); }
 .account-card { margin-top: 32px; padding: 20px; background: var(--surface); border-radius: 16px; }
 .account-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .btn.danger { background: #ff6b7d; color: #28080d; }
+.import-options { display: grid; gap: 16px; margin-top: 28px; }
+.import-option { display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 16px; background: var(--surface); color: var(--text); text-decoration: none; }
+.import-option:hover { outline: 2px solid var(--accent); }
+.import-option span { color: var(--muted); }
 .hostbar { display: flex; gap: 8px; margin: 16px 0 8px; align-items: center; }
 .hostbar .field { margin: 0; max-width: none; flex: 1; }
 .hits { margin-bottom: 24px; }

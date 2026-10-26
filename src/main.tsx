@@ -8,11 +8,13 @@ import OwnFiles from "./OwnFiles";
 import Playlists from "./Playlists";
 import Host from "./Host";
 import ImportLastfm from "./ImportLastfm";
+import ImportHistory from "./ImportHistory";
+import Imports from "./Imports";
 import Account from "./Account";
 import { supabase } from "./supabase";
 import "./styles.css";
 
-type Route = "home" | "stats" | "host" | "files" | "playlists" | "import" | "account";
+type Route = "home" | "stats" | "host" | "files" | "playlists" | "imports" | "lastfm" | "spotify-import" | "account";
 
 declare global {
   interface Window {
@@ -54,7 +56,9 @@ function routeFor(hash: string): Route {
   if (hash === "#host") return "host";
   if (hash === "#files") return "files";
   if (hash === "#playlists") return "playlists";
-  if (hash === "#lastfm") return "import";
+  if (hash === "#import") return "imports";
+  if (hash === "#lastfm") return "lastfm";
+  if (hash === "#spotify-import") return "spotify-import";
   if (hash === "#account") return "account";
   return "home";
 }
@@ -127,7 +131,7 @@ function Root() {
         {!embeddedInAfterglow && <a href="#host" aria-current={route === "host" ? "page" : undefined}>Host</a>}
         <a href="#files" aria-current={route === "files" ? "page" : undefined}>My files</a>
         <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}>Playlists</a>
-        <a href="#lastfm" aria-current={route === "import" ? "page" : undefined}>Import</a>
+        <a href="#import" aria-current={["imports", "lastfm", "spotify-import"].includes(route) ? "page" : undefined}>Import</a>
         <a href="#account" aria-current={route === "account" ? "page" : undefined}>Account</a>
         <SyncButton onDone={() => setTick((t) => t + 1)} />
       </nav>
@@ -135,7 +139,9 @@ function Root() {
         : route === "host" ? <Host />
         : route === "files" ? <OwnFiles key={tick} />
         : route === "playlists" ? <Playlists key={tick} />
-        : route === "import" ? <ImportLastfm key={tick} />
+        : route === "imports" ? <Imports />
+        : route === "lastfm" ? <ImportLastfm key={tick} />
+        : route === "spotify-import" ? <ImportHistory key={tick} />
         : route === "account" ? <Account />
         : <App key={tick} />}
     </>

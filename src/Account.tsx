@@ -75,6 +75,50 @@ export default function Account() {
     await run("Listening history deleted", "delete_history");
   }
 
+  async function readAll(table: "profiles" | "plays" | "own_files" | "playlists" | "playlist_items") {
+    const rows: unknown[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase.from(table).select("*").range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < 1000) return rows;
+    }
+  }
+
+  async function exportData() {
+    setBusy("Exporting data");
+    setMessage("");
+    try {
+      const [profiles, plays, ownFiles, playlists, playlistItems] = await Promise.all([
+        readAll("profiles"),
+        readAll("plays"),
+        readAll("own_files"),
+        readAll("playlists"),
+        readAll("playlist_items"),
+      ]);
+      const payload = {
+        format: "tracker-export-v1",
+        exported_at: new Date().toISOString(),
+        profiles,
+        plays,
+        own_files: ownFiles,
+        playlists,
+        playlist_items: playlistItems,
+      };
+      const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage(`Backup downloaded with ${plays.length.toLocaleString()} plays. Uploaded audio files are not included.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Data export failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function deleteAccount() {
     const answer = window.prompt("This permanently deletes your Tracker account, stats, uploads and playlists. Type DELETE to continue.");
     if (answer !== "DELETE") return;
@@ -110,6 +154,7 @@ export default function Account() {
         <h3>Your data</h3>
         <p className="muted">You control the listening data stored by Tracker.</p>
         <div className="account-actions">
+          <button className="btn ghost" disabled={!!busy} onClick={exportData}>Export my data</button>
           <button className="btn ghost" disabled={!!busy} onClick={clearHistory}>Delete listening history</button>
           <button className="btn danger" disabled={!!busy} onClick={deleteAccount}>Delete account</button>
         </div>

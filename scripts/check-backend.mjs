@@ -22,11 +22,19 @@ const desktopMigration = await readFile(
   new URL("../supabase/migrations/202610270002_desktop_ingestion.sql", import.meta.url),
   "utf8"
 );
+const importMigration = await readFile(
+  new URL("../supabase/migrations/202610270003_restore_import_permissions.sql", import.meta.url),
+  "utf8"
+);
 if (!/function public\.ingest_desktop_play\b/i.test(desktopMigration)) {
   throw new Error("Backend migration is missing desktop play ingestion");
 }
 if (!/trigger plays_suppress_near_duplicate\b/i.test(desktopMigration)) {
   throw new Error("Backend migration is missing cross-source duplicate protection");
+}
+if (!/source in \('spotify', 'desktop', 'lastfm', 'import', 'upload'\)/i.test(importMigration)
+  || !/source in \('lastfm', 'import', 'upload', 'desktop'\)/i.test(importMigration)) {
+  throw new Error("Backend migration is missing Last.fm import permissions");
 }
 
 for (const [label, pattern] of requirements) {
