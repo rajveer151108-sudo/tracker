@@ -39,7 +39,7 @@ const LIMITS = {
 
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
-  lyricsLayout: ["scroll", "flash"],
+  lyricsLayout: ["scroll", "flash", "wordstream"],
   lyricsAlign: ["center", "left"],
   lyricsFont: ["sans", "serif", "round"],
   backdropStyle: ["blur", "album"],

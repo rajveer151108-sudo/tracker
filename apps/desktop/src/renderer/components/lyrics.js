@@ -2,7 +2,9 @@
   // Lyrics (line list + estimated word timing)
   // =====================================================================
   let trackId = null;
-  let lines = [];            // [{ t: seconds, text }]
+  let sourceLines = [];      // canonical lyric lines, kept independent of the visual layout
+  let lines = [];            // currently rendered rows (lines or individual words)
+  let timingInfo = "";
   let lineEls = [];
   let activeIdx = -2;
   let prevActive = -1;
@@ -56,6 +58,76 @@
     return Math.max(1, groups ? groups.length : 1);
   }
 
+  function wordWeight(word) {
+    return syllables(word) * 2 + word.replace(/[^\p{L}\p{N}]/gu, "").length * 0.15 + 0.5;
+  }
+
+  function estimatedWords(line, nextStart) {
+    const textWords = (line.text || "").split(/\s+/).filter(Boolean);
+    if (!textWords.length) return [];
+    const start = Number(line.t) || 0;
+    const end = Math.max(start + 0.12, Number(line.end) || Number(nextStart) || start + 4);
+    const weights = textWords.map(wordWeight);
+    const total = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+    let elapsed = 0;
+    return textWords.map((text, index) => {
+      const t = start + (elapsed / total) * (end - start);
+      elapsed += weights[index];
+      return { text, t, end: start + (elapsed / total) * (end - start), estimated: true };
+    });
+  }
+
+  function timedWords(line, nextStart) {
+    if (!Array.isArray(line.words) || !line.words.length) return estimatedWords(line, nextStart);
+    const lineEnd = Math.max(Number(line.t) + 0.12, Number(line.end) || Number(nextStart) || Number(line.t) + 4);
+    return line.words.flatMap((word, index) => {
+      const text = String(word.text || "").trim();
+      const t = Number(word.t);
+      if (!text || !Number.isFinite(t)) return [];
+      const nextWordStart = Number(line.words[index + 1]?.t);
+      const rawEnd = Number(word.end);
+      const end = Number.isFinite(rawEnd) && rawEnd > t
+        ? rawEnd
+        : Number.isFinite(nextWordStart) && nextWordStart > t ? nextWordStart : lineEnd;
+      return [{ text, t, end: Math.max(t + 0.06, end) }];
+    });
+  }
+
+  function wordStreamRows(input) {
+    return input.flatMap((line, index) => {
+      const words = timedWords(line, input[index + 1]?.t);
+      return words.map((word) => ({
+        t: word.t,
+        end: word.end,
+        text: word.text,
+        words: [word],
+        wordStream: true,
+      }));
+    }).sort((a, b) => a.t - b.t);
+  }
+
+  function updateTimingInfo() {
+    $("estimate").textContent = timingInfo
+      ? timingInfo + (settings.lyricsLayout === "wordstream" ? " \u00b7 Word stream" : "")
+      : "";
+  }
+
+  function rebuildLyricsLayout() {
+    lines = settings.lyricsLayout === "wordstream" ? wordStreamRows(sourceLines) : sourceLines;
+    buildLines();
+    updateTimingInfo();
+  }
+
+  function setLyrics(nextLines, info) {
+    sourceLines = Array.isArray(nextLines) ? nextLines : [];
+    timingInfo = info || "";
+    rebuildLyricsLayout();
+  }
+
+  function clearLyrics() {
+    setLyrics([], "");
+  }
+
   // Each line becomes a row of word spans. Words get a share of the line's time
   // based on how long they are (we don't have real per-word timing from LRCLIB).
   function buildLines() {
@@ -80,7 +152,7 @@
         W.wt = l.words.map((w) => w.t);
         W.we = l.words.map((w) => w.end);
       } else {
-        const weights = words.map((w) => syllables(w) * 2 + w.replace(/[^\p{L}\p{N}]/gu, "").length * 0.15 + 0.5);
+        const weights = words.map(wordWeight);
         const total = weights.reduce((a, b) => a + b, 0);
         let acc = 0;
         W.starts = []; W.ends = [];
@@ -226,8 +298,7 @@
   async function loadTrack(np) {
     trackId = np.id;
     lastInfo = { id: np.id, title: np.title, artist: np.artist, album: np.album, durationSec: np.durationMs / 1000 };
-    lines = []; buildLines();
-    $("estimate").textContent = "";
+    clearLyrics();
     document.body.dataset.genre = ""; $("genre").textContent = "";
     applyFeel();
     const gid = np.id;
@@ -243,19 +314,17 @@
     const res = await window.tracker.lyrics(lastInfo);
     if (trackId !== mine || !settings.showLyrics) return;   // song changed or lyrics turned off meanwhile
     if (res && Array.isArray(res.words) && res.words.length) {
-      lines = res.words.map((l) => ({ t: l.t, end: l.end, text: l.text, words: l.words }));
-      buildLines();
+      setLyrics(res.words.map((l) => ({ t: l.t, end: l.end, text: l.text, words: l.words })),
+        "Real word timing \u00b7 " + (res.source || "Timed source"));
       setNotice("");
-      $("estimate").textContent = "Real word timing \u00B7 " + (res.source || "");
     } else if (res && res.synced) {
-      lines = parseLrc(res.synced);
-      buildLines();
-      setNotice(lines.length ? "" : "No synced lyrics for this song.");
+      const parsed = parseLrc(res.synced);
+      setLyrics(parsed, "Line timing");
+      setNotice(parsed.length ? "" : "No synced lyrics for this song.");
     } else if (res && res.plain && settings.lyricsEstimate) {
-      lines = plainToLines(res.plain, np.durationMs / 1000);
-      buildLines();
-      setNotice(lines.length ? "" : "No synced lyrics found for this song.");
-      if (lines.length) $("estimate").textContent = "Estimated timing";
+      const estimated = plainToLines(res.plain, np.durationMs / 1000);
+      setLyrics(estimated, estimated.length ? "Estimated timing" : "");
+      setNotice(estimated.length ? "" : "No synced lyrics found for this song.");
     } else if (res && res.error) {
       setNotice("Could not reach the lyrics service: " + res.error);
     } else {
@@ -287,8 +356,7 @@
     } else {
       playing = false;
       sendActive(false);
-      trackId = null; lines = []; buildLines();
-      $("estimate").textContent = "";
+      trackId = null; clearLyrics();
       document.body.dataset.genre = ""; $("genre").textContent = "";
       $("title").textContent = np.state === "closed" ? "Spotify is not open" : "Nothing playing";
       $("artist").textContent = ""; $("album").textContent = "";

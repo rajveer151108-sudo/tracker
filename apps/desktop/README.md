@@ -1,6 +1,6 @@
 # Afterglow
 
-Afterglow is an enhanced Spotify desktop player for macOS. It wraps the Spotify desktop app with synced lyrics, album-art atmosphere, screen-edge glow, beat reaction, and a lightweight Spotify library/search view.
+Afterglow is an enhanced Spotify desktop player for macOS. It wraps the Spotify desktop app with word-synced lyrics, kinetic Word stream mode, album-art atmosphere, screen-edge glow, beat reaction, and a lightweight Spotify library/search view.
 
 ## Project Layout
 
@@ -39,6 +39,7 @@ npm start
 
 ```sh
 npm run check
+npm test
 ```
 
 ## Build

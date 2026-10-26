@@ -27,14 +27,15 @@
           el.dataset.d = Math.min(Math.abs(i - Math.max(idx, 0)), 4);
         });
         clearFit();
-        if (settings.lyricsLayout === "flash" && settings.lyricsFit) {
+        const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
+        if (impactLayout && settings.lyricsFit) {
           const fi = Math.max(idx, 0);
           fitLine(lineEls[fi], lines[fi].text);
         }
-        lineEls.forEach((el) => el.classList.remove("flash"));
-        if (idx >= 0 && settings.lyricsLayout === "flash") {
+        lineEls.forEach((el) => el.classList.remove("flash", "word-hit"));
+        if (idx >= 0 && impactLayout) {
           void lineEls[idx].offsetWidth;            // restart the animation
-          lineEls[idx].classList.add("flash");
+          lineEls[idx].classList.add(settings.lyricsLayout === "wordstream" ? "word-hit" : "flash");
         }
         const focus = lineEls[Math.max(idx, 0)];
         const stageH = $("stage").clientHeight;

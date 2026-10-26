@@ -32,6 +32,21 @@
   }
   body[data-layout="flash"] .line.flash { animation: flashIn .4s cubic-bezier(.2,.9,.3,1); }
 
+  /* word stream: one timed word per row, snapping through fast verses like kinetic type */
+  body[data-layout="wordstream"] #lines { transition-duration: 140ms; }
+  body[data-layout="wordstream"] .line { padding: 3px 0; font-size: calc(var(--lyric-size) * .9); opacity: .08;
+                                         filter: blur(3px); transform: scale(.72); transition-duration: 140ms; }
+  body[data-layout="wordstream"] .line[data-d="1"] { opacity: .28; filter: blur(1.5px); transform: scale(.82); }
+  body[data-layout="wordstream"] .line[data-d="0"] { opacity: 1; filter: none; transform: scale(1); line-height: 1; }
+  body.immersive[data-layout="wordstream"] .line[data-d="0"] { font-size: calc(var(--lyric-size) * 2.6); }
+  @keyframes wordHit {
+    0% { opacity: 0; transform: translateY(24px) scale(.68); filter: blur(10px) brightness(2.2); }
+    60% { opacity: 1; transform: translateY(-2px) scale(1.06); filter: blur(0) brightness(1.5); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }
+  }
+  body[data-layout="wordstream"] .line.word-hit { animation: wordHit 180ms cubic-bezier(.16,.85,.28,1); }
+  body[data-layout="wordstream"] .line.active { transform: scale(calc(1 + var(--pulse) * .045)); }
+
   .w { display: inline-block; transition: transform .22s ease; }
   .w.cur { transform: translateY(-4px) scale(1.08); }
   .w.nearL { transform: translateX(-.07em) scale(.93); }   /* neighbours shrink and step back so the words don't blur together */

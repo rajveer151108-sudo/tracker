@@ -9,13 +9,13 @@
     { type: "button", label: "Check lyric sources", hint: "Shows what each lyric service returns for the song that's playing.",
       button: "Run check", action: () => runLyricsDiag() },
     { key: "lyricsHighlight", label: "Highlight", type: "choice",
-      hint: "Word timing is estimated from word length, not exact.",
+      hint: "Uses exact word timing when a source provides it, then falls back to a musical estimate.",
       options: [["word", "Word by word"], ["sweep", "Sweep"], ["whole", "Whole line"]] },
     { key: "lyricsLayout", label: "Layout", type: "choice",
-      hint: "Flash line: the current line pops onto the screen and the lines before and after stay faint.",
-      options: [["scroll", "Scrolling"], ["flash", "Flash line"]] },
+      hint: "Word stream turns every timed word into a separate high-impact line—made for fast verses.",
+      options: [["scroll", "Scrolling"], ["flash", "Flash line"], ["wordstream", "Word stream"]] },
     { key: "lyricsFit", label: "Make short lines bigger", type: "toggle",
-      hint: "Flash line only. One-word lines grow to fill the screen; long lines stay normal." },
+      hint: "Flash and Word stream layouts grow short lines to fill the screen." },
     { key: "lyricsEstimate", label: "Estimate timing for unsynced songs", type: "toggle",
       hint: "If a song has no synced lyrics, spread the plain lyrics over the song. Use \u2190 \u2192 to nudge." },
     { key: "lyricsAlign", label: "Position", type: "choice", options: [["center", "Center"], ["left", "Left"]] },
@@ -126,20 +126,24 @@
   }
 
   let lyricsWereOn = true;
+  let appliedLyricsLayout = null;
   function applySettings() {
     for (const def of SETTINGS_UI) if (def.key && controlsByKey[def.key]) controlsByKey[def.key](settings[def.key]);
 
     document.body.classList.toggle("noblur", !settings.lyricsBlur);
     document.body.classList.toggle("center", settings.lyricsAlign === "center");
     document.body.dataset.font = settings.lyricsFont;
+    const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
+    appliedLyricsLayout = settings.lyricsLayout;
     root.style.setProperty("--lyric-size", settings.lyricsSize + "px");
     applyFeel();
+    if (layoutChanged) rebuildLyricsLayout();
     activeIdx = -2;                   // re-measure and re-centre the current line after a layout change
 
     $("lines").style.display = settings.showLyrics ? "" : "none";
     if (!settings.showLyrics) {
-      lines = []; buildLines();
+      clearLyrics();
       setNotice("Lyrics are off. Turn them on in settings.");
     } else if (!lyricsWereOn) {
       trackId = null;                 // forces a fresh lyrics lookup on the next poll
