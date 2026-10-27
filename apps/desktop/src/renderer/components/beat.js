@@ -7,11 +7,16 @@
 
   function setBeatStatus(text) { const el = $("status_beat"); if (el) el.textContent = text || ""; }
 
-  async function startBeat() {
+  async function startBeat(requestPermission = false) {
     if (beatOn || beatStarting) return;
     beatStarting = true;
     setBeatStatus("Starting\u2026");
     try {
+      const permission = await window.tracker.screenCaptureStatus();
+      if (!requestPermission && permission !== "granted") {
+        setBeatStatus("Ready \u00B7 turn Beat Reaction off and on when you want to grant access");
+        return;
+      }
       const stream = await navigator.mediaDevices.getDisplayMedia({
         audio: true,
         video: { width: 320, height: 240, frameRate: 30 },
@@ -36,9 +41,10 @@
     } catch (e) {
       beatOn = false;
       setBeatStatus("Couldn't start: " + (e && e.name ? e.name + " " : "") + (e && e.message ? e.message : e) +
-        " (click anywhere in this window to retry)");
+        " (turn Beat Reaction off and on to retry)");
+    } finally {
+      beatStarting = false;
     }
-    beatStarting = false;
   }
 
   function stopBeat(msg) {
@@ -55,9 +61,6 @@
       setBeatStatus("Listening \u00B7 bass level " + Math.round(lastBass * 100) + "% (stays at 0% if no sound reaches the app)");
     }
   }, 300);
-
-  // a click is a "user gesture", which Chromium wants before it will start screen/audio capture
-  document.addEventListener("click", () => { if (settings.beat && !beatOn && !beatStarting) startBeat(); });
 
   function beatStep(tNow, dt) {
     if (!beatOn || !analyser) {

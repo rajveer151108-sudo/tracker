@@ -97,7 +97,10 @@
       if (def.type === "toggle") {
         const sw = document.createElement("label"); sw.className = "switch";
         const input = document.createElement("input"); input.type = "checkbox";
-        input.addEventListener("change", () => window.tracker.setSettings({ [def.key]: input.checked }));
+        input.addEventListener("change", () => {
+          window.tracker.setSettings({ [def.key]: input.checked });
+          if (def.key === "beat" && input.checked && typeof startBeat === "function") startBeat(true);
+        });
         sw.appendChild(input); sw.appendChild(document.createElement("span"));
         row.appendChild(sw);
         controlsByKey[def.key] = (v) => { input.checked = !!v; };

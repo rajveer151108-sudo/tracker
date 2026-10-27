@@ -44,7 +44,14 @@ rm -rf "/Applications/$APP_NAME.app"
 cp -R "$PACKAGED_APP" /Applications/
 
 echo "4/4  Signing it so macOS will run it..."
+# Nested Electron code needs ordinary ad-hoc signing. The outer app then gets
+# a stable designated requirement so macOS remembers privacy and Keychain
+# approval across local rebuilds instead of keying them to a changing CDHash.
 codesign --force --deep --sign - "/Applications/$APP_NAME.app"
+codesign --force --sign - \
+  --requirements "=designated => identifier \"$APP_BUNDLE_ID\"" \
+  "/Applications/$APP_NAME.app"
+codesign --verify --deep --strict "/Applications/$APP_NAME.app"
 
 echo ""
 echo "Done! Open $APP_NAME from your Applications folder (or Launchpad)."

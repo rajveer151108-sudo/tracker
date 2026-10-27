@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("tracker", {
   lyrics: (info) => ipcRenderer.invoke("lyrics", info),
   genre: (info) => ipcRenderer.invoke("genre", info),
   lyricsDiag: (info) => ipcRenderer.invoke("lyrics-diag", info),
+  screenCaptureStatus: () => ipcRenderer.invoke("screen-capture-status"),
   control: (action) => ipcRenderer.invoke("control", action),
   seek: (positionSec) => ipcRenderer.invoke("seek", positionSec),
   getSettings: () => ipcRenderer.invoke("settings-get"),

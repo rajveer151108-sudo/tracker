@@ -8,6 +8,7 @@ const {
   desktopCapturer,
   shell,
   safeStorage,
+  systemPreferences,
 } = require("electron");
 const { createSettingsStore } = require("./src/main/settings-store");
 const { createSpotifyDesktop } = require("./src/main/spotify-desktop");
@@ -103,6 +104,9 @@ function registerIpc() {
   ipcMain.handle("lyrics", (_event, info) => lyrics.fetchLyrics(info || {}));
   ipcMain.handle("lyrics-diag", (_event, info) => lyrics.diagnose(info || {}));
   ipcMain.handle("genre", (_event, info) => genre.fetchGenre(info || {}));
+  ipcMain.handle("screen-capture-status", () => process.platform === "darwin"
+    ? systemPreferences.getMediaAccessStatus("screen")
+    : "granted");
 
   ipcMain.handle("history-get", spotifyLibrary.loadHistory);
   ipcMain.on("history-add", (_event, track) => spotifyLibrary.addHistory(track));
