@@ -23,7 +23,7 @@
       $("homeScreen")?.style.setProperty("--home-progress", seekPercent.toFixed(2) + "%");
       if (typeof updateArcadeDialogue === "function") {
         const dialogueIndex = sourceLines.length ? window.LyricTiming.activeLyricIndex(sourceLines, t) : -1;
-        updateArcadeDialogue(sourceLines[dialogueIndex], sourceLines[dialogueIndex + 1]);
+        updateArcadeDialogue(sourceLines[dialogueIndex], sourceLines[dialogueIndex + 1], dialogueIndex, sourceLines);
       }
     }
 

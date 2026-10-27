@@ -15,11 +15,15 @@
 
   function parseLrc(text) {
     const out = [];
+    let speakerHint = "";
     for (const raw of text.split("\n")) {
       const stamps = [...raw.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)];
       if (!stamps.length) continue;
-      const lyric = raw.replace(/\[[^\]]*\]/g, "").trim();
-      for (const m of stamps) out.push({ t: Number(m[1]) * 60 + Number(m[2]), text: lyric });
+      let lyric = raw.replace(/\[\d+:\d+(?:\.\d+)?\]/g, "").trim();
+      const tag = lyric.match(/^\[([^\]]+)]\s*/);
+      if (tag) { speakerHint = tag[1].trim(); lyric = lyric.slice(tag[0].length).trim(); }
+      if (!lyric) continue;
+      for (const m of stamps) out.push({ t: Number(m[1]) * 60 + Number(m[2]), text: lyric, speakerHint });
     }
     return out.sort((a, b) => a.t - b.t);
   }
@@ -236,17 +240,20 @@
   // ---- songs with no synced lyrics: spread the plain lines over the song ----
   function plainToLines(plain, dur) {
     const items = [];
+    let speakerHint = "";
     for (const raw of plain.split("\n")) {
-      const line = raw.trim();
+      let line = raw.trim();
       if (!line) { if (items.length) items[items.length - 1].weight += 1.5; continue; }   // blank line = a pause
-      if (/^\[[^\]]*\]$/.test(line)) continue;                                           // [Chorus] style tags
-      items.push({ text: line, weight: Math.max(2, line.split(/\s+/).length) + 1 });
+      const tag = line.match(/^\[([^\]]+)]\s*/);
+      if (tag) { speakerHint = tag[1].trim(); line = line.slice(tag[0].length).trim(); }
+      if (!line) continue;
+      items.push({ text: line, speakerHint, weight: Math.max(2, line.split(/\s+/).length) + 1 });
     }
     const start = Math.min(12, dur * 0.06);
     const end = Math.max(start + 10, dur - Math.min(10, dur * 0.05));
     const total = items.reduce((a, b) => a + b.weight, 0) || 1;
     let acc = 0;
-    return items.map((it) => { const t = start + (acc / total) * (end - start); acc += it.weight; return { t, text: it.text }; });
+    return items.map((it) => { const t = start + (acc / total) * (end - start); acc += it.weight; return { t, text: it.text, speakerHint: it.speakerHint }; });
   }
 
   function setPop(W, idx) {
@@ -353,7 +360,7 @@
     const res = await window.tracker.lyrics(lastInfo);
     if (trackId !== gid || generation !== lyricsGeneration || !settings.showLyrics) return;
     if (res && Array.isArray(res.words) && res.words.length) {
-      setLyrics(res.words.map((l) => ({ t: l.t, end: l.end, text: l.text, words: l.words })),
+      setLyrics(res.words.map((l) => ({ t: l.t, end: l.end, text: l.text, words: l.words, speakerHint: l.speakerHint || l.speaker || l.role || l.label || "" })),
         "Real word timing \u00b7 " + (res.source || "Timed source"));
       setNotice("");
     } else if (res && res.synced) {

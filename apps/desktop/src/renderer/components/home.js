@@ -47,12 +47,12 @@ function mountArcadeCanvas(host,trackUri,request){
   }).catch(()=>{});
 }
 
-function updateArcadeDialogue(line,nextLine){
-  const box=document.querySelector(".arcadeDialogue"),text=box?.querySelector(".arcadeDialogueText"),next=box?.querySelector(".arcadeDialogueNext");
+function updateArcadeDialogue(line,nextLine,index,allLines){
+  const box=document.querySelector(".arcadeDialogue"),text=box?.querySelector(".arcadeDialogueText"),next=box?.querySelector(".arcadeDialogueNext"),speaker=box?.querySelector(".arcadeDialogueSpeaker");
   if(!box||!text)return;
-  const current=String(line?.text||"").trim(),upcoming=String(nextLine?.text||"").trim(),key=current+"|"+upcoming;
+  const artistText=box.dataset.artists||"",currentLine=window.DialogueSpeaker.parseLine(line,artistText),nextParsed=window.DialogueSpeaker.parseLine(nextLine,artistText),current=currentLine.text,upcoming=nextParsed.text,currentSpeaker=window.DialogueSpeaker.speakerFor(allLines||[],index,artistText),key=current+"|"+upcoming+"|"+currentSpeaker;
   if(box.dataset.key===key)return;
-  box.dataset.key=key;text.textContent=current||"LISTENING FOR DIALOGUE…";if(next)next.textContent=upcoming?`NEXT  ${upcoming}`:"";
+  box.dataset.key=key;text.textContent=current||"LISTENING FOR DIALOGUE…";if(next)next.textContent=upcoming?`NEXT  ${upcoming}`:"";if(speaker)speaker.textContent=currentSpeaker.toUpperCase();
   box.classList.remove("talking");void box.offsetWidth;box.classList.add("talking");
 }
 
@@ -152,7 +152,7 @@ function renderArcadeCabinet(hero,item){
   if(item){
     const world=homeElement("div","arcadeScreenWorld"),pixelWorld=homeElement("canvas","arcadePixelWorld");pixelWorld.width=80;pixelWorld.height=45;world.append(pixelWorld,homeElement("div","arcadeWorldShade"));screen.appendChild(world);if(item.img)paintArcadeWorld(pixelWorld,item.img);mountArcadeCanvas(world,item.uri,canvasRequest);
     const art=homeElement("img","arcadeScreenArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;const info=homeElement("div","arcadeScreenInfo");info.append(homeElement("span","arcadeScreenStatus",playing?"● GAME IN PROGRESS":"Ⅱ GAME PAUSED"),homeElement("h2","",item.title),homeElement("p","",item.sub||"Unknown artist"),homeElement("small","",item.album||"AFTERGLOW ARCADE"));
-    const dialogue=homeElement("div","arcadeDialogue"),speaker=homeElement("span","arcadeDialogueSpeaker",(item.sub||"PLAYER").split(",")[0].toUpperCase()),copy=homeElement("strong","arcadeDialogueText","LISTENING FOR DIALOGUE…"),next=homeElement("small","arcadeDialogueNext","");dialogue.append(speaker,copy,next);
+    const dialogue=homeElement("div","arcadeDialogue"),artists=window.DialogueSpeaker.artistsFrom(item.sub),speaker=homeElement("span","arcadeDialogueSpeaker",(artists.length===1?artists[0]:"VOCALS").toUpperCase()),copy=homeElement("strong","arcadeDialogueText","LISTENING FOR DIALOGUE…"),next=homeElement("small","arcadeDialogueNext","");dialogue.dataset.artists=item.sub||"";dialogue.append(speaker,copy,next);
     const progress=homeElement("div","arcadeStageProgress");progress.append(homeElement("span","","STAGE PROGRESS"),homeElement("i",""));screen.append(art,info,dialogue,progress);
   }
   else{const idle=homeElement("div","arcadeScreenIdle");idle.append(homeElement("span","","AFTERGLOW"),homeElement("h2","","SELECT A GAME"),homeElement("p","","Choose a song from the left rack"));screen.appendChild(idle);}
