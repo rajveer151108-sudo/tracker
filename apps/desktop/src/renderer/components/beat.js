@@ -10,7 +10,7 @@
 
   const MOTION_PROFILES = {
     rap:        { impact: 1.25, energy: .85, vocal: 1.0,  lift: .6,  build: .75, drop: 1.25, sway: .08, rate: 1.2 },
-    rnb:        { impact: .75,  energy: .82, vocal: 1.25, lift: 1.3,  build: 1.1, drop: .85,  sway: .42, rate: .55 },
+    rnb:        { impact: 0,    energy: .78, vocal: 1.35, lift: 1.45, build: .7, drop: .2,   sway: .46, rate: .5 },
     jazz:       { impact: .55,  energy: .72, vocal: 1.1,  lift: 1.2,  build: .7,  drop: .5,   sway: .7,  rate: .8 },
     rock:       { impact: 1.15, energy: 1.2, vocal: 1.0,  lift: .8,  build: .9,  drop: 1.15, sway: .12, rate: 1.35 },
     electronic: { impact: 1.35, energy: 1.1, vocal: .6,   lift: .9,  build: 1.35, drop: 1.5, sway: .05, rate: 1.4 },
@@ -161,9 +161,10 @@
     if (rise > 0.10 && norm > 0.5 && tNow - lastBeat > 160) { pulse = 1; lastBeat = tNow; }
     pulse *= Math.exp(-dt / 0.16);                                // each hit fades out over ~0.16s
 
+    const profile = motionProfile();
     const k = (settings.beatStrength || 100) / 100 * feel.beat;
     outLevel = Math.min(1.4, (pulse * 0.9 + Math.max(0, rise) * 0.8) * k);
-    root.style.setProperty("--pulse", outLevel.toFixed(3));
+    root.style.setProperty("--pulse", (outLevel * profile.impact).toFixed(3));
 
     energyPeak = Math.max(rms, energyPeak * Math.exp(-dt / 6));
     vocalPeak = Math.max(vocalRaw, vocalPeak * Math.exp(-dt / 6));
@@ -203,7 +204,6 @@
     }
     dropFlash *= Math.exp(-dt / 0.28);
 
-    const profile = motionProfile();
     const sway = Math.sin(tNow * 0.003 * profile.rate) * profile.sway * motionEnergy;
     const expressiveVocal = lyricMotionEmotion * lyricMotionLife * motionVocal;
     const motion = applyMusicMotion({
