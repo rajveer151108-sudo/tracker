@@ -11,17 +11,18 @@ async function launchHomeGame(item,source){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".gameCartridgeFlight").forEach(node=>node.remove());
   homeState.slotItem=item;const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
-  const sourceRect=source?.getBoundingClientRect(),heroRect=hero.getBoundingClientRect();
+  const heroRect=hero.getBoundingClientRect();
   const cartridge=homeElement("div","gameCartridgeFlight");const art=homeElement("img");art.alt="";if(item.img)art.src=item.img;cartridge.append(art,homeElement("strong","",item.title));document.body.appendChild(cartridge);
-  const startX=sourceRect?.left??40,startY=sourceRect?.top??innerHeight/2,startW=Math.min(sourceRect?.width??180,220);
+  const startW=Math.min(190,heroRect.width*.28),startX=heroRect.left+heroRect.width/2-startW/2,startY=heroRect.top+42;
   Object.assign(cartridge.style,{left:`${startX}px`,top:`${startY}px`,width:`${startW}px`});
-  const targetX=heroRect.left+heroRect.width/2-startW*.34,targetY=heroRect.top+heroRect.height*.48;
+  const targetY=heroRect.top+heroRect.height*.5-startY;
   const flight=cartridge.animate([
-    {transform:"translate3d(0,0,0) scale(1) rotateZ(0deg)",opacity:1},
-    {transform:`translate3d(${(targetX-startX)*.62}px,${(targetY-startY)*.54-80}px,0) scale(.9) rotateZ(-7deg)`,opacity:1,offset:.58},
-    {transform:`translate3d(${targetX-startX}px,${targetY-startY+28}px,0) scale(.12) rotateX(84deg)`,opacity:0}
-  ],{duration:780,easing:"cubic-bezier(.22,.8,.25,1)",fill:"forwards"});
-  await new Promise(resolve=>setTimeout(resolve,800));
+    {transform:"translate3d(0,-24px,0) scale(.96) rotateX(0deg)",opacity:0},
+    {transform:"translate3d(0,0,0) scale(1) rotateX(0deg)",opacity:1,offset:.12},
+    {transform:`translate3d(0,${targetY-35}px,0) scale(.92) rotateX(0deg)`,opacity:1,offset:.78},
+    {transform:`translate3d(0,${targetY+8}px,0) scale(.72,.08) rotateX(86deg)`,opacity:0}
+  ],{duration:1000,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});
+  await new Promise(resolve=>setTimeout(resolve,1020));
   flight.cancel();cartridge.remove();
   const started=await homePlay(item);
   setTimeout(()=>{screen.classList.remove("game-slotting");if(!started)homeState.slotItem=null;renderHomeHero();},450);
