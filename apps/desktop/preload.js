@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("tracker", {
   systemAudioSource: () => ipcRenderer.invoke("system-audio-source"),
   control: (action) => ipcRenderer.invoke("control", action),
   seek: (positionSec) => ipcRenderer.invoke("seek", positionSec),
+  setVolume: (volume) => ipcRenderer.invoke("volume-set", volume),
   getSettings: () => ipcRenderer.invoke("settings-get"),
   setSettings: (patch) => ipcRenderer.send("settings-set", patch),
   onSettings: (cb) => ipcRenderer.on("settings", (_e, s) => cb(s)),

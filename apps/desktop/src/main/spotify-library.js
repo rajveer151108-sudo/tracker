@@ -11,6 +11,7 @@ const SCOPES = [
   "playlist-read-collaborative",
   "user-library-read",
   "user-read-recently-played",
+  "user-read-playback-state",
 ].join(" ");
 
 const ALLOWED_PATHS = [
@@ -18,6 +19,7 @@ const ALLOWED_PATHS = [
   /^\/me\/playlists(\?|$)/,
   /^\/me\/tracks(\?|$)/,
   /^\/me\/player\/recently-played(\?|$)/,
+  /^\/me\/player\/queue(\?|$)/,
   /^\/search\?/,
   /^\/playlists\/[A-Za-z0-9]+\/(items|tracks)(\?|$)/,
 ];

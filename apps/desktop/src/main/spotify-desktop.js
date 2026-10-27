@@ -13,7 +13,8 @@ if application "Spotify" is running then
     set trackPosition to player position
     set trackArt to artwork url of theTrack
     set trackId to id of theTrack
-    return playerStateText & "||" & trackName & "||" & trackArtist & "||" & trackAlbum & "||" & trackDuration & "||" & trackPosition & "||" & trackArt & "||" & trackId
+    set trackVolume to sound volume
+    return playerStateText & "||" & trackName & "||" & trackArtist & "||" & trackAlbum & "||" & trackDuration & "||" & trackPosition & "||" & trackArt & "||" & trackId & "||" & trackVolume
   end tell
 else
   return "closed"
@@ -41,7 +42,7 @@ async function readSpotify() {
   if (error) return { state: "error", message: (stderr || error.message).trim() };
   const out = stdout.trim();
   if (out === "closed" || out === "stopped") return { state: out };
-  const [state, title, artist, album, durationMs, position, artwork, id] = out.split("||");
+  const [state, title, artist, album, durationMs, position, artwork, id, volume] = out.split("||");
   return {
     state,
     title,
@@ -52,6 +53,7 @@ async function readSpotify() {
     artwork,
     id,
     uri: id,
+    volume: Number(volume),
   };
 }
 
@@ -73,6 +75,19 @@ async function seek(positionSec) {
   return error
     ? { ok: false, error: (stderr || error.message || "Could not seek").trim() }
     : { ok: true, positionSec: seconds };
+}
+
+async function setVolume(volume) {
+  const value = Math.round(Number(volume));
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    return { ok: false, error: "Volume must be between 0 and 100" };
+  }
+  const { error, stderr } = await runAppleScript(
+    `tell application "Spotify" to set sound volume to ${value}`
+  );
+  return error
+    ? { ok: false, error: (stderr || error.message || "Could not change volume").trim() }
+    : { ok: true, volume: value };
 }
 
 function createSpotifyDesktop({ app, getWindow }) {
@@ -98,7 +113,7 @@ function createSpotifyDesktop({ app, getWindow }) {
     return error ? { ok: false, error: (stderr || error.message).trim() } : { ok: true };
   }
 
-  return { readSpotify, control, seek, playUri, isSpotifyUri: (value) => URI_RE.test(String(value || "")) };
+  return { readSpotify, control, seek, setVolume, playUri, isSpotifyUri: (value) => URI_RE.test(String(value || "")) };
 }
 
 module.exports = { createSpotifyDesktop };

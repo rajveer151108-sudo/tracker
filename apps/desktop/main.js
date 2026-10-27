@@ -94,6 +94,7 @@ function registerIpc() {
   ipcMain.handle("now-playing", spotifyDesktop.readSpotify);
   ipcMain.handle("control", (_event, action) => spotifyDesktop.control(action));
   ipcMain.handle("seek", (_event, positionSec) => spotifyDesktop.seek(positionSec));
+  ipcMain.handle("volume-set", (_event, volume) => spotifyDesktop.setVolume(volume));
   ipcMain.handle("play-uri", (_event, uri, context) => spotifyDesktop.playUri(uri, context));
 
   ipcMain.handle("lyrics", (_event, info) => lyrics.fetchLyrics(info || {}));
