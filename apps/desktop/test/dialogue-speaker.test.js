@@ -7,6 +7,12 @@ test("feature artists default to a neutral vocals label", () => {
   assert.equal(speakerFor([{ text: "A lyric without a credit" }], 0, "Kanye West, Drake"), "VOCALS");
 });
 
+test("a verified lead vocalist may override an otherwise neutral collaboration", () => {
+  const lines = [{ text: "An unlabelled line" }];
+  assert.equal(speakerFor(lines, 0, "Drake, PARTYNEXTDOOR", "PARTYNEXTDOOR"), "PARTYNEXTDOOR");
+  assert.equal(speakerFor(lines, 0, "Drake, PARTYNEXTDOOR", "Someone Else"), "VOCALS");
+});
+
 test("speaker tags switch the arcade dialogue to the credited feature", () => {
   const lines = [
     { text: "[Verse 1: Kanye West] First line" },

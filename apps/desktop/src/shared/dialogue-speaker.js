@@ -36,12 +36,14 @@
     return { text, speaker };
   }
 
-  function speakerFor(lines, index, artistText) {
+  function speakerFor(lines, index, artistText, fallbackSpeaker = "") {
     const artists = artistsFrom(artistText);
     for (let cursor = Number(index); cursor >= 0; cursor--) {
       const speaker = parseLine(lines[cursor], artists).speaker;
       if (speaker) return speaker;
     }
+    const creditedFallback = resolveSpeaker(fallbackSpeaker, artists);
+    if (creditedFallback) return creditedFallback;
     return artists.length === 1 ? artists[0] : "VOCALS";
   }
 

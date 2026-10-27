@@ -4,6 +4,7 @@ const homeImage=images=>images?.length?(images[0]?.url||images.at(-1)?.url||""):
 const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", ");
 function homeElement(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!=null)el.textContent=text;return el;}
 const HOME_COPY={arcade:["GAME LIBRARY","Choose a stage","PRESS START"],vinyl:["CD LIBRARY","Choose a disc","NOW LOADED"],tape:["THE VIDEO ARCHIVE","Select a tape","FEATURE PRESENTATION"],midnight:["YOUR MUSIC","Recently played","NOW PLAYING"]};
+const ARCADE_VOCAL_OVERRIDES={"spotify:track:6oLHyWvmk6bKrA91EIYZBp":"PARTYNEXTDOOR"};
 const currentHomeMode=()=>document.body.dataset.homeMode||"arcade";
 let arcadeCanvasRequest=0;
 function updateHomeVolumeUi(value){const volume=Math.max(0,Math.min(100,Math.round(Number(value)||0))),slider=document.querySelector(".homeCdVolumeRange"),readout=document.querySelector(".homeCdVolumeValue"),control=document.querySelector(".homeCdSlider");homeState.volume=volume;if(slider&&Number(slider.value)!==volume)slider.value=String(volume);if(readout)readout.textContent=`${volume}%`;control?.style.setProperty("--volume",`${volume}%`);}
@@ -50,9 +51,9 @@ function mountArcadeCanvas(host,trackUri,request){
 function updateArcadeDialogue(line,nextLine,index,allLines){
   const box=document.querySelector(".arcadeDialogue"),text=box?.querySelector(".arcadeDialogueText"),next=box?.querySelector(".arcadeDialogueNext"),speaker=box?.querySelector(".arcadeDialogueSpeaker");
   if(!box||!text)return;
-  const artistText=box.dataset.artists||"",currentLine=window.DialogueSpeaker.parseLine(line,artistText),nextParsed=window.DialogueSpeaker.parseLine(nextLine,artistText),current=currentLine.text,upcoming=nextParsed.text,currentSpeaker=window.DialogueSpeaker.speakerFor(allLines||[],index,artistText),key=current+"|"+upcoming+"|"+currentSpeaker;
+  const artistText=box.dataset.artists||"",currentLine=window.DialogueSpeaker.parseLine(line,artistText),nextParsed=window.DialogueSpeaker.parseLine(nextLine,artistText),current=currentLine.text,upcoming=nextParsed.text,currentSpeaker=window.DialogueSpeaker.speakerFor(allLines||[],index,artistText,box.dataset.defaultSpeaker||""),key=current+"|"+upcoming+"|"+currentSpeaker;
   if(box.dataset.key===key)return;
-  box.dataset.key=key;text.textContent=current||"LISTENING FOR DIALOGUE…";if(next)next.textContent=upcoming?`NEXT  ${upcoming}`:"";if(speaker)speaker.textContent=currentSpeaker.toUpperCase();
+  box.dataset.key=key;box.dataset.length=current.length>115?"extra":current.length>64?"long":"normal";text.textContent=current||"LISTENING FOR DIALOGUE…";if(next)next.textContent=upcoming?`NEXT  ${upcoming}`:"";if(speaker)speaker.textContent=currentSpeaker.toUpperCase();
   box.classList.remove("talking");void box.offsetWidth;box.classList.add("talking");
 }
 
@@ -152,7 +153,7 @@ function renderArcadeCabinet(hero,item){
   if(item){
     const world=homeElement("div","arcadeScreenWorld"),pixelWorld=homeElement("canvas","arcadePixelWorld");pixelWorld.width=80;pixelWorld.height=45;world.append(pixelWorld,homeElement("div","arcadeWorldShade"));screen.appendChild(world);if(item.img)paintArcadeWorld(pixelWorld,item.img);mountArcadeCanvas(world,item.uri,canvasRequest);
     const art=homeElement("img","arcadeScreenArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;const info=homeElement("div","arcadeScreenInfo");info.append(homeElement("span","arcadeScreenStatus",playing?"● GAME IN PROGRESS":"Ⅱ GAME PAUSED"),homeElement("h2","",item.title),homeElement("p","",item.sub||"Unknown artist"),homeElement("small","",item.album||"AFTERGLOW ARCADE"));
-    const dialogue=homeElement("div","arcadeDialogue"),artists=window.DialogueSpeaker.artistsFrom(item.sub),speaker=homeElement("span","arcadeDialogueSpeaker",(artists.length===1?artists[0]:"VOCALS").toUpperCase()),copy=homeElement("strong","arcadeDialogueText","LISTENING FOR DIALOGUE…"),next=homeElement("small","arcadeDialogueNext","");dialogue.dataset.artists=item.sub||"";dialogue.append(speaker,copy,next);
+    const dialogue=homeElement("div","arcadeDialogue"),artists=window.DialogueSpeaker.artistsFrom(item.sub),defaultSpeaker=ARCADE_VOCAL_OVERRIDES[item.uri]||(artists.length===1?artists[0]:"VOCALS"),speaker=homeElement("span","arcadeDialogueSpeaker",defaultSpeaker.toUpperCase()),copy=homeElement("strong","arcadeDialogueText","LISTENING FOR DIALOGUE…"),next=homeElement("small","arcadeDialogueNext","");dialogue.dataset.artists=item.sub||"";dialogue.dataset.defaultSpeaker=defaultSpeaker;dialogue.append(speaker,copy,next);
     const progress=homeElement("div","arcadeStageProgress");progress.append(homeElement("span","","STAGE PROGRESS"),homeElement("i",""));screen.append(art,info,dialogue,progress);
   }
   else{const idle=homeElement("div","arcadeScreenIdle");idle.append(homeElement("span","","AFTERGLOW"),homeElement("h2","","SELECT A GAME"),homeElement("p","","Choose a song from the left rack"));screen.appendChild(idle);}
@@ -177,7 +178,7 @@ function renderCdPlayer(hero,item,copy){
   scene.append(stack,player);hero.append(scene);
 }
 function renderHomeHero(){
-  const hero=$("arcadeNow");hero.innerHTML="";const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=(mode==="vinyl"&&homeState.slotItem)||homeState.nowPlaying;
+  const hero=$("arcadeNow");hero.innerHTML="";const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem((mode==="vinyl"&&homeState.slotItem)||homeState.nowPlaying);
   if(mode==="arcade"){renderArcadeCabinet(hero,item);return;}
   if(mode==="vinyl"&&item){renderCdPlayer(hero,item,copy);return;}
   if(!item){const empty=homeElement("div","homeHeroEmpty");empty.append(homeElement("span","homeHeroKicker",copy[2]),homeElement("h2","","Your next favourite song lives here"),homeElement("p","","Open the library or start Spotify to fill this space."));hero.appendChild(empty);return;}
@@ -213,6 +214,7 @@ async function refreshArcadeHome(force=false){
   }finally{homeState.loading=false;}
 }
 function homeNowPlayingKey(np){if(!np||!(np.state==="playing"||np.state==="paused"))return"idle";return[np.id,np.uri,np.title,np.artist,np.album,np.artwork,np.state].map(value=>String(value||"").normalize("NFKC").trim().toLowerCase()).join("|");}
-function updateHomeNowPlaying(np){const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume);if(Number.isFinite(volume))updateHomeVolumeUi(volume);if(homeState.pendingUri&&homeState.slotItem&&active&&uri&&uri!==homeState.pendingUri)return;if(key===homeState.nowKey)return;homeState.nowKey=key;homeState.nowPlaying=active?{uri,title:np.title||"Unknown track",sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}:null;if(homeState.nowPlaying)setHomeGameColor(homeState.nowPlaying);if(!homeState.pendingUri||!active||uri===homeState.pendingUri){homeState.slotItem=null;homeState.pendingUri="";homeState.loadSequence++;$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated");}renderHome();if(active&&currentHomeMode()==="vinyl")refreshHomeQueue(true);}
+function enrichHomeItem(item){if(!item?.uri)return item;const known=[...homeState.games,...homeState.recent,...homeState.queue].find(track=>track.uri===item.uri);return known?{...item,sub:known.sub||item.sub,album:known.album||item.album,img:known.img||item.img}:item;}
+function updateHomeNowPlaying(np){const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume);if(Number.isFinite(volume))updateHomeVolumeUi(volume);if(homeState.pendingUri&&homeState.slotItem&&active&&uri&&uri!==homeState.pendingUri)return;if(key===homeState.nowKey)return;homeState.nowKey=key;homeState.nowPlaying=active?enrichHomeItem({uri,title:np.title||"Unknown track",sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}):null;if(homeState.nowPlaying)setHomeGameColor(homeState.nowPlaying);if(!homeState.pendingUri||!active||uri===homeState.pendingUri){homeState.slotItem=null;homeState.pendingUri="";homeState.loadSequence++;$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated");}renderHome();if(active&&currentHomeMode()==="vinyl")refreshHomeQueue(true);}
 function setAppView(view){const wanted=view==="lyrics"?"lyrics":"home";if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();document.body.dataset.view=wanted;$("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");if(wanted==="home")refreshArcadeHome();else activeIdx=-2;}
 function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("arcadeLibraryBtn").addEventListener("click",()=>{setTab("recent");openLibrary();});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}
