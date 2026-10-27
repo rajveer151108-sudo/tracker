@@ -36,7 +36,7 @@ const DEFAULTS = {
 };
 
 const LIMITS = {
-  lyricsSize: [18, 60],
+  lyricsSize: [18, 72],
   lyricsHistoryLines: [2, 6],
   glowStrength: [0, 300],
   glowThickness: [20, 300],

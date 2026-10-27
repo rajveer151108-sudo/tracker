@@ -28,7 +28,7 @@
       hint: "If a song has no synced lyrics, spread the plain lyrics over the song. Use \u2190 \u2192 to nudge." },
     { key: "lyricsAlign", label: "Position", type: "choice", options: [["center", "Center"], ["left", "Left"]] },
     { key: "lyricsFont", label: "Font", type: "choice", options: [["sans", "Sans"], ["serif", "Serif"], ["round", "Rounded"]] },
-    { key: "lyricsSize", label: "Size", type: "range", min: 22, max: 48, step: 2, unit: "px" },
+    { key: "lyricsSize", label: "Size", type: "range", min: 18, max: 72, step: 2, unit: "px" },
     { key: "lyricsBlur", label: "Blur lines that aren't playing", type: "toggle" },
 
     { type: "heading", label: "Background" },

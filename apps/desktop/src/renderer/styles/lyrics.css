@@ -47,7 +47,12 @@
   body:is([data-layout="stack"], [data-layout="wordstack"]) .line.stack-hidden { opacity: 0 !important; pointer-events: none; }
   body.noblur:is([data-layout="stack"], [data-layout="wordstack"]) .line { filter: none !important; }
   body.immersive[data-layout="stack"] .line { font-size: calc(var(--lyric-size) * 1.35); }
-  body[data-layout="wordstack"] .line { padding: .18em 0; font-size: calc(var(--lyric-size) * 1.15); line-height: 1.05; }
+  body[data-layout="wordstack"] .line {
+    padding: .18em 0;
+    font-size: calc(var(--lyric-size) * 1.15);
+    line-height: 1.05;
+    filter: none !important;
+  }
   body.immersive[data-layout="wordstack"] .line { font-size: calc(var(--lyric-size) * 1.8); }
   body[data-layout="wordstack"] .w { padding: .08em .04em .18em; margin: -.08em -.04em -.18em; }
 
