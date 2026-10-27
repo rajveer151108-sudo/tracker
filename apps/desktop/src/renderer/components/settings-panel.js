@@ -33,8 +33,11 @@
     { type: "heading", label: "Background" },
     { key: "backdrop", label: "Show background", type: "toggle" },
     { key: "backdropStyle", label: "Style", type: "choice",
-      hint: "Album tour shows the cover sharp and zooms around it: top-left, top-right, and so on.",
+      hint: "Album tour shows the cover sharp and moves around its artwork.",
       options: [["blur", "Blurred"], ["album", "Album tour"]] },
+    { key: "backdropTourFocus", label: "Album tour focus", type: "choice",
+      hint: "Smart artwork finds detailed, colourful areas automatically. Center stage stays near the middle; Classic corners keeps the original route.",
+      options: [["smart", "Smart artwork"], ["center", "Center stage"], ["corners", "Classic corners"]] },
     { key: "backdropOpacity", label: "Opacity", type: "range", min: 0, max: 100, step: 5, unit: "%" },
 
     { type: "heading", label: "Screen glow" },
@@ -163,7 +166,8 @@
 
     $("backdrop").style.display = settings.backdrop ? "" : "none";
     root.style.setProperty("--bdop", String((settings.backdropOpacity == null ? 60 : settings.backdropOpacity) / 100));
-    if (settings.backdrop && lastArtwork && (!$("backdrop").children.length || backdropKey !== settings.backdropStyle)) setBackdrop(lastArtwork);
+    const wantedBackdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart");
+    if (settings.backdrop && lastArtwork && (!$("backdrop").children.length || backdropKey !== wantedBackdropKey)) setBackdrop(lastArtwork);
 
     if (settings.beat && !beatOn && !beatStarting) startBeat();
     if (!settings.beat && beatOn) stopBeat("Off");

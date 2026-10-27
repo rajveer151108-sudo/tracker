@@ -5,21 +5,11 @@
   .bdw.in { opacity: 1; }
   .bd { position: absolute; inset: -25%; background-size: cover; background-position: center;
         filter: blur(70px) saturate(1.5); animation: drift 16s ease-in-out infinite alternate; }
-  /* album tour: the sharp cover fills the whole screen (a square at least as big as the screen),
-     and a camera zooms into each corner of the cover, then back out */
+  /* Album tour fills the screen with a square cover. JavaScript chooses focal points from
+     the artwork and drives the camera; the cover stays centered while it is analysed. */
   .alb { --S: max(100cqw, 100cqh); --ex: calc((var(--S) - 100cqw) / 2); --ey: calc((var(--S) - 100cqh) / 2);
          position: absolute; left: 50%; top: 50%; width: var(--S); height: var(--S); translate: -50% -50%;
-         background-size: cover; background-position: center;
-         animation: albumTour var(--tour, 26s) ease-in-out infinite; }
-  @keyframes albumTour {
-    0%, 8%    { transform: translate(0, 0) scale(1);                                                   transform-origin: 50% 50%; }
-    16%, 24%  { transform: translate(var(--ex), var(--ey)) scale(2.4);                                  transform-origin: 0% 0%; }
-    32%, 40%  { transform: translate(calc(-1 * var(--ex)), var(--ey)) scale(2.4);                       transform-origin: 100% 0%; }
-    48%, 56%  { transform: translate(calc(-1 * var(--ex)), calc(-1 * var(--ey))) scale(2.4);            transform-origin: 100% 100%; }
-    64%, 72%  { transform: translate(var(--ex), calc(-1 * var(--ey))) scale(2.4);                       transform-origin: 0% 100%; }
-    82%, 88%  { transform: translate(0, 0) scale(1.7);                                                   transform-origin: 50% 50%; }
-    100%      { transform: translate(0, 0) scale(1);                                                     transform-origin: 50% 50%; }
-  }
+         background-size: cover; background-position: center; will-change: transform; }
   @keyframes drift {
     from { transform: scale(1.3)  rotate(-6deg) translate(-8%, -5%); }
     to   { transform: scale(1.65) rotate(9deg)  translate(8%, 6%); }

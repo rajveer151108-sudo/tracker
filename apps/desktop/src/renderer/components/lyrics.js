@@ -38,6 +38,7 @@
     const bucket = document.body.dataset.genre || "";
     feel = settings.genreFeel ? (FEELS[bucket] || DEFAULT_FEEL) : DEFAULT_FEEL;
     root.style.setProperty("--tour", feel.tour + "s");
+    if (typeof setAlbumTourDuration === "function") setAlbumTourDuration(feel.tour);
     root.style.setProperty("--lines-ms", feel.lines + "ms");
     document.body.dataset.hl = (settings.genreFeel && feel.highlight) || settings.lyricsHighlight || "word";
     window.tracker.sendGlow({ speed: feel.spin });
