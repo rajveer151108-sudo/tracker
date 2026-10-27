@@ -10,6 +10,14 @@ const {
   safeStorage,
   systemPreferences,
 } = require("electron");
+
+// Electron 45's Core Audio Tap path does not reliably connect loopback audio
+// when the app supplies its own desktop source. Electron 44 still supports the
+// ScreenCaptureKit route, which works with macOS's granted Screen & System
+// Audio Recording permission and avoids a native picker on every start.
+if (process.platform === "darwin") {
+  app.commandLine.appendSwitch("disable-features", "MacCatapLoopbackAudioForScreenShare");
+}
 const { createSettingsStore } = require("./src/main/settings-store");
 const { createSpotifyDesktop } = require("./src/main/spotify-desktop");
 const { createLyricsService } = require("./src/main/lyrics-service");
