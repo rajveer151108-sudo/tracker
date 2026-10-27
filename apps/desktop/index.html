@@ -35,21 +35,25 @@
     </div>
   </header>
   <main id="homeScreen" aria-label="Afterglow Home">
-    <div class="arcadeScanlines" aria-hidden="true"></div>
-    <div class="arcadeInner">
-      <div class="arcadeMarquee">
-        <div><span class="arcadeEyebrow">AFTERGLOW ARCADE</span><h1>SELECT YOUR SOUND</h1></div>
-        <div class="arcadeScore"><span>PLAYER</span><strong id="arcadePlayer">GUEST</strong><span>PLAYS</span><strong id="arcadePlays">000</strong></div>
+    <div class="homeAtmosphere" aria-hidden="true"></div>
+    <div class="homeShell">
+      <nav class="homeThemeBar" aria-label="Home style">
+        <span>HOME MODE</span>
+        <button data-home-theme="arcade">Arcade</button><button data-home-theme="vinyl">Vinyl</button>
+        <button data-home-theme="tape">Tape archive</button><button data-home-theme="midnight">Midnight</button>
+      </nav>
+      <div class="homeLayout">
+        <aside class="homeRoster">
+          <div class="homeSectionTitle"><span id="homeRosterKicker">GAME LIBRARY</span><h1 id="homeRosterTitle">Choose a song</h1></div>
+          <div id="arcadeRecent" class="homeSongList"><div class="homeLoading">INSERTING COIN…</div></div>
+          <button class="homeTextButton" id="arcadeLibraryBtn">OPEN FULL LIBRARY</button>
+        </aside>
+        <section id="arcadeNow" class="homeHero" aria-live="polite"></section>
+        <aside class="homeCollections">
+          <div class="homeSectionTitle"><span>COLLECTIONS</span><h2>Your playlists</h2></div>
+          <div id="arcadeCollections" class="homeCollectionList"><div class="homeLoading">LOADING COLLECTIONS…</div></div>
+        </aside>
       </div>
-      <section id="arcadeNow" class="arcadeNow"></section>
-      <section class="arcadeSection">
-        <div class="arcadeSectionHead"><div><span>STAGE SELECT</span><h2>Recently played</h2></div><button class="arcadeTextBtn" id="arcadeLibraryBtn">ALL GAMES</button></div>
-        <div id="arcadeRecent" class="arcadeGrid"><div class="arcadeLoading">INSERTING COIN…</div></div>
-      </section>
-      <section class="arcadeSection">
-        <div class="arcadeSectionHead"><div><span>COLLECTION VAULT</span><h2>Your playlists</h2></div></div>
-        <div id="arcadeCollections" class="arcadeGrid collections"><div class="arcadeLoading">LOADING COLLECTIONS…</div></div>
-      </section>
     </div>
   </main>
   <div id="stage">

@@ -2,6 +2,11 @@
   // Settings. To add a new setting: add a default in main.js, then add a row here.
   // =====================================================================
   const SETTINGS_UI = [
+    { type: "heading", label: "Home" },
+    { key: "homeMode", label: "Home style", type: "choice",
+      hint: "The same music library, rebuilt as four different listening spaces.",
+      options: [["arcade", "Arcade"], ["vinyl", "Vinyl"], ["tape", "Tape archive"], ["midnight", "Midnight"]] },
+
     { type: "heading", label: "Lyrics" },
     { key: "showLyrics", label: "Show lyrics", type: "toggle" },
     { key: "lyricsWordSource", label: "Use real word timing when available", type: "toggle",
@@ -166,6 +171,8 @@
     document.body.classList.toggle("word-keywords", !!settings.lyricsKeywords);
     document.body.classList.toggle("music-motion", !!settings.musicMotion);
     document.body.dataset.performance = settings.performanceMode || "balanced";
+    document.body.dataset.homeMode = settings.homeMode || "arcade";
+    if (typeof renderHome === "function") renderHome();
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
     appliedLyricsLayout = settings.lyricsLayout;
