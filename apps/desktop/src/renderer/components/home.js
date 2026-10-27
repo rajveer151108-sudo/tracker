@@ -5,17 +5,22 @@ const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", 
 function homeElement(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!=null)el.textContent=text;return el;}
 const HOME_COPY={arcade:["GAME LIBRARY","Choose a stage","PRESS START"],vinyl:["THE RECORD SHELF","Select a record","NOW SPINNING"],tape:["THE VIDEO ARCHIVE","Select a tape","FEATURE PRESENTATION"],midnight:["YOUR MUSIC","Recently played","NOW PLAYING"]};
 const currentHomeMode=()=>document.body.dataset.homeMode||"arcade";
+function setHomeGameColor(item){
+  const seed=String(item?.uri||item?.title||"afterglow");let hash=0;for(const char of seed)hash=(hash*31+char.charCodeAt(0))>>>0;
+  const hue=hash%360,sat=62+(hash%18),light=42+(hash%12),fallback=`hsl(${hue} ${sat}% ${light}%)`;$("homeScreen")?.style.setProperty("--game-color",fallback);document.body.style.setProperty("--game-color",fallback);
+  if(!item?.img)return;const image=new Image();image.crossOrigin="anonymous";image.onload=()=>{try{const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d",{willReadFrequently:true});canvas.width=canvas.height=24;ctx.drawImage(image,0,0,24,24);const data=ctx.getImageData(0,0,24,24).data;let r=0,g=0,b=0,w=0;for(let i=0;i<data.length;i+=16){const hi=Math.max(data[i],data[i+1],data[i+2]),lo=Math.min(data[i],data[i+1],data[i+2]),weight=1+(hi-lo)/90;r+=data[i]*weight;g+=data[i+1]*weight;b+=data[i+2]*weight;w+=weight;}const color=`rgb(${Math.round(r/w)} ${Math.round(g/w)} ${Math.round(b/w)})`;$("homeScreen")?.style.setProperty("--game-color",color);document.body.style.setProperty("--game-color",color);}catch{}};image.src=item.img;
+}
 
 async function homePlay(item){if(!item?.uri)return false;const result=await window.tracker.playUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok)setTimeout(poll,250);return !!result?.ok;}
 async function launchHomeGame(item,source){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".gameCartridgeFlight").forEach(node=>node.remove());
-  homeState.slotItem=item;const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
-  const heroRect=hero.getBoundingClientRect();
+  homeState.slotItem=item;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
+  const heroRect=hero.getBoundingClientRect(),slotRect=hero.querySelector(".arcadeGameSlot")?.getBoundingClientRect();
   const cartridge=homeElement("div","gameCartridgeFlight");const art=homeElement("img");art.alt="";if(item.img)art.src=item.img;cartridge.append(art,homeElement("strong","",item.title));document.body.appendChild(cartridge);
-  const startW=Math.min(190,heroRect.width*.28),startX=heroRect.left+heroRect.width/2-startW/2,startY=heroRect.top+42;
+  const startW=Math.min(150,heroRect.width*.22),slotCenter=slotRect?slotRect.left+slotRect.width/2:heroRect.left+heroRect.width/2,startX=slotCenter-startW/2,startY=(slotRect?.top??heroRect.top+heroRect.height*.72)-startW-54;
   Object.assign(cartridge.style,{left:`${startX}px`,top:`${startY}px`,width:`${startW}px`});
-  const targetY=heroRect.top+heroRect.height*.5-startY;
+  const targetY=(slotRect?.top??heroRect.top+heroRect.height*.72)-startY-startW*.18;
   const flight=cartridge.animate([
     {transform:"translate3d(0,-24px,0) scale(.96) rotateX(0deg)",opacity:0},
     {transform:"translate3d(0,0,0) scale(1) rotateX(0deg)",opacity:1,offset:.12},
@@ -46,8 +51,20 @@ function renderHomeCollections(){
   if(!homeState.playlists.length){list.appendChild(homeElement("div","homeEmpty","Connect Spotify to bring your full library here."));return;}
   homeState.playlists.forEach(item=>{const card=homeElement("button","homeCollection");card.classList.toggle("selected",homeState.activeCollection?.key===item.key);let image;if(item.img){image=homeElement("img");image.alt="";image.loading="lazy";image.src=item.img;}else{image=homeElement("div","homeCollectionPlaceholder",item.symbol||"♫");}card.append(image,homeElement("strong","",item.title),homeElement("small","",item.sub||"Playlist"));card.addEventListener("click",()=>loadHomeCollection(item));list.appendChild(card);});
 }
+function renderArcadeCabinet(hero,item){
+  const cabinet=homeElement("div","arcadeCabinet"),display=homeElement("div","arcadeDisplay"),top=homeElement("div","arcadeDisplayTop");
+  top.append(homeElement("span","","PLAYER 01"),homeElement("strong","",item?"NOW PLAYING":"READY"),homeElement("span","",item?"SCORE 01":"INSERT GAME"));display.appendChild(top);
+  const screen=homeElement("div","arcadeScreenContent");
+  if(item){const art=homeElement("img","arcadeScreenArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;const info=homeElement("div","arcadeScreenInfo");info.append(homeElement("span","arcadeScreenStatus",playing?"● GAME IN PROGRESS":"Ⅱ GAME PAUSED"),homeElement("h2","",item.title),homeElement("p","",item.sub||"Unknown artist"),homeElement("small","",item.album||"AFTERGLOW ARCADE"));screen.append(art,info);}
+  else{const idle=homeElement("div","arcadeScreenIdle");idle.append(homeElement("span","","AFTERGLOW"),homeElement("h2","","SELECT A GAME"),homeElement("p","","Choose a song from the left rack"));screen.appendChild(idle);}
+  display.appendChild(screen);
+  const deck=homeElement("div","arcadeDeck"),transport=homeElement("div","arcadeDeckButtons"),prev=homeElement("button","arcadeRoundButton","◀"),play=homeElement("button","arcadeRoundButton primary",playing?"Ⅱ":"▶"),next=homeElement("button","arcadeRoundButton","▶");prev.addEventListener("click",()=>control("previous"));play.addEventListener("click",()=>control("playpause"));next.addEventListener("click",()=>control("next"));transport.append(prev,play,next);
+  const slotZone=homeElement("div","arcadeSlotZone");slotZone.append(homeElement("span","","GAME SLOT"),homeElement("div","arcadeGameSlot",""),homeElement("small","",homeState.slotItem?"LOADING…":"CHOOSE A SONG"));
+  const lyrics=homeElement("button","arcadeLyricsButton","MIC // LYRICS");lyrics.addEventListener("click",()=>setAppView("lyrics"));deck.append(transport,slotZone,lyrics);cabinet.append(display,deck);hero.appendChild(cabinet);
+}
 function renderHomeHero(){
   const hero=$("arcadeNow");hero.innerHTML="";const item=homeState.nowPlaying;const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade;
+  if(mode==="arcade"){renderArcadeCabinet(hero,item);return;}
   if(!item){const empty=homeElement("div","homeHeroEmpty");empty.append(homeElement("span","homeHeroKicker",copy[2]),homeElement("h2","","Your next favourite song lives here"),homeElement("p","","Open the library or start Spotify to fill this space."));hero.appendChild(empty);return;}
   const visual=homeElement("div","homeHeroVisual"),art=homeElement("img","homeHeroArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;visual.append(art,homeElement("div","homeVinyl",""),homeElement("div","homeTapeSpine",item.title));
   const details=homeElement("div","homeHeroDetails");details.append(homeElement("span","homeHeroKicker",`LIVE // ${copy[2]}`),homeElement("h2","",item.title),homeElement("p","homeHeroArtist",item.sub||"Unknown artist"));
@@ -79,6 +96,6 @@ async function refreshArcadeHome(force=false){
     if(!homeState.activeCollection)homeState.activeCollection=homeState.playlists.find(p=>p.kind==="recent")||homeState.playlists[0];homeState.loadedAt=Date.now();renderHome();
   }finally{homeState.loading=false;}
 }
-function updateHomeNowPlaying(np){const active=np&&(np.state==="playing"||np.state==="paused"),key=active?`${np.id}:${np.state}:${np.artwork}`:"idle";if(key===homeState.nowKey)return;homeState.nowKey=key;homeState.nowPlaying=active?{uri:np.uri,title:np.title,sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}:null;homeState.slotItem=null;$("homeScreen")?.classList.remove("game-slotting");renderHome();}
+function updateHomeNowPlaying(np){const active=np&&(np.state==="playing"||np.state==="paused"),key=active?`${np.id}:${np.state}:${np.artwork}`:"idle";if(key===homeState.nowKey)return;homeState.nowKey=key;homeState.nowPlaying=active?{uri:np.uri,title:np.title,sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}:null;if(homeState.nowPlaying)setHomeGameColor(homeState.nowPlaying);homeState.slotItem=null;$("homeScreen")?.classList.remove("game-slotting");renderHome();}
 function setAppView(view){const wanted=view==="lyrics"?"lyrics":"home";if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();document.body.dataset.view=wanted;$("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");if(wanted==="home")refreshArcadeHome();else activeIdx=-2;}
 function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("arcadeLibraryBtn").addEventListener("click",()=>{setTab("recent");openLibrary();});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}
