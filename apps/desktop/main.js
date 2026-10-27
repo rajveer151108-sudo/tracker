@@ -132,6 +132,15 @@ function registerIpc() {
   ipcMain.on("glow-update", (_event, patch) => glow.update(patch));
   ipcMain.on("beat", (_event, value) => {
     if (typeof value === "number") glow.beat(value);
+    else if (value && typeof value === "object") {
+      const motion = {};
+      for (const key of ["impact", "energy", "vocal", "lift", "word"]) {
+        if (typeof value[key] === "number" && Number.isFinite(value[key])) {
+          motion[key] = Math.max(0, Math.min(1.5, value[key]));
+        }
+      }
+      glow.beat(motion);
+    }
   });
   ipcMain.on("fullscreen-toggle", () => setImmersive(!immersive));
   ipcMain.on("win-minimize", () => {

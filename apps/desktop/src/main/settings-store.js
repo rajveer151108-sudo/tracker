@@ -33,6 +33,8 @@ const DEFAULTS = {
   glowColorB: "#7a5cff",
   beat: false,
   beatStrength: 100,
+  musicMotion: true,
+  motionStrength: 100,
 };
 
 const LIMITS = {
@@ -43,6 +45,7 @@ const LIMITS = {
   backdropOpacity: [0, 100],
   backdropTourZoom: [20, 140],
   beatStrength: [0, 300],
+  motionStrength: [0, 250],
 };
 
 const ENUMS = {

@@ -1,4 +1,4 @@
-:root { --glow: 29, 185, 84; --pulse: 0; --lyric-size: 30px; }
+:root { --glow: 29, 185, 84; --pulse: 0; --motion-energy: 0; --motion-vocal: 0; --motion-lift: 0; --word-life: 0; --lyric-size: 30px; }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body { font-family: -apple-system, system-ui, sans-serif; background: #08080b; color: #fff;

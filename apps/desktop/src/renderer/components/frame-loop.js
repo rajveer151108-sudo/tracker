@@ -16,6 +16,7 @@
     $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
     $("pos").textContent = fmt(now);
 
+    let wordLife = 0;
     if (lines.length) {
       const idx = window.LyricTiming.activeLyricIndex(lines, t);
 
@@ -76,6 +77,7 @@
           const pw = mode === "whole" ? 1
             : W.timed ? clamp01((t - W.wt[i]) / Math.max(0.06, W.we[i] - W.wt[i]))
             : clamp01((p - W.starts[i]) / (W.ends[i] - W.starts[i]));
+          if (pw > 0 && pw < 1) wordLife = Math.max(wordLife, Math.sin(Math.PI * pw));
           if (pw > 0 && pw < 1) curIdx = i;
           const key = Math.round(pw * 200);
           if (W.cache[i] !== key) { W.cache[i] = key; W.spans[i].style.setProperty("--p", (pw * 100).toFixed(1) + "%"); }
@@ -84,6 +86,8 @@
         if (W.cur !== popIdx) setPop(W, popIdx);
       }
     }
+    lyricMotionLife = wordLife;
+    root.style.setProperty("--word-life", wordLife.toFixed(3));
     requestAnimationFrame(frame);
   }
 

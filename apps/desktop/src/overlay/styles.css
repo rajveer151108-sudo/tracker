@@ -1,6 +1,6 @@
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
   #edge { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.2s ease; }
-  #edge.on { opacity: 1; animation: breathe 5s ease-in-out infinite; }
+  #edge.on { opacity: 1; }
   @keyframes breathe { 0%, 100% { filter: brightness(.88); } 50% { filter: brightness(1.15); } }
 
   #glowbox { position: absolute; inset: 0; }                         /* soft inner glow */

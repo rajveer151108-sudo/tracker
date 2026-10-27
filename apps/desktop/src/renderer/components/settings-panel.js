@@ -63,10 +63,13 @@
     { key: "genreFeel", label: "Match the feel to the genre", type: "toggle",
       hint: "Rap: fast and punchy. R&B: slow and dreamy, with lines lighting up whole. Pop, rock and electronic get their own speeds." },
 
-    { type: "heading", label: "Beat reaction" },
-    { key: "beat", label: "Pulse with the music", type: "toggle", status: true,
-      hint: "Listens to the audio your Mac is playing. macOS may ask for permission the first time." },
-    { key: "beatStrength", label: "Strength", type: "range", min: 30, max: 200, step: 10, unit: "%" },
+    { type: "heading", label: "Music motion" },
+    { key: "beat", label: "Listen and react to the song", type: "toggle", status: true,
+      hint: "Analyses the audio your Mac is playing. macOS may ask for permission the first time." },
+    { key: "musicMotion", label: "Lyrics and lights dance", type: "toggle",
+      hint: "Follows energy, vocals, melodic lift, held words and beat drops instead of using only a single pulse." },
+    { key: "motionStrength", label: "Dance strength", type: "range", min: 0, max: 200, step: 10, unit: "%" },
+    { key: "beatStrength", label: "Beat punch", type: "range", min: 0, max: 200, step: 10, unit: "%" },
   ];
   let settings = {};
   const controlsByKey = {};
@@ -152,6 +155,7 @@
     document.body.dataset.motion = settings.lyricsMotion || "slide";
     document.body.classList.toggle("word-emoji", !!settings.lyricsEmoji);
     document.body.classList.toggle("word-keywords", !!settings.lyricsKeywords);
+    document.body.classList.toggle("music-motion", !!settings.musicMotion);
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
     appliedLyricsLayout = settings.lyricsLayout;
