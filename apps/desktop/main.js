@@ -83,10 +83,13 @@ function createWindow() {
 function registerMediaCapture() {
   session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
     desktopCapturer
-      .getSources({ types: ["screen"] })
-      .then((sources) => callback({ video: sources[0], audio: "loopback" }))
+      .getSources({ types: ["screen"], thumbnailSize: { width: 0, height: 0 } })
+      .then((sources) => {
+        if (!sources[0]) return callback(null);
+        callback({ video: sources[0], audio: "loopback" });
+      })
       .catch(() => {
-        try { callback({}); } catch {}
+        try { callback(null); } catch {}
       });
   });
 }

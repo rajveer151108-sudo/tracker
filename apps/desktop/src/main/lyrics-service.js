@@ -41,6 +41,18 @@ function normalizeInfo(info) {
   return { ...info, title };
 }
 
+function lyricsCacheKey(info) {
+  const clean = (value) => String(value || "").normalize("NFKC").trim().toLowerCase();
+  const platformId = spotifyTrackId(info?.id);
+  return [
+    platformId ? `spotify:${platformId}` : clean(info?.id),
+    clean(info?.title),
+    clean(info?.artist),
+    clean(info?.album),
+    Math.round(Number(info?.durationSec) || 0),
+  ].join("|");
+}
+
 function providerParams(info) {
   const platformId = spotifyTrackId(info.id);
   const params = {
@@ -183,8 +195,9 @@ function createLyricsService(getSettings) {
   }
 
   async function fetchWordLyrics(info, diagnostics) {
+    const cacheKey = lyricsCacheKey(info);
     if (!diagnostics) {
-      const cached = wordCache.get(info.id);
+      const cached = wordCache.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) return cached.value;
     }
 
@@ -196,7 +209,7 @@ function createLyricsService(getSettings) {
     }
 
     if (!diagnostics) {
-      wordCache.set(info.id, {
+      wordCache.set(cacheKey, {
         value: found,
         expiresAt: Date.now() + (found ? WORD_CACHE_HIT_MS : WORD_CACHE_MISS_MS),
       });
@@ -206,11 +219,12 @@ function createLyricsService(getSettings) {
 
   async function fetchLyrics(info) {
     const { id, title, artist, album, durationSec } = info;
+    const cacheKey = lyricsCacheKey(info);
     if (getSettings().lyricsWordSource) {
       const wordLyrics = await fetchWordLyrics(info);
       if (wordLyrics) return { words: wordLyrics.lines, source: wordLyrics.source };
     }
-    if (lineCache.has(id)) return lineCache.get(id);
+    if (lineCache.has(cacheKey)) return lineCache.get(cacheKey);
 
     let result = null;
     try {
@@ -243,7 +257,7 @@ function createLyricsService(getSettings) {
       result = { error: String(error?.message || error) };
     }
 
-    if (!result?.error) lineCache.set(id, result);
+    if (!result?.error) lineCache.set(cacheKey, result);
     return result;
   }
 
@@ -272,4 +286,4 @@ function createLyricsService(getSettings) {
   return { fetchLyrics, diagnose };
 }
 
-module.exports = { createLyricsService, getJson, normalizeInfo, spotifyTrackId, wordStats };
+module.exports = { createLyricsService, getJson, lyricsCacheKey, normalizeInfo, spotifyTrackId, wordStats };

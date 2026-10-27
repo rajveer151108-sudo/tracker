@@ -2,6 +2,8 @@
   // Lyrics (line list + estimated word timing)
   // =====================================================================
   let trackId = null;
+  let lyricsGeneration = 0;
+  let pollInFlight = false;
   let sourceLines = [];      // canonical lyric lines, kept independent of the visual layout
   let lines = [];            // currently rendered rows (lines or individual words)
   let timingInfo = "";
@@ -250,6 +252,12 @@
 
   function setNotice(msg) { $("notice").textContent = msg || ""; }
 
+  function currentTrackKey(np) {
+    return [np.id, np.title, np.artist, np.album, Math.round(Number(np.durationMs) || 0)]
+      .map((value) => String(value || "").normalize("NFKC").trim().toLowerCase())
+      .join("|");
+  }
+
   // set the glow colour here and on the full-screen edge glow
   function applyGlow(rgb, rgb2) {
     root.style.setProperty("--glow", rgb);
@@ -313,23 +321,23 @@
   $("cover").addEventListener("load", setGlowFromCover);
 
   async function loadTrack(np) {
-    trackId = np.id;
+    const gid = currentTrackKey(np);
+    const generation = ++lyricsGeneration;
+    trackId = gid;
     lastInfo = { id: np.id, title: np.title, artist: np.artist, album: np.album, durationSec: np.durationMs / 1000 };
     clearLyrics();
     document.body.dataset.genre = ""; $("genre").textContent = "";
     applyFeel();
-    const gid = np.id;
     window.tracker.genre({ id: np.id, title: np.title, artist: np.artist, album: np.album }).then((g) => {
-      if (trackId !== gid || !g) return;
+      if (trackId !== gid || generation !== lyricsGeneration || !g) return;
       document.body.dataset.genre = g.bucket || "other";      // CSS can key off body[data-genre="rap"] etc.
       applyFeel();
       $("genre").textContent = g.raw || "";
     }).catch(() => {});
     if (!settings.showLyrics) { setNotice("Lyrics are off. Turn them on in settings."); return; }
     setNotice("Looking for lyrics\u2026");
-    const mine = np.id;
     const res = await window.tracker.lyrics(lastInfo);
-    if (trackId !== mine || !settings.showLyrics) return;   // song changed or lyrics turned off meanwhile
+    if (trackId !== gid || generation !== lyricsGeneration || !settings.showLyrics) return;
     if (res && Array.isArray(res.words) && res.words.length) {
       setLyrics(res.words.map((l) => ({ t: l.t, end: l.end, text: l.text, words: l.words })),
         "Real word timing \u00b7 " + (res.source || "Timed source"));
@@ -350,40 +358,48 @@
   }
 
   async function poll() {
-    const np = await window.tracker.nowPlaying();
-    if (np.state === "playing" || np.state === "paused") {
-      window.tracker.observeForTracker(np);
-      $("title").textContent = np.title;
-      $("artist").textContent = np.artist;
-      $("album").textContent = np.album;
-      if (np.artwork && $("cover").getAttribute("src") !== np.artwork) {
-        $("cover").src = np.artwork;
-        lastArtwork = np.artwork;
-        if (settings.backdrop) setBackdrop(np.artwork);
+    if (pollInFlight) return;
+    pollInFlight = true;
+    try {
+      const np = await window.tracker.nowPlaying();
+      if (np.state === "playing" || np.state === "paused") {
+        window.tracker.observeForTracker(np);
+        $("title").textContent = np.title;
+        $("artist").textContent = np.artist;
+        $("album").textContent = np.album;
+        if (np.artwork && $("cover").getAttribute("src") !== np.artwork) {
+          $("cover").src = np.artwork;
+          lastArtwork = np.artwork;
+          if (settings.backdrop) setBackdrop(np.artwork);
+        }
+        durSec = np.durationMs / 1000;
+        if (!seeking) {
+          posSec = np.positionSec;
+          syncAt = performance.now();
+        }
+        playing = np.state === "playing";
+        sendActive(playing);
+        $("dur").textContent = fmt(durSec);
+        const nextTrackId = currentTrackKey(np);
+        if (nextTrackId !== trackId) {
+          window.tracker.historyAdd({ uri: np.id, name: np.title, artist: np.artist, album: np.album, img: np.artwork });
+          loadTrack(np);
+        }
+      } else {
+        window.tracker.observeForTracker(null);
+        playing = false;
+        sendActive(false);
+        if (trackId !== null) lyricsGeneration++;
+        trackId = null; clearLyrics();
+        document.body.dataset.genre = ""; $("genre").textContent = "";
+        $("title").textContent = np.state === "closed" ? "Spotify is not open" : "Nothing playing";
+        $("artist").textContent = ""; $("album").textContent = "";
+        setNotice(np.state === "error" ? ("Could not read Spotify: " + (np.message || "")) : "Press play in Spotify.");
       }
-      durSec = np.durationMs / 1000;
-      if (!seeking) {
-        posSec = np.positionSec;
-        syncAt = performance.now();
-      }
-      playing = np.state === "playing";
-      sendActive(playing);
-      $("dur").textContent = fmt(durSec);
-      if (np.id !== trackId) {
-        window.tracker.historyAdd({ uri: np.id, name: np.title, artist: np.artist, album: np.album, img: np.artwork });
-        loadTrack(np);
-      }
-    } else {
-      window.tracker.observeForTracker(null);
-      playing = false;
-      sendActive(false);
-      trackId = null; clearLyrics();
-      document.body.dataset.genre = ""; $("genre").textContent = "";
-      $("title").textContent = np.state === "closed" ? "Spotify is not open" : "Nothing playing";
-      $("artist").textContent = ""; $("album").textContent = "";
-      setNotice(np.state === "error" ? ("Could not read Spotify: " + (np.message || "")) : "Press play in Spotify.");
+      $("playpause").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    } finally {
+      pollInFlight = false;
     }
-    $("playpause").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
   }
 
 

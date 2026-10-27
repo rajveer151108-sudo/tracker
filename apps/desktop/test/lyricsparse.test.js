@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { parseTTML, parseKpoe, parseAny, parseTime } = require("../lyricsparse");
-const { normalizeInfo, spotifyTrackId, wordStats } = require("../src/main/lyrics-service");
+const { lyricsCacheKey, normalizeInfo, spotifyTrackId, wordStats } = require("../src/main/lyrics-service");
 
 test("parseTime accepts TTML clock and unit formats", () => {
   assert.equal(parseTime("01:02.500"), 62.5);
@@ -57,6 +57,18 @@ test("provider matching removes badges and version suffixes without changing the
 test("Spotify track IDs are extracted for exact provider matching", () => {
   assert.equal(spotifyTrackId("spotify:track:4uLU6hMCjMI75M1A2tKUQC"), "4uLU6hMCjMI75M1A2tKUQC");
   assert.equal(spotifyTrackId("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=test"), "4uLU6hMCjMI75M1A2tKUQC");
+});
+
+test("lyrics cache keys cannot collide when Spotify briefly omits track IDs", () => {
+  const whiteFerrari = lyricsCacheKey({ title: "White Ferrari", artist: "Frank Ocean", album: "Blonde", durationSec: 248 });
+  const sticky = lyricsCacheKey({ title: "Sticky", artist: "Drake", album: "Honestly, Nevermind", durationSec: 243 });
+  assert.notEqual(whiteFerrari, sticky);
+});
+
+test("lyrics cache keys include metadata even when a Spotify ID is present", () => {
+  const first = lyricsCacheKey({ id: "spotify:track:4uLU6hMCjMI75M1A2tKUQC", title: "One", artist: "Artist", durationSec: 100 });
+  const staleId = lyricsCacheKey({ id: "spotify:track:4uLU6hMCjMI75M1A2tKUQC", title: "Two", artist: "Artist", durationSec: 120 });
+  assert.notEqual(first, staleId);
 });
 
 test("wordStats rejects mostly line-timed provider responses", () => {

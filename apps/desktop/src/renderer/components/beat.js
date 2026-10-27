@@ -12,7 +12,10 @@
     beatStarting = true;
     setBeatStatus("Starting\u2026");
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        audio: true,
+        video: { width: 320, height: 240, frameRate: 30 },
+      });
       stream.getVideoTracks().forEach((t) => t.stop());          // we only want the sound
       const tracks = stream.getAudioTracks();
       if (!tracks.length) throw new Error("No audio came through. Check the permission in System Settings, then restart the app.");
