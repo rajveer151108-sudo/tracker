@@ -17,8 +17,7 @@
     $("pos").textContent = fmt(now);
 
     if (lines.length) {
-      let idx = -1;
-      for (let i = 0; i < lines.length; i++) { if (lines[i].t <= t) idx = i; else break; }
+      const idx = window.LyricTiming.activeLyricIndex(lines, t);
 
       if (idx !== activeIdx) {
         // tidy the line that was active before
@@ -26,10 +25,11 @@
         if (old && prevActive !== idx) { old._w.spans.forEach((s) => s.classList.remove("cur", "nearL", "nearR")); old._w.cur = -1; }
         activeIdx = idx;
         prevActive = idx;
+        document.body.classList.toggle("lyrics-waiting", idx < 0);
         lineEls.forEach((el, i) => {
           el.classList.toggle("active", i === idx);
-          el.dataset.d = Math.min(Math.abs(i - Math.max(idx, 0)), 4);
-          el.dataset.side = i < idx ? "past" : i > idx ? "next" : "current";
+          el.dataset.d = idx < 0 ? "4" : String(Math.min(Math.abs(i - idx), 4));
+          el.dataset.side = idx < 0 ? "next" : i < idx ? "past" : i > idx ? "next" : "current";
         });
         clearFit();
         const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
@@ -41,19 +41,20 @@
           const max = motion === "cube" ? 280 : motion === "glide" ? 320 : motion === "slide" ? 220 : 110;
           root.style.setProperty("--word-step-ms", Math.round(Math.max(min, Math.min(max, gap * factor))) + "ms");
         }
-        if (impactLayout && settings.lyricsFit) {
-          const fi = Math.max(idx, 0);
-          fitLine(lineEls[fi], lines[fi].text);
+        if (impactLayout && settings.lyricsFit && idx >= 0) {
+          fitLine(lineEls[idx], lines[idx].text);
         }
         lineEls.forEach((el) => el.classList.remove("flash", "word-hit"));
         if (idx >= 0 && impactLayout) {
           void lineEls[idx].offsetWidth;            // restart the animation
           lineEls[idx].classList.add(settings.lyricsLayout === "wordstream" ? "word-hit" : "flash");
         }
-        const focus = lineEls[Math.max(idx, 0)];
-        const stageH = $("stage").clientHeight;
-        $("lines").style.transform =
-          "translateY(" + (stageH / 2 - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
+        if (idx >= 0) {
+          const focus = lineEls[idx];
+          const stageH = $("stage").clientHeight;
+          $("lines").style.transform =
+            "translateY(" + (stageH / 2 - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
+        }
       }
 
       if (idx >= 0) {

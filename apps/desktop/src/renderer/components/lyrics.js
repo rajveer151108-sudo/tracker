@@ -129,6 +129,7 @@
   }
 
   function clearLyrics() {
+    document.body.classList.remove("lyrics-waiting");
     setLyrics([], "");
   }
 

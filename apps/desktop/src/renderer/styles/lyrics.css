@@ -3,7 +3,8 @@
            -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
                    mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
   #lines { position: absolute; left: 0; right: 0; top: 0; padding: 0 32px;
-           transition: transform var(--lines-ms, 550ms) cubic-bezier(.22,.8,.25,1); }
+           opacity: 1; transition: transform var(--lines-ms, 550ms) cubic-bezier(.22,.8,.25,1), opacity .3s ease; }
+  body.lyrics-waiting #lines { opacity: 0; }
   .line { font-size: var(--lyric-size); font-weight: 800; line-height: 1.2; padding: 10px 0; text-align: left;
           color: rgba(255,255,255,.28); filter: blur(2px); transform-origin: left center;
           transition: color .4s, filter .4s, opacity .4s, transform .4s; opacity: .55; transform: scale(.9); }
@@ -33,7 +34,7 @@
   body[data-layout="flash"] .line.flash { animation: flashIn .4s cubic-bezier(.2,.9,.3,1); }
 
   /* word stream: one timed word per row, snapping through fast verses like kinetic type */
-  body[data-layout="wordstream"] #lines { transition-property: transform; transition-duration: var(--word-step-ms, 160ms); }
+  body[data-layout="wordstream"] #lines { transition-property: transform, opacity; transition-duration: var(--word-step-ms, 160ms), .25s; }
   body[data-layout="wordstream"] .line { padding: .22em 0 .3em; font-size: calc(var(--lyric-size) * .9); opacity: .08;
                                          line-height: 1.12; overflow: visible; filter: blur(3px); transform: scale(.72);
                                          transition: color var(--word-step-ms, 160ms), filter var(--word-step-ms, 160ms),
