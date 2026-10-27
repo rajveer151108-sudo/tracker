@@ -60,8 +60,10 @@ function setImmersive(on) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 520,
-    height: 800,
+    width: 1440,
+    height: 900,
+    minWidth: 520,
+    minHeight: 680,
     title: "Afterglow",
     backgroundColor: "#0b0b0f",
     frame: false,

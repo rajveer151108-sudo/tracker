@@ -121,3 +121,47 @@ body[data-home-mode="vinyl"] .homeHeroArtist{color:#ffffffb5}.homeCdFlight{posit
 @media(max-width:1100px){body[data-home-mode="vinyl"] .homeLayout{grid-template-columns:230px minmax(390px,1fr)}body[data-home-mode="vinyl"] .homeCollections{display:none}.homeCdScene{grid-template-columns:minmax(110px,.55fr) minmax(280px,1fr)}.homeCdAlbumCard{width:clamp(92px,13vw,140px)}}
 @media(max-width:700px){.homeCdScene{grid-template-columns:1fr;width:min(430px,100%)}.homeCdAlbumStack{display:none}.homeCdDeck{grid-template-columns:1fr 36px;grid-template-rows:minmax(220px,1fr) auto}.homeCdControls{flex-wrap:wrap}.homeCdButton.wide{margin-left:0}}
 @media(prefers-reduced-motion:reduce){.homeCdDisc,.homeCdLaser,#homeScreen.cd-loading .homeCdPlayer{animation:none}.homeCdFlight{transition:none}}
+
+/* CD player refinement: record crate collections, album-colored discs, and info on the deck. */
+body[data-home-mode="vinyl"] #homeScreen{--cd-a:#7a9cff;--cd-b:#81ffd0;--cd-c:#f7e6a6}
+body[data-home-mode="vinyl"] .homeLayout{grid-template-columns:minmax(270px,28%) minmax(560px,1fr) minmax(280px,24%)}
+body[data-home-mode="vinyl"] .homeRoster{background:linear-gradient(90deg,#f7f7f1,#eeeee9)}
+body[data-home-mode="vinyl"] .homeSong{grid-template-columns:25px 50px minmax(0,1fr) 16px;padding:9px 7px;border-radius:10px}
+body[data-home-mode="vinyl"] .homeSong img{width:50px;height:50px;border-radius:50%;border:3px solid #151515;background:radial-gradient(circle,#f8f8f4 0 8%,#222 9% 15%,var(--cd-a) 16%,var(--cd-b) 55%,var(--cd-c));box-shadow:inset 0 0 0 4px #ffffff55,0 5px 13px #0002}
+body[data-home-mode="vinyl"] .homeSong:hover img,body[data-home-mode="vinyl"] .homeSong.selected img{transform:rotate(18deg) scale(1.06);transition:transform .22s ease}
+body[data-home-mode="vinyl"] .homeSongArrow{width:15px;height:15px;border-radius:50%;display:grid;place-items:center;color:#fff;background:#151515;font-size:8px;opacity:.82}
+body[data-home-mode="vinyl"] .homeHero{padding:clamp(14px,2.8vw,34px);background:radial-gradient(circle at 64% 38%,color-mix(in srgb,var(--cd-a) 22%,transparent),transparent 36%),linear-gradient(145deg,#171819,#0e0f10)}
+.homeCdScene{width:min(1040px,100%);grid-template-columns:minmax(150px,.62fr) minmax(440px,1.85fr);gap:clamp(18px,3.2vw,46px);align-self:center}
+.homeCdAlbumStack{height:clamp(290px,48vh,480px)}
+.homeCdAlbumCard{width:clamp(130px,14vw,196px);box-shadow:0 18px 32px #0008}
+.homeCdAlbumCard:nth-child(1){transform:translate(18px,98px) rotate(-5deg)}
+.homeCdAlbumCard:nth-child(2){transform:translate(76px,62px) rotate(5deg) scale(.96)}
+.homeCdAlbumCard:nth-child(3){transform:translate(4px,24px) rotate(-8deg) scale(.84)}
+.homeCdAlbumCard:nth-child(4){transform:translate(58px,175px) rotate(7deg) scale(.8)}
+.homeCdAlbumCard:nth-child(5){transform:translate(8px,265px) rotate(-5deg) scale(.66)}
+.homeCdPlayer{padding:22px;border-radius:22px;background:linear-gradient(145deg,#fbfbf7,#c7cac2);box-shadow:inset 0 1px #fff,0 34px 90px #0008}
+.homeCdDeck{grid-template-columns:minmax(300px,1fr) 52px;grid-template-rows:minmax(330px,1fr) 104px 58px;gap:15px;padding:19px}
+.homeCdDiscTarget{grid-row:1;min-height:330px}
+.homeCdDisc{background:radial-gradient(circle at 50% 50%,#f5f2ec 0 4.8%,transparent 5.2% 12%,color-mix(in srgb,var(--cd-a) 72%,#252337) 12.4% 18%,transparent 18.5%),repeating-radial-gradient(circle,transparent 0 9px,#ffffff48 10px 11px),conic-gradient(from 28deg,var(--cd-a),var(--cd-b),var(--cd-c),color-mix(in srgb,var(--cd-a) 65%,#fff),var(--cd-a));box-shadow:inset 0 0 0 10px #ffffff5f,inset 0 0 32px color-mix(in srgb,var(--cd-a) 44%,#0000),0 17px 30px #0004}
+.homeCdLaser{background:linear-gradient(90deg,#ffffff00,var(--cd-a),#ffffff00)}
+.homeCdScreen{grid-column:1/3;display:grid;grid-template-columns:minmax(0,1fr);align-content:center;min-width:0;padding:12px 15px;border:1px solid color-mix(in srgb,var(--cd-a) 42%,#222);border-radius:12px;color:#eaf1ff;background:linear-gradient(145deg,#12161d,#06080c);box-shadow:inset 0 0 0 1px #ffffff12,inset 0 0 28px color-mix(in srgb,var(--cd-a) 24%,transparent),0 8px 20px #0004}
+.homeCdScreen span{font:800 8px/1 ui-monospace,monospace;letter-spacing:.16em;color:color-mix(in srgb,var(--cd-b) 70%,#fff);text-transform:uppercase}
+.homeCdScreen strong{display:-webkit-box;overflow:hidden;margin-top:6px;font:900 clamp(21px,2.15vw,34px)/.94 system-ui,sans-serif;letter-spacing:-.035em;overflow-wrap:anywhere;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.homeCdScreen small{overflow:hidden;margin-top:6px;color:#ffffff9a;font:800 9px/1.2 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;text-overflow:ellipsis}
+.homeCdControls{grid-row:3;grid-column:1/3}
+.homeCdChips{display:none}
+.homeCdFlight{background:radial-gradient(circle at 50% 50%,#f5f2ec 0 5%,transparent 5.4% 15%,color-mix(in srgb,var(--cd-a) 76%,#252337) 15.4% 21%,transparent 21.5%),repeating-radial-gradient(circle,transparent 0 10px,#ffffff45 11px 12px),conic-gradient(from 35deg,var(--cd-a),var(--cd-b),var(--cd-c),color-mix(in srgb,var(--cd-a) 58%,#fff),var(--cd-a));box-shadow:inset 0 0 0 10px #ffffff5c,inset 0 0 28px color-mix(in srgb,var(--cd-a) 44%,#0000),0 28px 60px #0009}
+body[data-home-mode="vinyl"] .homeCollections{padding:22px 16px;background:linear-gradient(90deg,#f2f0e9,#faf9f4)}
+body[data-home-mode="vinyl"] .homeCollections .homeSectionTitle{position:relative;z-index:2}
+body[data-home-mode="vinyl"] .homeCollectionList{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:28px 13px 18px;border:1px solid #2b2b25;border-radius:4px 4px 12px 12px;background:linear-gradient(180deg,#3a3a31 0 15px,#11150f 16px 100%);box-shadow:inset 0 10px 0 #ffffff10,0 18px 35px #0003;perspective:900px}
+body[data-home-mode="vinyl"] .homeCollectionList:before{content:"VINYL COLLECTIONS";position:absolute;left:18px;top:7px;color:#e8dfc7;font:900 8px/1 ui-monospace,monospace;letter-spacing:.16em}
+body[data-home-mode="vinyl"] .homeCollection{position:relative;z-index:1;min-height:168px;padding:8px 8px 10px;border:0;border-radius:4px;color:#141414;background:#f8f5e9;box-shadow:0 9px 16px #0007;transform-origin:center bottom;transition:transform .22s ease,box-shadow .22s ease}
+body[data-home-mode="vinyl"] .homeCollection:before{content:"";position:absolute;z-index:-1;left:34%;right:5%;top:16px;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#f7f7ef 0 8%,#222 8.5% 18%,#050505 19% 100%);box-shadow:0 4px 12px #0007}
+body[data-home-mode="vinyl"] .homeCollection:hover,body[data-home-mode="vinyl"] .homeCollection.selected{transform:translateY(-16px) scale(1.08) rotate(-1deg);box-shadow:0 18px 30px #0008}
+body[data-home-mode="vinyl"] .homeCollection:nth-child(2n):hover,body[data-home-mode="vinyl"] .homeCollection:nth-child(2n).selected{transform:translateY(-16px) scale(1.08) rotate(1deg)}
+body[data-home-mode="vinyl"] .homeCollection img,body[data-home-mode="vinyl"] .homeCollectionPlaceholder{position:relative;z-index:1;width:72%;aspect-ratio:1;border-radius:2px;box-shadow:5px 5px 0 #0002}
+body[data-home-mode="vinyl"] .homeCollection strong{position:relative;z-index:1;margin-top:9px}
+body[data-home-mode="vinyl"] .homeCollection small{position:relative;z-index:1}
+@media(max-width:1100px){body[data-home-mode="vinyl"] .homeLayout{grid-template-columns:245px minmax(420px,1fr)}.homeCdScene{grid-template-columns:minmax(120px,.5fr) minmax(330px,1fr)}.homeCdDeck{grid-template-rows:minmax(270px,1fr) 96px 58px}.homeCdDiscTarget{min-height:270px}}
+@media(max-width:700px){.homeCdDeck{grid-template-rows:minmax(250px,1fr) 82px auto}.homeCdScreen strong{font-size:28px}}
+@media(max-width:600px){body[data-home-mode="vinyl"] .homeHero{min-height:auto;padding:18px 14px}body[data-home-mode="vinyl"] .homeCdScene{width:min(390px,100%)}body[data-home-mode="vinyl"] .homeCdPlayer{padding:14px;border-radius:18px}body[data-home-mode="vinyl"] .homeCdDeck{grid-template-columns:1fr 32px;grid-template-rows:minmax(210px,56vw) 88px auto;gap:11px;padding:13px}.homeCdDiscTarget{min-height:210px}.homeCdScreen{padding:10px 12px}.homeCdScreen strong{font-size:23px}.homeCdControls{flex-wrap:wrap;border-radius:16px}.homeCdButton.wide{margin-left:0}body[data-home-mode="vinyl"] .homeCollectionList{grid-template-columns:repeat(2,minmax(0,1fr));padding-inline:10px}body[data-home-mode="vinyl"] .homeCollection{min-height:145px}}
