@@ -176,12 +176,44 @@
     filter: brightness(calc(1 + var(--motion-lift) * var(--word-life) * .3 + var(--motion-build) * .18 + var(--motion-drop) * .7 + var(--motion-emotion) * .45 - var(--motion-duck) * .3))
             drop-shadow(0 0 calc(10px + var(--pulse) * 8px + var(--motion-energy) * 14px + var(--motion-drop) * 28px + var(--motion-emotion) * 18px) rgba(var(--glow), .85)); }
 
-  body[data-genre="jazz"].music-motion .line.active {
-    rotate: calc(var(--motion-sway) * .7deg);
+  /* Each genre gets a different physical language. Auto-by-genre selects
+     these data-dance values; users can override the style in Settings. */
+  body.music-motion[data-dance="float"] .line.active {
+    translate: calc(var(--motion-sway) * 5px)
+      calc((var(--motion-lift) * var(--word-life) * 1.2 + var(--motion-emotion)) * -11px);
+    scale: calc(1 + var(--motion-energy) * .015 + var(--motion-vocal) * var(--word-life) * .04 + var(--motion-emotion) * .065);
+    rotate: calc(var(--motion-sway) * .24deg);
+  }
+  body.music-motion[data-dance="punch"] .line.active {
+    translate: calc(var(--motion-sway) * 2px) calc((var(--pulse) * 6px + var(--motion-drop) * 12px) * -1);
+    scale: calc(1 + var(--pulse) * .055 + var(--motion-drop) * .095 + var(--motion-emotion) * .035);
+    rotate: calc(var(--motion-sway) * -.3deg);
+  }
+  body.music-motion[data-dance="sway"] .line.active {
+    translate: calc(var(--motion-sway) * 13px) calc(var(--motion-lift) * var(--word-life) * -5px);
+    scale: calc(1 + var(--motion-energy) * .018 + var(--motion-emotion) * .045);
+    rotate: calc(var(--motion-sway) * .9deg);
     transition-timing-function: cubic-bezier(.25,.7,.3,1);
   }
-  body[data-genre="rock"].music-motion .line.active { scale: calc(1 + var(--motion-energy) * .045 + var(--motion-drop) * .09); }
-  body[data-genre="rap"].music-motion .line.active { translate: calc(var(--motion-sway) * 3px) calc(var(--motion-drop) * -7px); }
+  body.music-motion[data-dance="shake"] .line.active {
+    translate: calc(var(--motion-shake) * 9px) calc(var(--pulse) * -5px);
+    scale: calc(1 + var(--motion-energy) * .05 + var(--motion-drop) * .1);
+    rotate: calc(var(--motion-shake) * 1.15deg);
+  }
+  body.music-motion[data-dance="bounce"] .line.active {
+    translate: calc(var(--motion-sway) * 4px)
+      calc((var(--pulse) * 6px + var(--motion-lift) * var(--word-life) * 6px) * -1);
+    scale: calc(1 + var(--pulse) * .04 + var(--motion-energy) * .025 + var(--motion-emotion) * .05);
+  }
+  body.music-motion[data-dance="snap"] .line.active {
+    translate: calc(var(--motion-shake) * 4px) calc((var(--motion-drop) * 14px + var(--pulse) * 5px) * -1);
+    scale: calc(1 + var(--motion-build) * .025 + var(--motion-drop) * .13);
+    rotate: calc(var(--motion-shake) * .45deg);
+  }
+  body.music-motion[data-dance="subtle"] .line.active {
+    translate: calc(var(--motion-sway) * 4px) calc(var(--motion-lift) * var(--word-life) * -5px);
+    scale: calc(1 + var(--motion-energy) * .018 + var(--motion-emotion) * .035);
+  }
   body.word-keywords[data-layout="wordstream"][data-motion="cube"] .line.keyword[data-d="0"] .w {
     padding: .08em .04em .2em; margin: -.08em -.04em -.2em; border-radius: 0;
     background: none; background-clip: border-box; -webkit-background-clip: border-box;

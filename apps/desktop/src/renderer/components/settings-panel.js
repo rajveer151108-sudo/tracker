@@ -68,6 +68,10 @@
       hint: "Analyses the audio your Mac is playing. macOS may ask for permission the first time." },
     { key: "musicMotion", label: "Lyrics and lights dance", type: "toggle",
       hint: "Follows energy, vocals, melodic lift, held words and beat drops instead of using only a single pulse." },
+    { key: "lyricsDanceStyle", label: "Lyrics dance style", type: "choice",
+      hint: "Auto gives each genre its own movement, or choose one style for every song.",
+      options: [["auto", "Auto by genre"], ["float", "Vocal float"], ["punch", "Rap punch"], ["sway", "Jazz sway"],
+        ["shake", "Rock shake"], ["bounce", "Pop bounce"], ["snap", "Electronic snap"], ["subtle", "Subtle"]] },
     { key: "motionStrength", label: "Dance strength", type: "range", min: 0, max: 200, step: 10, unit: "%" },
     { key: "beatStrength", label: "Beat punch", type: "range", min: 0, max: 200, step: 10, unit: "%" },
   ];

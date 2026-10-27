@@ -35,6 +35,7 @@ const DEFAULTS = {
   beatStrength: 100,
   musicMotion: true,
   motionStrength: 100,
+  lyricsDanceStyle: "auto",
 };
 
 const LIMITS = {
@@ -59,6 +60,7 @@ const ENUMS = {
   glowStyle: ["steady", "rotate", "comet"],
   glowScope: ["everywhere", "tracker"],
   glowDisplays: ["all", "main"],
+  lyricsDanceStyle: ["auto", "float", "punch", "sway", "shake", "bounce", "snap", "subtle"],
 };
 
 function clean(key, value) {

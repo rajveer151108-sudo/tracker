@@ -34,6 +34,7 @@
     jazz:       { tour: 42, spin: 20, lines: 900,  highlight: "whole", beat: 0.65 },
   };
   const DEFAULT_FEEL = { tour: 26, spin: 9, lines: 550, highlight: null, beat: 1.0 };
+  const GENRE_DANCES = { rap: "punch", rnb: "float", jazz: "sway", rock: "shake", electronic: "snap", pop: "bounce" };
   let feel = DEFAULT_FEEL;
   function applyFeel() {
     const bucket = document.body.dataset.genre || "";
@@ -42,6 +43,9 @@
     if (typeof setAlbumTourDuration === "function") setAlbumTourDuration(feel.tour);
     root.style.setProperty("--lines-ms", feel.lines + "ms");
     document.body.dataset.hl = (settings.genreFeel && feel.highlight) || settings.lyricsHighlight || "word";
+    document.body.dataset.dance = settings.lyricsDanceStyle === "auto"
+      ? (GENRE_DANCES[bucket] || "subtle")
+      : (settings.lyricsDanceStyle || "subtle");
     window.tracker.sendGlow({ speed: feel.spin });
   }
 

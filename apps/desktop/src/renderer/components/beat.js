@@ -9,13 +9,13 @@
   let lyricMotionLife = 0, lyricMotionEmotion = 0;
 
   const MOTION_PROFILES = {
-    rap:        { impact: 1.25, energy: .85, vocal: 1.0,  lift: .6,  build: .75, drop: 1.25, sway: .08, rate: 1.2 },
-    rnb:        { impact: 0,    energy: .78, vocal: 1.35, lift: 1.45, build: .7, drop: .2,   sway: .46, rate: .5 },
-    jazz:       { impact: .55,  energy: .72, vocal: 1.1,  lift: 1.2,  build: .7,  drop: .5,   sway: .7,  rate: .8 },
-    rock:       { impact: 1.15, energy: 1.2, vocal: 1.0,  lift: .8,  build: .9,  drop: 1.15, sway: .12, rate: 1.35 },
-    electronic: { impact: 1.35, energy: 1.1, vocal: .6,   lift: .9,  build: 1.35, drop: 1.5, sway: .05, rate: 1.4 },
-    pop:        { impact: 1.0,  energy: 1.0, vocal: 1.05, lift: 1.0,  build: 1.0, drop: 1.0, sway: .2,  rate: 1.0 },
-    other:      { impact: .9,   energy: .95, vocal: 1.0,  lift: 1.0,  build: .9,  drop: .9,  sway: .25, rate: .8 },
+    rap:        { impact: 1.25, energy: .85, vocal: 1.0,  lift: .6,  build: .75, drop: 1.25, sway: .08, shake: .12, rate: 1.2 },
+    rnb:        { impact: 0,    energy: .78, vocal: 1.35, lift: 1.45, build: .7, drop: .2,   sway: .46, shake: 0,   rate: .5 },
+    jazz:       { impact: .55,  energy: .72, vocal: 1.1,  lift: 1.2,  build: .7,  drop: .5,   sway: .7,  shake: .03, rate: .8 },
+    rock:       { impact: 1.15, energy: 1.2, vocal: 1.0,  lift: .8,  build: .9,  drop: 1.15, sway: .12, shake: 1,   rate: 1.35 },
+    electronic: { impact: 1.35, energy: 1.1, vocal: .6,   lift: .9,  build: 1.35, drop: 1.5, sway: .05, shake: .25, rate: 1.4 },
+    pop:        { impact: 1.0,  energy: 1.0, vocal: 1.05, lift: 1.0,  build: 1.0, drop: 1.0, sway: .2,  shake: .08, rate: 1.0 },
+    other:      { impact: .9,   energy: .95, vocal: 1.0,  lift: 1.0,  build: .9,  drop: .9,  sway: .25, shake: .05, rate: .8 },
   };
 
   function motionProfile() {
@@ -123,6 +123,7 @@
     const drop = clampMotion(motion.drop * strength);
     const emotion = clampMotion(motion.emotion * strength);
     const sway = Math.max(-1, Math.min(1, Number(motion.sway) || 0)) * Math.min(1.5, strength);
+    const shake = Math.max(-1.5, Math.min(1.5, Number(motion.shake) || 0)) * Math.min(1.5, strength);
     root.style.setProperty("--motion-energy", energy.toFixed(3));
     root.style.setProperty("--motion-vocal", vocal.toFixed(3));
     root.style.setProperty("--motion-lift", lift.toFixed(3));
@@ -131,6 +132,7 @@
     root.style.setProperty("--motion-drop", drop.toFixed(3));
     root.style.setProperty("--motion-emotion", emotion.toFixed(3));
     root.style.setProperty("--motion-sway", sway.toFixed(3));
+    root.style.setProperty("--motion-shake", shake.toFixed(3));
     return { impact: clampMotion(motion.impact), energy, vocal, lift, build, duck, drop, emotion,
       word: clampMotion(motion.word), sway };
   }
@@ -205,6 +207,7 @@
     dropFlash *= Math.exp(-dt / 0.28);
 
     const sway = Math.sin(tNow * 0.003 * profile.rate) * profile.sway * motionEnergy;
+    const shake = Math.sin(tNow * 0.052) * profile.shake * outLevel;
     const expressiveVocal = lyricMotionEmotion * lyricMotionLife * motionVocal;
     const motion = applyMusicMotion({
       impact: outLevel * profile.impact,
@@ -217,6 +220,7 @@
       emotion: expressiveVocal,
       word: lyricMotionLife,
       sway,
+      shake,
     });
     if (tNow - lastSend > 33) { lastSend = tNow; window.tracker.sendBeat(motion); }
   }

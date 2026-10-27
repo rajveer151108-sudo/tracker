@@ -1,7 +1,6 @@
 /* ---- backgrounds ---- */
   #backdrop { position: absolute; inset: 0; overflow: hidden; pointer-events: none; container-type: size;
-              opacity: var(--bdop, .6); transform: scale(calc(1 + var(--pulse) * .05 + var(--motion-energy) * .018));
-              filter: brightness(calc(1 + var(--motion-energy) * .16 + var(--motion-build) * .12 + var(--motion-drop) * .5 - var(--motion-duck) * .34)); }
+              opacity: var(--bdop, .6); }
   .bdw { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
   .bdw.in { opacity: 1; }
   .bd { position: absolute; inset: -25%; background-size: cover; background-position: center;
