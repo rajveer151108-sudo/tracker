@@ -410,6 +410,7 @@
         $("artist").textContent = ""; $("album").textContent = "";
         setNotice(np.state === "error" ? ("Could not read Spotify: " + (np.message || "")) : "Press play in Spotify.");
       }
+      if (typeof updateHomeNowPlaying === "function") updateHomeNowPlaying(np);
       $("playpause").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
     } finally {
       pollInFlight = false;

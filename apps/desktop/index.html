@@ -5,7 +5,7 @@
 <title>Afterglow</title>
 <link rel="stylesheet" href="src/renderer/styles.css" />
 </head>
-<body>
+<body data-view="home" data-home-mode="arcade">
   <div id="backdrop"></div>
   <div id="glow"></div>
   <header>
@@ -16,7 +16,13 @@
       <div id="album"></div>
       <div id="genre"></div>
     </div>
-    <button id="libBtn" class="wbtn" title="Library (L)">&#9835;&#xFE0E;</button>
+    <button id="homeBtn" class="wbtn navbtn active" title="Home (H)" aria-label="Open Home">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>
+    </button>
+    <button id="lyricsBtn" class="wbtn navbtn" title="Lyrics (Y)" aria-label="Open Lyrics">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/></svg>
+    </button>
+    <button id="libBtn" class="wbtn navbtn" title="Library (L)" aria-label="Open Library">&#9835;&#xFE0E;</button>
     <button id="trackerBtn" class="wbtn" title="Tracker (T)" aria-label="Open Tracker">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
         <path d="M4 19V10M10 19V5M16 19v-7M22 19V2" />
@@ -28,6 +34,24 @@
       <button class="wbtn" id="closeBtn" title="Quit">&#10005;</button>
     </div>
   </header>
+  <main id="homeScreen" aria-label="Afterglow Home">
+    <div class="arcadeScanlines" aria-hidden="true"></div>
+    <div class="arcadeInner">
+      <div class="arcadeMarquee">
+        <div><span class="arcadeEyebrow">AFTERGLOW ARCADE</span><h1>SELECT YOUR SOUND</h1></div>
+        <div class="arcadeScore"><span>PLAYER</span><strong id="arcadePlayer">GUEST</strong><span>PLAYS</span><strong id="arcadePlays">000</strong></div>
+      </div>
+      <section id="arcadeNow" class="arcadeNow"></section>
+      <section class="arcadeSection">
+        <div class="arcadeSectionHead"><div><span>STAGE SELECT</span><h2>Recently played</h2></div><button class="arcadeTextBtn" id="arcadeLibraryBtn">ALL GAMES</button></div>
+        <div id="arcadeRecent" class="arcadeGrid"><div class="arcadeLoading">INSERTING COIN…</div></div>
+      </section>
+      <section class="arcadeSection">
+        <div class="arcadeSectionHead"><div><span>COLLECTION VAULT</span><h2>Your playlists</h2></div></div>
+        <div id="arcadeCollections" class="arcadeGrid collections"><div class="arcadeLoading">LOADING COLLECTIONS…</div></div>
+      </section>
+    </div>
+  </main>
   <div id="stage">
     <div id="lines"></div>
     <div id="estimate"></div>
@@ -45,7 +69,7 @@
         <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/></svg>
       </button>
     </div>
-    <div id="hint">Space play/pause &middot; &larr; &rarr; shift lyrics <span id="offs"></span> &middot; G glow &middot; F fullscreen &middot; S settings &middot; L library &middot; T tracker</div>
+    <div id="hint">Space play/pause &middot; H home &middot; Y lyrics <span id="offs"></span> &middot; F fullscreen &middot; S settings &middot; L library &middot; T tracker</div>
   </footer>
 
   <div id="library">
@@ -91,6 +115,7 @@
 <script src="src/renderer/components/frame-loop.js"></script>
 <script src="src/renderer/components/controls.js"></script>
 <script src="src/renderer/components/library.js"></script>
+<script src="src/renderer/components/home.js"></script>
 <script src="src/renderer/components/tracker-panel.js"></script>
 <script src="src/renderer/components/init.js"></script>
 </body>

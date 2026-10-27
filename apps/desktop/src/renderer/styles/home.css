@@ -1,0 +1,82 @@
+/* ---- home / arcade mode ---- */
+#homeScreen { position: relative; z-index: 1; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+              margin: 4px 16px 0; border: 1px solid rgba(113,92,255,.32); border-radius: 18px 18px 8px 8px;
+              background: linear-gradient(180deg, rgba(18,12,47,.94), rgba(5,6,18,.94) 58%, rgba(8,3,20,.96));
+              box-shadow: inset 0 0 55px rgba(73,47,255,.15), 0 18px 70px rgba(0,0,0,.32); }
+body[data-view="lyrics"] #homeScreen { display: none; }
+body[data-view="home"] #stage { display: none; }
+body[data-view="home"] #estimate, body[data-view="home"] #notice { display: none; }
+
+.arcadeScanlines { position: fixed; inset: 0; pointer-events: none; z-index: 8; opacity: .12;
+  background: repeating-linear-gradient(180deg, transparent 0 3px, rgba(105,86,255,.25) 4px, transparent 5px); }
+.arcadeInner { position: relative; z-index: 2; width: min(1160px, 100%); margin: 0 auto; padding: 26px 28px 54px; }
+.arcadeMarquee { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
+.arcadeEyebrow, .arcadeSectionHead span, .arcadeScore span { color: #62f7ff; font: 700 10px ui-monospace, Menlo, monospace;
+  letter-spacing: .18em; text-shadow: 0 0 12px rgba(98,247,255,.55); }
+.arcadeMarquee h1 { margin: 4px 0 0; font: 900 clamp(24px, 4.2vw, 48px)/.95 ui-monospace, Menlo, monospace;
+  letter-spacing: -.07em; color: #fff39a; text-shadow: 3px 3px 0 #f150ff, 0 0 25px rgba(241,80,255,.4); }
+.arcadeScore { display: grid; grid-template-columns: auto auto; gap: 3px 12px; padding: 10px 13px;
+  border: 1px solid rgba(98,247,255,.32); background: rgba(6,10,29,.72); box-shadow: inset 0 0 18px rgba(98,247,255,.08); }
+.arcadeScore strong { text-align: right; color: #fff39a; font: 800 12px ui-monospace, Menlo, monospace; }
+
+.arcadeNow { min-height: 168px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 24px;
+  padding: 22px; overflow: hidden; border: 2px solid rgba(255,243,154,.78);
+  background: radial-gradient(circle at 15% 30%, rgba(var(--glow),.27), transparent 38%), linear-gradient(115deg, rgba(60,30,135,.9), rgba(12,10,35,.95));
+  box-shadow: 0 0 0 4px rgba(241,80,255,.16), inset 0 0 32px rgba(98,247,255,.1), 0 0 30px rgba(241,80,255,.16); }
+.arcadeNowCopy { min-width: 0; }
+.arcadeNowCopy > span { color: #62f7ff; font: 700 10px ui-monospace, Menlo, monospace; letter-spacing: .16em; }
+.arcadeNowCopy h2 { overflow: hidden; margin: 8px 0 4px; font-size: clamp(26px, 5vw, 58px); line-height: .94;
+  white-space: nowrap; text-overflow: ellipsis; text-shadow: 0 0 24px rgba(255,255,255,.24); }
+.arcadeNowCopy p { margin: 0 0 18px; opacity: .65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arcadeNowArt { width: clamp(104px, 15vw, 164px); aspect-ratio: 1; object-fit: cover; border: 3px solid #fff39a;
+  box-shadow: 8px 8px 0 #f150ff, 0 0 30px rgba(98,247,255,.28); transform: rotate(2deg); }
+.arcadeActions { display: flex; gap: 9px; flex-wrap: wrap; }
+.arcadeBtn, .arcadeTextBtn { border: 0; cursor: pointer; font: 800 11px ui-monospace, Menlo, monospace; letter-spacing: .06em; }
+.arcadeBtn { padding: 10px 15px; background: #fff39a; color: #160b31; box-shadow: 4px 4px 0 #f150ff; }
+.arcadeBtn.secondary { color: #fff; background: #2d2371; box-shadow: 4px 4px 0 #62f7ff; }
+.arcadeBtn:hover { transform: translate(-1px,-1px); filter: brightness(1.08); }
+.arcadeTextBtn { padding: 7px 10px; color: #62f7ff; background: transparent; border: 1px solid rgba(98,247,255,.32); }
+
+.arcadeSection { margin-top: 28px; }
+.arcadeSectionHead { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 11px; }
+.arcadeSectionHead h2 { margin: 2px 0 0; font-size: 20px; }
+.arcadeGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px,1fr)); gap: 14px; }
+.arcadeCard { position: relative; min-width: 0; padding: 9px 9px 13px; cursor: pointer; color: #fff; border: 1px solid rgba(255,255,255,.15);
+  background: linear-gradient(180deg, rgba(70,48,139,.72), rgba(16,12,39,.88)); box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.arcadeCard:nth-child(3n+2) { background: linear-gradient(180deg, rgba(21,102,127,.68), rgba(10,23,40,.9)); }
+.arcadeCard:nth-child(3n) { background: linear-gradient(180deg, rgba(137,41,107,.66), rgba(37,11,37,.9)); }
+.arcadeCard:hover, .arcadeCard:focus-visible { outline: 0; transform: translateY(-6px) rotate(-.5deg); border-color: #fff39a;
+  box-shadow: 0 10px 0 rgba(241,80,255,.28), 0 18px 35px rgba(0,0,0,.4); }
+.arcadeCard img { width: 100%; aspect-ratio: 1; display: block; object-fit: cover; background: #171127; image-rendering: auto; }
+.arcadeCardBadge { position: absolute; top: 14px; left: 14px; padding: 4px 6px; color: #160b31; background: #62f7ff;
+  font: 900 9px ui-monospace, Menlo, monospace; box-shadow: 2px 2px 0 #f150ff; }
+.arcadeCard h3 { margin: 10px 0 3px; overflow: hidden; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
+.arcadeCard p { margin: 0; opacity: .52; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arcadeGrid.collections .arcadeCard { border-radius: 18px 18px 4px 4px; border-top-width: 5px; }
+.arcadeGrid.collections .arcadeCard img { border-radius: 11px 11px 2px 2px; }
+.arcadeLoading { grid-column: 1/-1; padding: 24px 4px; color: #fff39a; opacity: .62;
+  font: 700 11px ui-monospace, Menlo, monospace; letter-spacing: .12em; }
+.arcadeEmpty { grid-column: 1/-1; padding: 22px; border: 1px dashed rgba(98,247,255,.28); color: rgba(255,255,255,.62); }
+.arcadeEmpty button { margin-top: 12px; }
+
+header .navbtn.active { color: #fff39a; background: rgba(241,80,255,.22); box-shadow: inset 0 0 0 1px rgba(255,243,154,.28); }
+body.immersive #homeScreen { display: none; }
+
+@media (max-width: 700px) {
+  header { gap: 6px; padding-inline: 12px; }
+  header #cover { width: 52px; height: 52px; }
+  header .wbtn, header #gear { width: 34px; height: 34px; }
+  header #album, header #genre { display: none; }
+  #homeScreen { margin-inline: 8px; }
+  .arcadeInner { padding: 20px 15px 42px; }
+  .arcadeScore { display: none; }
+  .arcadeNow { min-height: 142px; gap: 14px; padding: 16px; }
+  .arcadeNowArt { width: 96px; }
+  .arcadeGrid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcadeCard { transition: none; }
+  .arcadeCard:hover { transform: none; }
+}
