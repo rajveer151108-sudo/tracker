@@ -51,6 +51,7 @@ async function readSpotify() {
     positionSec: Number(position),
     artwork,
     id,
+    uri: id,
   };
 }
 
