@@ -1,5 +1,5 @@
 // Home: one music library, four genuinely different listening spaces.
-const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,nowKey:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
+const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,nowKey:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
 const homeImage=images=>images?.length?(images[0]?.url||images.at(-1)?.url||""):"";
 const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", ");
 function homeElement(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!=null)el.textContent=text;return el;}
@@ -32,11 +32,16 @@ function paintArcadeWorld(canvas,url){
   const image=new Image();
   image.onload=()=>{
     if(!canvas.isConnected)return;
-    const context=canvas.getContext("2d"),width=canvas.width,height=canvas.height,scale=Math.max(width/image.naturalWidth,height/image.naturalHeight),sourceWidth=width/scale,sourceHeight=height/scale;
-    context.imageSmoothingEnabled=true;
-    context.drawImage(image,(image.naturalWidth-sourceWidth)/2,(image.naturalHeight-sourceHeight)/2,sourceWidth,sourceHeight,0,0,width,height);
+    const context=canvas.getContext("2d",{willReadFrequently:true}),width=canvas.width,height=canvas.height,scale=Math.max(width/image.naturalWidth,height/image.naturalHeight),sourceWidth=width/scale,sourceHeight=height/scale;
+    context.imageSmoothingEnabled=true;context.drawImage(image,(image.naturalWidth-sourceWidth)/2,(image.naturalHeight-sourceHeight)/2,sourceWidth,sourceHeight,0,0,width,height);
+    let source;try{source=context.getImageData(0,0,width,height);}catch{return;}
+    const state={source,strength:0,lastTime:0};canvas._arcadeWorld=state;
+    const colorAt=(x,y,lift)=>{const sx=Math.max(0,Math.min(width-1,Math.round(x))),sy=Math.max(0,Math.min(height-1,Math.round(y))),index=(sy*width+sx)*4,data=source.data;return `rgb(${Math.min(255,data[index]+lift)} ${Math.min(255,data[index+1]+lift)} ${Math.min(255,data[index+2]+lift)})`;};
+    const paintField=(centerX,centerY,radius,power,phase)=>{if(!Number.isFinite(centerX)||!Number.isFinite(centerY)||power<.02)return;const left=Math.max(0,Math.floor(centerX-radius)),right=Math.min(width-1,Math.ceil(centerX+radius)),top=Math.max(0,Math.floor(centerY-radius)),bottom=Math.min(height-1,Math.ceil(centerY+radius));for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){const dx=x-centerX,dy=y-centerY,distance=Math.hypot(dx,dy);if(distance>=radius)continue;const falloff=(1-distance/radius)*power,wave=Math.sin(distance*1.7-phase)*.65,push=(falloff*3.2+wave*falloff),length=Math.max(.25,distance),destX=Math.round(x+dx/length*push),destY=Math.round(y+dy/length*push);context.fillStyle=`rgba(3,4,10,${Math.min(.5,falloff*.42)})`;context.fillRect(x,y,1,1);context.fillStyle=colorAt(x,y,Math.round(falloff*95));context.fillRect(destX,destY,falloff>.72?2:1,falloff>.72?2:1);}};
+    const animate=time=>{if(!canvas.isConnected)return;const cursor=canvas._arcadeCursor||{},cat=canvas._arcadeCat||{},target=cursor.active?1:0;state.strength+=(target-state.strength)*.12;if(time-state.lastTime>28){state.lastTime=time;context.putImageData(source,0,0);const phase=time*.008;paintField(cursor.x,cursor.y,9,state.strength,phase);paintField(cat.x,cat.y,5,cat.active?.58:0,phase+1.7);}requestAnimationFrame(animate);};
+    requestAnimationFrame(animate);
   };
-  image.src=url;
+  image.crossOrigin="anonymous";image.src=url;
 }
 
 function mountArcadeCanvas(host,trackUri,request){
@@ -81,20 +86,20 @@ function wireCdScrub(disc){
 }
 
 function paintPixelKitten(canvas){
-  const context=canvas.getContext("2d");context.imageSmoothingEnabled=false;context.clearRect(0,0,28,20);
+  const context=canvas.getContext("2d");context.imageSmoothingEnabled=false;context.clearRect(0,0,32,20);
   const block=(color,x,y,w,h)=>{context.fillStyle=color;context.fillRect(x,y,w,h);};
-  block("#090b16",2,10,4,3);block("#090b16",4,7,3,5);block("#090b16",7,9,14,8);block("#090b16",15,4,10,9);block("#090b16",16,1,4,5);block("#090b16",22,1,4,5);block("#090b16",9,16,4,4);block("#090b16",17,16,4,4);
-  block("#ffe58a",4,9,3,2);block("#ffe58a",7,10,13,6);block("#ffe58a",16,4,8,8);block("#ffe58a",17,2,3,4);block("#ffe58a",22,2,3,4);block("#ffe58a",10,16,3,3);block("#ffe58a",18,16,3,3);
-  block("#8cfaff",18,7,2,2);block("#8cfaff",22,7,2,2);block("#f150ff",21,10,2,1);block("#fff",18,7,1,1);block("#fff",22,7,1,1);
+  block("#171a21",1,8,3,7);block("#171a21",3,5,3,5);block("#171a21",5,4,3,3);block("#171a21",6,9,18,9);block("#171a21",20,5,10,11);block("#171a21",21,2,4,5);block("#171a21",27,2,4,6);block("#171a21",8,16,5,4);block("#171a21",16,16,5,4);block("#171a21",24,15,4,5);
+  block("#8f9299",3,8,3,6);block("#bfc1c7",5,6,2,3);block("#9c9fa6",7,10,17,6);block("#bfc1c7",21,6,8,9);block("#bfc1c7",22,3,3,5);block("#bfc1c7",27,3,3,5);block("#777b83",10,12,4,4);block("#777b83",18,10,4,6);block("#bfc1c7",9,16,3,3);block("#bfc1c7",17,16,3,3);block("#bfc1c7",25,15,2,4);
+  block("#0a0c11",23,8,2,2);block("#0a0c11",27,8,2,2);block("#0a0c11",25,11,2,2);block("#f19ac8",21,11,2,2);block("#f19ac8",29,11,2,2);block("#e7e9ee",23,8,1,1);block("#e7e9ee",27,8,1,1);
 }
 
-function mountArcadeKitten(screen){
-  const kitten=homeElement("canvas","arcadePixelKitten");kitten.width=28;kitten.height=20;kitten.setAttribute("aria-hidden","true");paintPixelKitten(kitten);screen.appendChild(kitten);
+function mountArcadeKitten(screen,worldCanvas){
+  const kitten=homeElement("canvas","arcadePixelKitten");kitten.width=32;kitten.height=20;kitten.setAttribute("aria-hidden","true");paintPixelKitten(kitten);screen.appendChild(kitten);
   let currentX=64,currentY=80,targetX=64,targetY=80,visible=false,facing=1;
-  const tick=()=>{if(!screen.isConnected)return;currentX+=(targetX-currentX)*.09;currentY+=(targetY-currentY)*.09;kitten.style.setProperty("--kitten-x",`${currentX}px`);kitten.style.setProperty("--kitten-y",`${currentY}px`);kitten.style.setProperty("--kitten-face",String(facing));requestAnimationFrame(tick);};
+  const tick=()=>{if(!screen.isConnected)return;currentX+=(targetX-currentX)*.09;currentY+=(targetY-currentY)*.09;kitten.style.setProperty("--kitten-x",`${currentX}px`);kitten.style.setProperty("--kitten-y",`${currentY}px`);kitten.style.setProperty("--kitten-face",String(facing));if(worldCanvas){const rect=screen.getBoundingClientRect();worldCanvas._arcadeCat={x:currentX/Math.max(1,rect.width)*worldCanvas.width,y:currentY/Math.max(1,rect.height)*worldCanvas.height,active:visible};}requestAnimationFrame(tick);};
   screen.addEventListener("pointerenter",()=>{visible=true;kitten.classList.add("awake");screen.style.setProperty("--arcade-mouse-on","1");});
-  screen.addEventListener("pointermove",event=>{const rect=screen.getBoundingClientRect(),nextX=Math.max(28,Math.min(rect.width-28,event.clientX-rect.left-18)),nextY=Math.max(42,Math.min(rect.height-82,event.clientY-rect.top+20));facing=nextX>=targetX?1:-1;targetX=nextX;targetY=nextY;screen.style.setProperty("--arcade-mouse-x",`${event.clientX-rect.left}px`);screen.style.setProperty("--arcade-mouse-y",`${event.clientY-rect.top}px`);if(!visible){visible=true;kitten.classList.add("awake");}screen.style.setProperty("--arcade-mouse-on","1");});
-  screen.addEventListener("pointerleave",()=>{visible=false;kitten.classList.remove("awake");screen.style.setProperty("--arcade-mouse-on","0");});
+  screen.addEventListener("pointermove",event=>{const rect=screen.getBoundingClientRect(),mouseX=event.clientX-rect.left,mouseY=event.clientY-rect.top,nextX=Math.max(32,Math.min(rect.width-32,mouseX-22)),nextY=Math.max(42,Math.min(rect.height-82,mouseY+22));facing=nextX>=targetX?1:-1;targetX=nextX;targetY=nextY;screen.style.setProperty("--arcade-mouse-x",`${mouseX}px`);screen.style.setProperty("--arcade-mouse-y",`${mouseY}px`);if(worldCanvas)worldCanvas._arcadeCursor={x:mouseX/Math.max(1,rect.width)*worldCanvas.width,y:mouseY/Math.max(1,rect.height)*worldCanvas.height,active:true};if(!visible){visible=true;kitten.classList.add("awake");}screen.style.setProperty("--arcade-mouse-on","1");});
+  screen.addEventListener("pointerleave",()=>{visible=false;kitten.classList.remove("awake");screen.style.setProperty("--arcade-mouse-on","0");if(worldCanvas)worldCanvas._arcadeCursor={...(worldCanvas._arcadeCursor||{}),active:false};});
   requestAnimationFrame(tick);
 }
 
@@ -139,7 +144,7 @@ async function launchHomeItem(item,source){
 async function launchHomeGame(item,source){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".gameCartridgePortal").forEach(node=>node.remove());
-  homeState.slotItem=item;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
+  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
   const heroRect=hero.getBoundingClientRect(),slotRect=hero.querySelector(".arcadeGameSlot")?.getBoundingClientRect();
   const portal=homeElement("div","gameCartridgePortal"),cartridge=homeElement("div","gameCartridgeFlight"),label=homeElement("div","gameCartridgeLabel"),art=homeElement("img");art.alt="";if(item.img)art.src=item.img;label.append(art,homeElement("strong","",item.title));cartridge.append(label);portal.append(cartridge);hero.appendChild(portal);
   const startW=Math.min(210,heroRect.width*.3),slotCenter=slotRect?slotRect.left+slotRect.width/2:heroRect.left+heroRect.width/2,startX=slotCenter-startW/2,cartridgeH=startW/1.55;
@@ -154,15 +159,16 @@ async function launchHomeGame(item,source){
   ],{duration:1000,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"});
   await new Promise(resolve=>setTimeout(resolve,1020));
   flight.cancel();portal.remove();
+  screen.classList.remove("game-slotting");renderHomeHero();
   const started=await homePlay(item);
-  setTimeout(()=>{screen.classList.remove("game-slotting");if(!started)homeState.slotItem=null;renderHomeHero();},450);
-  setTimeout(()=>{if(homeState.slotItem===item){homeState.slotItem=null;screen.classList.remove("game-slotting");renderHomeHero();}},4000);
+  if(!started){homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;renderHomeHero();return;}
+  setTimeout(()=>{if(homeState.slotItem?.uri===item.uri&&homeState.nowPlaying?.uri!==item.uri)clearHomePending(true);},5000);
 }
 async function launchHomeCd(item,source){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".homeCdFlight,.homeCdFlightSleeve").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
-  homeState.slotItem=item;homeState.pendingUri=item.uri;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");renderHomeHero();
+  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");renderHomeHero();
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const target=hero.querySelector(".homeCdDisc")?.getBoundingClientRect(),src=sourceRect||(hero.querySelector(".homeCdAlbumCard img")||hero).getBoundingClientRect();
   if(target){
@@ -195,8 +201,8 @@ async function launchHomeCd(item,source){
   if(sequence!==homeState.loadSequence)return;
   screen.classList.add("cd-seated");
   const started=await homePlay(item);
-  setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("cd-loading","cd-seated");if(!started){homeState.slotItem=null;homeState.pendingUri="";}renderHomeHero();},520);
-  setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem===item){homeState.slotItem=null;homeState.pendingUri="";screen.classList.remove("cd-loading","cd-seated");renderHomeHero();}},5200);
+  setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("cd-loading","cd-seated");if(!started)clearHomePending();else renderHomeHero();},520);
+  setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri)clearHomePending(true);},5200);
 }
 
 function renderHomeRoster(){
@@ -247,15 +253,15 @@ function renderArcadeCabinet(hero,item){
   const canvasRequest=++arcadeCanvasRequest;
   const cabinet=homeElement("div","arcadeCabinet"),display=homeElement("div","arcadeDisplay"),top=homeElement("div","arcadeDisplayTop");
   top.append(homeElement("span","","PLAYER 01"),homeElement("strong","",item?"NOW PLAYING":"READY"),homeElement("span","",item?"SCORE 01":"INSERT GAME"));display.appendChild(top);
-  const screen=homeElement("div","arcadeScreenContent");
+  const screen=homeElement("div","arcadeScreenContent");let pixelWorld=null;
   if(item){
-    const world=homeElement("div","arcadeScreenWorld"),pixelWorld=homeElement("canvas","arcadePixelWorld");pixelWorld.width=80;pixelWorld.height=45;world.append(pixelWorld,homeElement("div","arcadeWorldShade"));screen.appendChild(world);if(item.img)paintArcadeWorld(pixelWorld,item.img);mountArcadeCanvas(world,item.uri,canvasRequest);
+    const world=homeElement("div","arcadeScreenWorld");pixelWorld=homeElement("canvas","arcadePixelWorld");pixelWorld.width=80;pixelWorld.height=45;world.append(pixelWorld,homeElement("div","arcadeWorldShade"));screen.appendChild(world);if(item.img)paintArcadeWorld(pixelWorld,item.img);mountArcadeCanvas(world,item.uri,canvasRequest);
     const art=homeElement("img","arcadeScreenArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;const info=homeElement("div","arcadeScreenInfo");info.append(homeElement("span","arcadeScreenStatus",playing?"● GAME IN PROGRESS":"Ⅱ GAME PAUSED"),homeElement("h2","",item.title),homeElement("p","",item.sub||"Unknown artist"),homeElement("small","",item.album||"AFTERGLOW ARCADE"));
     const dialogue=homeElement("div","arcadeDialogue"),artists=window.DialogueSpeaker.artistsFrom(item.sub),defaultSpeaker=ARCADE_VOCAL_OVERRIDES[item.uri]||(artists.length===1?artists[0]:"VOCALS"),speaker=homeElement("span","arcadeDialogueSpeaker",defaultSpeaker.toUpperCase()),copy=homeElement("strong","arcadeDialogueText","LISTENING FOR DIALOGUE…"),next=homeElement("small","arcadeDialogueNext","");dialogue.dataset.artists=item.sub||"";dialogue.dataset.defaultSpeaker=defaultSpeaker;dialogue.append(speaker,copy,next);
     const progress=homeElement("div","arcadeStageProgress");progress.append(homeElement("span","","STAGE PROGRESS"),homeElement("i",""));wireArcadeSeek(progress);screen.append(art,info,dialogue,progress);
   }
   else{const idle=homeElement("div","arcadeScreenIdle");idle.append(homeElement("span","","AFTERGLOW"),homeElement("h2","","SELECT A GAME"),homeElement("p","","Choose a song from the left rack"));screen.appendChild(idle);}
-  mountArcadeKitten(screen);
+  if(pixelWorld)mountArcadeKitten(screen,pixelWorld);
   display.appendChild(screen);
   const deck=homeElement("div","arcadeDeck"),transport=homeElement("div","arcadeDeckButtons"),prev=homeElement("button","arcadeRoundButton","◀"),play=homeElement("button","arcadeRoundButton primary",playing?"Ⅱ":"▶"),next=homeElement("button","arcadeRoundButton","▶");prev.addEventListener("click",()=>control("previous"));play.addEventListener("click",()=>control("playpause"));next.addEventListener("click",()=>control("next"));transport.append(prev,play,next);
   const slotZone=homeElement("div","arcadeSlotZone");slotZone.append(homeElement("span","","GAME SLOT"),homeElement("div","arcadeGameSlot",""),homeElement("small","",homeState.slotItem?"LOADING…":"CHOOSE A SONG"));
@@ -277,7 +283,7 @@ function renderCdPlayer(hero,item,copy){
   scene.append(stack,player);hero.append(scene);
 }
 function renderHomeHero(){
-  const hero=$("arcadeNow");hero.innerHTML="";const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem((mode==="vinyl"&&homeState.slotItem)||homeState.nowPlaying);
+  const hero=$("arcadeNow");hero.innerHTML="";const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem(homeState.slotItem||homeState.nowPlaying);
   if(mode==="arcade"){renderArcadeCabinet(hero,item);return;}
   if(mode==="vinyl"&&item){renderCdPlayer(hero,item,copy);return;}
   if(!item){const empty=homeElement("div","homeHeroEmpty");empty.append(homeElement("span","homeHeroKicker",copy[2]),homeElement("h2","","Your next favourite song lives here"),homeElement("p","","Open the library or start Spotify to fill this space."));hero.appendChild(empty);return;}
@@ -314,6 +320,22 @@ async function refreshArcadeHome(force=false){
 }
 function homeNowPlayingKey(np){if(!np||!(np.state==="playing"||np.state==="paused"))return"idle";return[np.id,np.uri,np.title,np.artist,np.album,np.artwork,np.state].map(value=>String(value||"").normalize("NFKC").trim().toLowerCase()).join("|");}
 function enrichHomeItem(item){if(!item?.uri)return item;const known=[...homeState.games,...homeState.recent,...homeState.queue].find(track=>track.uri===item.uri);return known?{...item,sub:known.sub||item.sub,album:known.album||item.album,img:known.img||item.img}:item;}
-function updateHomeNowPlaying(np){const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume);if(Number.isFinite(volume))updateHomeVolumeUi(volume);if(homeState.pendingUri&&homeState.slotItem&&active&&uri&&uri!==homeState.pendingUri)return;if(key===homeState.nowKey)return;homeState.nowKey=key;homeState.nowPlaying=active?enrichHomeItem({uri,title:np.title||"Unknown track",sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}):null;if(homeState.nowPlaying)setHomeGameColor(homeState.nowPlaying);if(!homeState.pendingUri||!active||uri===homeState.pendingUri){homeState.slotItem=null;homeState.pendingUri="";homeState.loadSequence++;$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated");}renderHome();if(active&&currentHomeMode()==="vinyl")refreshHomeQueue(true);}
+function clearHomePending(render=false){
+  if(!homeState.slotItem&&!homeState.pendingUri)return;
+  homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.loadSequence++;$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated");if(render)renderHomeHero();
+}
+function updateHomeNowPlaying(np){
+  const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume),pendingAge=homeState.pendingAt?Date.now()-homeState.pendingAt:0;let pendingCleared=false;
+  if(Number.isFinite(volume))updateHomeVolumeUi(volume);
+  if(homeState.pendingUri&&homeState.slotItem){
+    if(active&&uri&&uri!==homeState.pendingUri&&pendingAge<6000)return;
+    if(active&&uri===homeState.pendingUri){clearHomePending();pendingCleared=true;}
+    else if((!active&&pendingAge>3500)||(active&&uri&&uri!==homeState.pendingUri&&pendingAge>=6000)){clearHomePending();pendingCleared=true;}
+  }
+  if(key===homeState.nowKey){if(pendingCleared||homeState.slotItem)renderHomeHero();return;}
+  homeState.nowKey=key;homeState.nowPlaying=active?enrichHomeItem({uri,title:np.title||"Unknown track",sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}):null;if(homeState.nowPlaying)setHomeGameColor(homeState.nowPlaying);
+  if(!homeState.pendingUri||!active||uri===homeState.pendingUri)clearHomePending();
+  renderHome();if(active&&currentHomeMode()==="vinyl")refreshHomeQueue(true);
+}
 function setAppView(view){const wanted=view==="lyrics"?"lyrics":"home";if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();document.body.dataset.view=wanted;$("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");if(wanted==="home")refreshArcadeHome();else activeIdx=-2;}
 function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("arcadeLibraryBtn").addEventListener("click",()=>{setTab("recent");openLibrary();});$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openLibrary();setTab("account");}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}
