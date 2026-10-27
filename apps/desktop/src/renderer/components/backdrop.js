@@ -31,21 +31,23 @@
     const width = Math.max(1, box.clientWidth);
     const height = Math.max(1, box.clientHeight);
     const size = Math.max(width, height);
-    const useful = (points && points.length ? points : TOUR_ROUTES.center).slice(0, 4);
+    const useful = (points && points.length ? points : TOUR_ROUTES.center).slice(0, 3);
     const peak = Math.max(...useful.map((point) => point.score || 0), 0.01);
+    const zoomStrength = Math.max(0.2, Math.min(1.4, Number(settings.backdropTourZoom || 65) / 100));
     const frames = [
       { offset: 0, transform: "translate(0px, 0px) scale(1)" },
       { offset: 0.08, transform: "translate(0px, 0px) scale(1)" },
     ];
     useful.forEach((point, index) => {
       const start = 0.14 + index * (0.58 / useful.length);
-      const zoom = 2.05 + Math.min(0.4, ((point.score || peak) / peak) * 0.4);
+      const confidence = Math.max(0, Math.min(1, (point.score || peak) / peak));
+      const zoom = 1.25 + zoomStrength * (0.58 + confidence * 0.22);
       const transform = tourTransform(point, zoom, size, width, height);
       frames.push({ offset: start, transform }, { offset: start + 0.075, transform });
     });
     frames.push(
-      { offset: 0.82, transform: "translate(0px, 0px) scale(1.55)" },
-      { offset: 0.89, transform: "translate(0px, 0px) scale(1.55)" },
+      { offset: 0.82, transform: `translate(0px, 0px) scale(${(1.12 + zoomStrength * 0.28).toFixed(3)})` },
+      { offset: 0.89, transform: `translate(0px, 0px) scale(${(1.12 + zoomStrength * 0.28).toFixed(3)})` },
       { offset: 1, transform: "translate(0px, 0px) scale(1)" },
     );
     frames.sort((a, b) => a.offset - b.offset);
@@ -86,11 +88,15 @@
     });
   }
 
+  function refreshAlbumTours() {
+    document.querySelectorAll(".alb").forEach((element) => runAlbumTour(element, element._tourPoints));
+  }
+
   let albumResizeTimer = null;
   window.addEventListener("resize", () => {
     clearTimeout(albumResizeTimer);
     albumResizeTimer = setTimeout(() => {
-      document.querySelectorAll(".alb").forEach((element) => runAlbumTour(element, element._tourPoints));
+      refreshAlbumTours();
     }, 120);
   });
 

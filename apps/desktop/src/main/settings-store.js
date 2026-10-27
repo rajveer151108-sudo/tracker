@@ -19,6 +19,7 @@ const DEFAULTS = {
   backdrop: true,
   backdropStyle: "blur",
   backdropTourFocus: "smart",
+  backdropTourZoom: 65,
   backdropOpacity: 60,
   glow: true,
   glowStyle: "steady",
@@ -38,6 +39,7 @@ const LIMITS = {
   glowStrength: [0, 300],
   glowThickness: [20, 300],
   backdropOpacity: [0, 100],
+  backdropTourZoom: [20, 140],
   beatStrength: [0, 300],
 };
 

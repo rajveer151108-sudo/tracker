@@ -37,6 +37,19 @@ test("smart focus follows an off-centre area with strong colour detail", () => {
   assert.ok(point.x > 0.6 && point.y < 0.45);
 });
 
+test("smart focus avoids a barcode-like label along the bottom edge", () => {
+  const pixels = image(112, 112, (x, y) => {
+    if (y > 84) return x % 4 < 2 ? [250, 250, 250] : [5, 5, 5];
+    if (x > 32 && x < 80 && y > 22 && y < 74) {
+      return (x + y) % 12 < 6 ? [230, 95, 52] : [35, 80, 180];
+    }
+    return [80, 32, 28];
+  });
+  const points = findFocusPoints(pixels, 112, 112);
+  assert.ok(points.length >= 1);
+  assert.ok(points[0].y < 0.72);
+});
+
 test("smart focus falls back to the center for flat artwork", () => {
   const pixels = image(64, 64, () => [80, 80, 80]);
   assert.deepEqual(findFocusPoints(pixels, 64, 64), [{ x: 0.5, y: 0.5, score: 0 }]);
