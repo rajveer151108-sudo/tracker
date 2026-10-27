@@ -26,8 +26,11 @@
         activeIdx = idx;
         prevActive = idx;
         document.body.classList.toggle("lyrics-waiting", idx < 0);
+        const stackLayout = settings.lyricsLayout === "stack";
+        const stackLines = Math.max(2, Math.min(6, Number(settings.lyricsHistoryLines) || 4));
         lineEls.forEach((el, i) => {
           el.classList.toggle("active", i === idx);
+          el.classList.toggle("stack-hidden", stackLayout && idx >= 0 && (i > idx || i <= idx - stackLines));
           el.dataset.d = idx < 0 ? "4" : String(Math.min(Math.abs(i - idx), 4));
           el.dataset.side = idx < 0 ? "next" : i < idx ? "past" : i > idx ? "next" : "current";
         });
@@ -52,8 +55,9 @@
         if (idx >= 0) {
           const focus = lineEls[idx];
           const stageH = $("stage").clientHeight;
+          const focusY = stackLayout ? stageH * 0.7 : stageH / 2;
           $("lines").style.transform =
-            "translateY(" + (stageH / 2 - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
+            "translateY(" + (focusY - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
         }
       }
 

@@ -112,7 +112,8 @@
 
   function updateTimingInfo() {
     $("estimate").textContent = timingInfo
-      ? timingInfo + (settings.lyricsLayout === "wordstream" ? " \u00b7 Word stream" : "")
+      ? timingInfo + (settings.lyricsLayout === "wordstream" ? " \u00b7 Word stream"
+        : settings.lyricsLayout === "stack" ? " \u00b7 Lyric stack" : "")
       : "";
   }
 
