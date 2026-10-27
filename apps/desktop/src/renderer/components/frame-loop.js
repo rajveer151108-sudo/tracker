@@ -20,6 +20,11 @@
       $("bar").setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
       $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
       $("pos").textContent = fmt(now);
+      $("homeScreen")?.style.setProperty("--home-progress", seekPercent.toFixed(2) + "%");
+      if (typeof updateArcadeDialogue === "function") {
+        const dialogueIndex = sourceLines.length ? window.LyricTiming.activeLyricIndex(sourceLines, t) : -1;
+        updateArcadeDialogue(sourceLines[dialogueIndex], sourceLines[dialogueIndex + 1]);
+      }
     }
 
     let wordLife = 0, lineEmotion = 0;

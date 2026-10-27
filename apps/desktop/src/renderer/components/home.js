@@ -5,6 +5,7 @@ const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", 
 function homeElement(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!=null)el.textContent=text;return el;}
 const HOME_COPY={arcade:["GAME LIBRARY","Choose a stage","PRESS START"],vinyl:["CD LIBRARY","Choose a disc","NOW LOADED"],tape:["THE VIDEO ARCHIVE","Select a tape","FEATURE PRESENTATION"],midnight:["YOUR MUSIC","Recently played","NOW PLAYING"]};
 const currentHomeMode=()=>document.body.dataset.homeMode||"arcade";
+let arcadeCanvasRequest=0;
 function updateHomeVolumeUi(value){const volume=Math.max(0,Math.min(100,Math.round(Number(value)||0))),slider=document.querySelector(".homeCdVolumeRange"),readout=document.querySelector(".homeCdVolumeValue"),control=document.querySelector(".homeCdSlider");homeState.volume=volume;if(slider&&Number(slider.value)!==volume)slider.value=String(volume);if(readout)readout.textContent=`${volume}%`;control?.style.setProperty("--volume",`${volume}%`);}
 function setHomeVolume(value,immediate=false){updateHomeVolumeUi(value);clearTimeout(homeState.volumeTimer);const commit=async()=>{homeState.volumeTimer=null;const result=await window.tracker.setVolume(homeState.volume);if(!result?.ok)showToast(`VOLUME: ${result?.error||"COULDN'T CHANGE IT"}`);};if(immediate)commit();else homeState.volumeTimer=setTimeout(commit,70);}
 function setHomeGameColor(item){
@@ -23,6 +24,36 @@ function setHomeGameColor(item){
       apply("--game-color",color);apply("--cd-a",color);apply("--cd-b",pick(1,.82));apply("--cd-c",pick(2,.64));
     }catch{}
   };image.src=item.img;
+}
+
+function paintArcadeWorld(canvas,url){
+  if(!canvas||!url)return;
+  const image=new Image();
+  image.onload=()=>{
+    if(!canvas.isConnected)return;
+    const context=canvas.getContext("2d"),width=canvas.width,height=canvas.height,scale=Math.max(width/image.naturalWidth,height/image.naturalHeight),sourceWidth=width/scale,sourceHeight=height/scale;
+    context.imageSmoothingEnabled=true;
+    context.drawImage(image,(image.naturalWidth-sourceWidth)/2,(image.naturalHeight-sourceHeight)/2,sourceWidth,sourceHeight,0,0,width,height);
+  };
+  image.src=url;
+}
+
+function mountArcadeCanvas(host,trackUri,request){
+  if(!host||!trackUri||window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  window.tracker.spotifyCanvas(trackUri).then(result=>{
+    if(request!==arcadeCanvasRequest||!host.isConnected||!result?.ok||!result.url)return;
+    const video=homeElement("video","arcadeCanvasWorld");video.src=result.url;video.autoplay=true;video.loop=true;video.muted=true;video.playsInline=true;video.preload="auto";video.disablePictureInPicture=true;
+    video.addEventListener("error",()=>video.remove(),{once:true});host.appendChild(video);video.play().catch(()=>video.remove());
+  }).catch(()=>{});
+}
+
+function updateArcadeDialogue(line,nextLine){
+  const box=document.querySelector(".arcadeDialogue"),text=box?.querySelector(".arcadeDialogueText"),next=box?.querySelector(".arcadeDialogueNext");
+  if(!box||!text)return;
+  const current=String(line?.text||"").trim(),upcoming=String(nextLine?.text||"").trim(),key=current+"|"+upcoming;
+  if(box.dataset.key===key)return;
+  box.dataset.key=key;text.textContent=current||"LISTENING FOR DIALOGUE…";if(next)next.textContent=upcoming?`NEXT  ${upcoming}`:"";
+  box.classList.remove("talking");void box.offsetWidth;box.classList.add("talking");
 }
 
 async function homePlay(item){if(!item?.uri)return false;const result=await window.tracker.playUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok)setTimeout(poll,250);return !!result?.ok;}
@@ -114,10 +145,16 @@ function renderHomeCollections(){
   homeState.playlists.forEach(item=>{const card=homeElement("button","homeCollection");card.classList.toggle("selected",homeState.activeCollection?.key===item.key);let image;if(item.img){image=homeElement("img");image.alt="";image.loading="lazy";image.src=item.img;}else{image=homeElement("div","homeCollectionPlaceholder",item.symbol||"♫");}card.append(image,homeElement("strong","",item.title),homeElement("small","",item.sub||"Playlist"));card.addEventListener("click",()=>loadHomeCollection(item));list.appendChild(card);});
 }
 function renderArcadeCabinet(hero,item){
+  const canvasRequest=++arcadeCanvasRequest;
   const cabinet=homeElement("div","arcadeCabinet"),display=homeElement("div","arcadeDisplay"),top=homeElement("div","arcadeDisplayTop");
   top.append(homeElement("span","","PLAYER 01"),homeElement("strong","",item?"NOW PLAYING":"READY"),homeElement("span","",item?"SCORE 01":"INSERT GAME"));display.appendChild(top);
   const screen=homeElement("div","arcadeScreenContent");
-  if(item){const art=homeElement("img","arcadeScreenArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;const info=homeElement("div","arcadeScreenInfo");info.append(homeElement("span","arcadeScreenStatus",playing?"● GAME IN PROGRESS":"Ⅱ GAME PAUSED"),homeElement("h2","",item.title),homeElement("p","",item.sub||"Unknown artist"),homeElement("small","",item.album||"AFTERGLOW ARCADE"));screen.append(art,info);}
+  if(item){
+    const world=homeElement("div","arcadeScreenWorld"),pixelWorld=homeElement("canvas","arcadePixelWorld");pixelWorld.width=80;pixelWorld.height=45;world.append(pixelWorld,homeElement("div","arcadeWorldShade"));screen.appendChild(world);if(item.img)paintArcadeWorld(pixelWorld,item.img);mountArcadeCanvas(world,item.uri,canvasRequest);
+    const art=homeElement("img","arcadeScreenArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;const info=homeElement("div","arcadeScreenInfo");info.append(homeElement("span","arcadeScreenStatus",playing?"● GAME IN PROGRESS":"Ⅱ GAME PAUSED"),homeElement("h2","",item.title),homeElement("p","",item.sub||"Unknown artist"),homeElement("small","",item.album||"AFTERGLOW ARCADE"));
+    const dialogue=homeElement("div","arcadeDialogue"),speaker=homeElement("span","arcadeDialogueSpeaker",(item.sub||"PLAYER").split(",")[0].toUpperCase()),copy=homeElement("strong","arcadeDialogueText","LISTENING FOR DIALOGUE…"),next=homeElement("small","arcadeDialogueNext","");dialogue.append(speaker,copy,next);
+    const progress=homeElement("div","arcadeStageProgress");progress.append(homeElement("span","","STAGE PROGRESS"),homeElement("i",""));screen.append(art,info,dialogue,progress);
+  }
   else{const idle=homeElement("div","arcadeScreenIdle");idle.append(homeElement("span","","AFTERGLOW"),homeElement("h2","","SELECT A GAME"),homeElement("p","","Choose a song from the left rack"));screen.appendChild(idle);}
   display.appendChild(screen);
   const deck=homeElement("div","arcadeDeck"),transport=homeElement("div","arcadeDeckButtons"),prev=homeElement("button","arcadeRoundButton","◀"),play=homeElement("button","arcadeRoundButton primary",playing?"Ⅱ":"▶"),next=homeElement("button","arcadeRoundButton","▶");prev.addEventListener("click",()=>control("previous"));play.addEventListener("click",()=>control("playpause"));next.addEventListener("click",()=>control("next"));transport.append(prev,play,next);
