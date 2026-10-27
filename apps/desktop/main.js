@@ -4,7 +4,6 @@ const {
   BrowserWindow,
   ipcMain,
   screen,
-  session,
   desktopCapturer,
   shell,
   safeStorage,
@@ -89,20 +88,6 @@ function createWindow() {
   glow.setMainWindow(mainWindow);
 }
 
-function registerMediaCapture() {
-  session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
-    desktopCapturer
-      .getSources({ types: ["screen"], thumbnailSize: { width: 0, height: 0 } })
-      .then((sources) => {
-        if (!sources[0]) return callback(null);
-        callback({ video: sources[0], audio: "loopback" });
-      })
-      .catch(() => {
-        try { callback(null); } catch {}
-      });
-  });
-}
-
 function registerIpc() {
   ipcMain.handle("now-playing", spotifyDesktop.readSpotify);
   ipcMain.handle("control", (_event, action) => spotifyDesktop.control(action));
@@ -115,6 +100,15 @@ function registerIpc() {
   ipcMain.handle("screen-capture-status", () => process.platform === "darwin"
     ? systemPreferences.getMediaAccessStatus("screen")
     : "granted");
+  ipcMain.handle("system-audio-source", async () => {
+    const sources = await desktopCapturer.getSources({
+      types: ["screen"],
+      thumbnailSize: { width: 0, height: 0 },
+      fetchWindowIcons: false,
+    });
+    if (!sources[0]) throw new Error("No screen source is available for system audio capture");
+    return sources[0].id;
+  });
 
   ipcMain.handle("history-get", spotifyLibrary.loadHistory);
   ipcMain.on("history-add", (_event, track) => spotifyLibrary.addHistory(track));
@@ -153,7 +147,6 @@ app.whenReady().then(() => {
   settingsStore.load();
   spotifyLibrary.loadAuth();
   trackerSync.load();
-  registerMediaCapture();
   registerIpc();
   createWindow();
   glow.createOverlays();

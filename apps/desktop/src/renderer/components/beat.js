@@ -17,9 +17,23 @@
         setBeatStatus("Ready \u00B7 turn Beat Reaction off and on when you want to grant access");
         return;
       }
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        audio: true,
-        video: { width: 320, height: 240, frameRate: 30 },
+      const sourceId = await window.tracker.systemAudioSource();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          mandatory: {
+            chromeMediaSource: "desktop",
+            chromeMediaSourceId: sourceId,
+          },
+        },
+        video: {
+          mandatory: {
+            chromeMediaSource: "desktop",
+            chromeMediaSourceId: sourceId,
+            maxWidth: 320,
+            maxHeight: 240,
+            maxFrameRate: 1,
+          },
+        },
       });
       stream.getVideoTracks().forEach((t) => t.stop());          // we only want the sound
       const tracks = stream.getAudioTracks();
