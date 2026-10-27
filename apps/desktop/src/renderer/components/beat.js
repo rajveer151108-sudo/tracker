@@ -5,7 +5,23 @@
   let beatOn = false, beatStarting = false;
   let pulse = 0, avgBass = 0, lastBeat = 0, outLevel = 0, lastSend = 0, lastBass = 0, peak = 0;
   let motionEnergy = 0, motionVocal = 0, motionLift = 0, energyPeak = 0.08, vocalPeak = 0.08;
-  let lyricMotionLife = 0;
+  let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
+  let lyricMotionLife = 0, lyricMotionEmotion = 0;
+
+  const MOTION_PROFILES = {
+    rap:        { impact: 1.25, energy: .85, vocal: 1.0,  lift: .6,  build: .75, drop: 1.25, sway: .08, rate: 1.2 },
+    rnb:        { impact: .75,  energy: .82, vocal: 1.25, lift: 1.3,  build: 1.1, drop: .85,  sway: .42, rate: .55 },
+    jazz:       { impact: .55,  energy: .72, vocal: 1.1,  lift: 1.2,  build: .7,  drop: .5,   sway: .7,  rate: .8 },
+    rock:       { impact: 1.15, energy: 1.2, vocal: 1.0,  lift: .8,  build: .9,  drop: 1.15, sway: .12, rate: 1.35 },
+    electronic: { impact: 1.35, energy: 1.1, vocal: .6,   lift: .9,  build: 1.35, drop: 1.5, sway: .05, rate: 1.4 },
+    pop:        { impact: 1.0,  energy: 1.0, vocal: 1.05, lift: 1.0,  build: 1.0, drop: 1.0, sway: .2,  rate: 1.0 },
+    other:      { impact: .9,   energy: .95, vocal: 1.0,  lift: 1.0,  build: .9,  drop: .9,  sway: .25, rate: .8 },
+  };
+
+  function motionProfile() {
+    if (!settings.genreFeel) return MOTION_PROFILES.other;
+    return MOTION_PROFILES[document.body.dataset.genre] || MOTION_PROFILES.other;
+  }
 
   function setBeatStatus(text) { const el = $("status_beat"); if (el) el.textContent = text || ""; }
 
@@ -69,7 +85,7 @@
     try { if (beatStream) beatStream.getTracks().forEach((t) => t.stop()); } catch (e) {}
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
     beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null;
-    motionEnergy = motionVocal = motionLift = pulse = outLevel = 0;
+    motionEnergy = motionVocal = motionLift = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
     applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0 });
     setBeatStatus(msg || "");
   }
@@ -102,10 +118,21 @@
     const energy = clampMotion(motion.energy * strength);
     const vocal = clampMotion(motion.vocal * strength);
     const lift = clampMotion(motion.lift * strength);
+    const build = clampMotion(motion.build * strength);
+    const duck = clampMotion(motion.duck * strength);
+    const drop = clampMotion(motion.drop * strength);
+    const emotion = clampMotion(motion.emotion * strength);
+    const sway = Math.max(-1, Math.min(1, Number(motion.sway) || 0)) * Math.min(1.5, strength);
     root.style.setProperty("--motion-energy", energy.toFixed(3));
     root.style.setProperty("--motion-vocal", vocal.toFixed(3));
     root.style.setProperty("--motion-lift", lift.toFixed(3));
-    return { impact: clampMotion(motion.impact), energy, vocal, lift, word: clampMotion(motion.word) };
+    root.style.setProperty("--motion-build", build.toFixed(3));
+    root.style.setProperty("--motion-duck", duck.toFixed(3));
+    root.style.setProperty("--motion-drop", drop.toFixed(3));
+    root.style.setProperty("--motion-emotion", emotion.toFixed(3));
+    root.style.setProperty("--motion-sway", sway.toFixed(3));
+    return { impact: clampMotion(motion.impact), energy, vocal, lift, build, duck, drop, emotion,
+      word: clampMotion(motion.word), sway };
   }
 
   function beatStep(tNow, dt) {
@@ -159,7 +186,38 @@
     motionVocal = follow(motionVocal, vocalTarget, 0.07, 0.28, dt);
     motionLift = follow(motionLift, liftTarget, 0.09, 0.3, dt);
 
-    const motion = applyMusicMotion({ impact: outLevel, energy: motionEnergy, vocal: motionVocal, lift: motionLift, word: lyricMotionLife });
+    motionShort = follow(motionShort, energyTarget, 0.08, 0.22, dt);
+    motionLong = follow(motionLong, energyTarget, 0.9, 1.6, dt);
+    const buildTarget = Math.max(0, Math.min(1, (motionShort - motionLong) * 3.2 + motionLift * 0.38));
+    motionBuild = follow(motionBuild, buildTarget, 0.18, 0.42, dt);
+
+    // A short valley after rising energy arms a drop. The next strong bass
+    // transient gets a larger release than an ordinary beat.
+    const preDropDip = motionLong > 0.38 && motionShort < motionLong * 0.68;
+    if (preDropDip && (motionBuild > 0.12 || motionLong > 0.58)) dropArmedUntil = tNow + 1800;
+    motionDuck = follow(motionDuck, preDropDip ? 1 : 0, 0.05, 0.2, dt);
+    if (tNow < dropArmedUntil && rise > 0.14 && norm > 0.7 && energyTarget > motionLong * 0.9) {
+      dropFlash = 1;
+      dropArmedUntil = 0;
+      motionDuck = 0;
+    }
+    dropFlash *= Math.exp(-dt / 0.28);
+
+    const profile = motionProfile();
+    const sway = Math.sin(tNow * 0.003 * profile.rate) * profile.sway * motionEnergy;
+    const expressiveVocal = lyricMotionEmotion * lyricMotionLife * motionVocal;
+    const motion = applyMusicMotion({
+      impact: outLevel * profile.impact,
+      energy: motionEnergy * profile.energy,
+      vocal: motionVocal * profile.vocal,
+      lift: motionLift * profile.lift,
+      build: motionBuild * profile.build,
+      duck: motionDuck,
+      drop: dropFlash * profile.drop,
+      emotion: expressiveVocal,
+      word: lyricMotionLife,
+      sway,
+    });
     if (tNow - lastSend > 33) { lastSend = tNow; window.tracker.sendBeat(motion); }
   }
 

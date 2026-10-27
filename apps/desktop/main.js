@@ -134,10 +134,13 @@ function registerIpc() {
     if (typeof value === "number") glow.beat(value);
     else if (value && typeof value === "object") {
       const motion = {};
-      for (const key of ["impact", "energy", "vocal", "lift", "word"]) {
+      for (const key of ["impact", "energy", "vocal", "lift", "word", "build", "duck", "drop", "emotion"]) {
         if (typeof value[key] === "number" && Number.isFinite(value[key])) {
           motion[key] = Math.max(0, Math.min(1.5, value[key]));
         }
+      }
+      if (typeof value.sway === "number" && Number.isFinite(value.sway)) {
+        motion.sway = Math.max(-1, Math.min(1, value.sway));
       }
       glow.beat(motion);
     }

@@ -3,6 +3,7 @@ const path = require("path");
 const { getJson } = require("./lyrics-service");
 
 const GENRE_RULES = [
+  ["jazz", /jazz|bebop|swing|bossa|big band/i],
   ["rap", /rap|hip.?hop|trap|drill|grime/i],
   ["rnb", /r\s?&\s?b|r&amp;b|rnb|soul|funk|neo/i],
   ["rock", /rock|metal|punk|grunge|emo|alternative|indie/i],
@@ -41,7 +42,15 @@ function createGenreService(app) {
 
   async function fetchGenre({ id, title, artist }) {
     const genresByTrack = load();
-    if (genresByTrack[id]) return genresByTrack[id];
+    if (genresByTrack[id]) {
+      const cached = genresByTrack[id];
+      const bucket = bucketFor(String(cached.raw || "").split(",").filter(Boolean));
+      if (bucket !== cached.bucket) {
+        genresByTrack[id] = { ...cached, bucket };
+        save();
+      }
+      return genresByTrack[id];
+    }
     let genres = [];
     try {
       const firstArtist = (artist || "").split(",")[0].trim();

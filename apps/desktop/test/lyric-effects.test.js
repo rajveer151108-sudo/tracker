@@ -34,3 +34,10 @@ test("emoji accents are semantic, spaced out and avoid immediate repeats", () =>
   assert.equal(effects.effectForWord("midnight").emoji, "🌙");
   assert.equal(effects.effectForWord("ordinary"), null);
 });
+
+test("expressive lyric lines carry more visual weight than filler", () => {
+  const powerful = effects.expressionForText("She cries to the heaven above");
+  const ordinary = effects.expressionForText("We got one coming up");
+  assert.ok(powerful >= 0.65);
+  assert.ok(powerful > ordinary + 0.5);
+});

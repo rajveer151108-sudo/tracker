@@ -286,6 +286,17 @@
     "hasnt hadnt yeah yea yep nah uh um oh ooh ah ayy ay yo hey huh hmm whoa woah la na da ba"
   ).split(/\s+/));
 
+  // Words that commonly carry emotional weight in a lyric. This is not used
+  // to alter the text; it only gives an expressive line more visual room when
+  // its audio is also swelling.
+  const POWER_WORDS = new Set((
+    "adore afraid alone angel angels anger anxious battle bleed bleeding blood broken burn burning " +
+    "cry cries cried crying danger dark darkness dead death desire devil die died dies dying dream dreams " +
+    "fear fears fire flame flames freedom goodbye heaven heavenly heartbreak heartbroken hope joy kill killed " +
+    "kiss lonely love loved lover magic pain passion peace pray prayer rage remember rise rising sad sadness " +
+    "scream soul spirit strong stronger strongest tears thunder truth war wild win world"
+  ).split(/\s+/));
+
   function cleanWord(text) {
     return String(text || "").normalize("NFKD").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
   }
@@ -298,6 +309,18 @@
 
   function effectForWord(text) {
     return EFFECTS[cleanWord(text)] || null;
+  }
+
+  function expressionForText(text) {
+    const words = String(text || "").split(/\s+/).map(cleanWord).filter(Boolean);
+    if (!words.length) return 0;
+    let power = 0, expressive = 0;
+    for (const word of words) {
+      if (POWER_WORDS.has(word)) power += 1;
+      else if (EFFECTS[word]) expressive += 1;
+    }
+    const punctuation = /[!?]/.test(String(text)) ? 0.12 : 0;
+    return Math.min(1, power * 0.34 + expressive * 0.08 + punctuation);
   }
 
   function isHighlightCandidate(text) {
@@ -340,5 +363,5 @@
     });
   }
 
-  return { cleanWord, decorateRows, effectForWord, isHighlightCandidate, selectHighlights };
+  return { cleanWord, decorateRows, effectForWord, expressionForText, isHighlightCandidate, selectHighlights };
 });

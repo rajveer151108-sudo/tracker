@@ -160,8 +160,9 @@
   .line.active { transform: scale(calc(1 + var(--pulse) * .028));
                  transition: color .4s, filter .4s, opacity .4s; }
   body.music-motion .line.active {
-    translate: 0 calc(var(--motion-lift) * var(--word-life) * -9px);
-    scale: calc(1 + var(--motion-energy) * .035 + var(--motion-vocal) * var(--word-life) * .025);
+    translate: calc(var(--motion-sway) * 7px) calc((var(--motion-lift) * var(--word-life) + var(--motion-emotion) * .7) * -9px);
+    scale: calc(1 + var(--motion-energy) * .03 + var(--motion-vocal) * var(--word-life) * .02 + var(--motion-build) * .025 + var(--motion-drop) * .075 + var(--motion-emotion) * .08);
+    opacity: calc(1 - var(--motion-duck) * .24);
   }
   /* "whole line" highlight (used for R&B): the line fades up as one piece, no per-word tracking */
   body[data-hl="whole"] .line.active .w { background: none; -webkit-background-clip: border-box; background-clip: border-box;
@@ -172,8 +173,15 @@
   .line.active .w { --p: 0%;
     background: linear-gradient(90deg, #fff var(--p), rgba(255,255,255,.3) var(--p));
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: brightness(calc(1 + var(--motion-lift) * var(--word-life) * .35))
-            drop-shadow(0 0 calc(10px + var(--pulse) * 10px + var(--motion-energy) * 18px) rgba(var(--glow), .85)); }
+    filter: brightness(calc(1 + var(--motion-lift) * var(--word-life) * .3 + var(--motion-build) * .18 + var(--motion-drop) * .7 + var(--motion-emotion) * .45 - var(--motion-duck) * .3))
+            drop-shadow(0 0 calc(10px + var(--pulse) * 8px + var(--motion-energy) * 14px + var(--motion-drop) * 28px + var(--motion-emotion) * 18px) rgba(var(--glow), .85)); }
+
+  body[data-genre="jazz"].music-motion .line.active {
+    rotate: calc(var(--motion-sway) * .7deg);
+    transition-timing-function: cubic-bezier(.25,.7,.3,1);
+  }
+  body[data-genre="rock"].music-motion .line.active { scale: calc(1 + var(--motion-energy) * .045 + var(--motion-drop) * .09); }
+  body[data-genre="rap"].music-motion .line.active { translate: calc(var(--motion-sway) * 3px) calc(var(--motion-drop) * -7px); }
   body.word-keywords[data-layout="wordstream"][data-motion="cube"] .line.keyword[data-d="0"] .w {
     padding: .08em .04em .2em; margin: -.08em -.04em -.2em; border-radius: 0;
     background: none; background-clip: border-box; -webkit-background-clip: border-box;

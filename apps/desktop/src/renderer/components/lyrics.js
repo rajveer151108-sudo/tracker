@@ -31,6 +31,7 @@
     pop:        { tour: 24, spin: 8,  lines: 500,  highlight: null,    beat: 1.0 },
     rock:       { tour: 20, spin: 6,  lines: 420,  highlight: null,    beat: 1.2 },
     electronic: { tour: 14, spin: 4,  lines: 380,  highlight: null,    beat: 1.3 },
+    jazz:       { tour: 42, spin: 20, lines: 900,  highlight: "whole", beat: 0.65 },
   };
   const DEFAULT_FEEL = { tour: 26, spin: 9, lines: 550, highlight: null, beat: 1.0 };
   let feel = DEFAULT_FEEL;
@@ -146,6 +147,9 @@
     lineEls = lines.map((l) => {
       const div = document.createElement("div");
       div.className = "line";
+      const expression = window.LyricEffects.expressionForText(l.text);
+      div.style.setProperty("--line-emotion", expression.toFixed(3));
+      div.dataset.expression = expression.toFixed(3);
       if (l.wordStream && l.tone) {
         div.classList.add("keyword");
         div.dataset.tone = l.tone;

@@ -1,7 +1,7 @@
 /* ---- backgrounds ---- */
   #backdrop { position: absolute; inset: 0; overflow: hidden; pointer-events: none; container-type: size;
               opacity: var(--bdop, .6); transform: scale(calc(1 + var(--pulse) * .05 + var(--motion-energy) * .018));
-              filter: brightness(calc(1 + var(--motion-energy) * .16)); }
+              filter: brightness(calc(1 + var(--motion-energy) * .16 + var(--motion-build) * .12 + var(--motion-drop) * .5 - var(--motion-duck) * .34)); }
   .bdw { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
   .bdw.in { opacity: 1; }
   .bd { position: absolute; inset: -25%; background-size: cover; background-position: center;
@@ -16,7 +16,7 @@
     to   { transform: scale(1.65) rotate(9deg)  translate(8%, 6%); }
   }
   #glow { position: absolute; inset: 0; pointer-events: none;
-          opacity: calc(.72 + var(--pulse) * .25 + var(--motion-energy) * .25 + var(--motion-lift) * .12);
+          opacity: calc(.62 + var(--pulse) * .2 + var(--motion-energy) * .22 + var(--motion-build) * .18 + var(--motion-drop) * .55 - var(--motion-duck) * .34 + var(--motion-lift) * .1);
           background:
             radial-gradient(ellipse 90% 55% at 50% 0%, rgba(var(--glow), .40), transparent 70%),
             radial-gradient(ellipse 90% 45% at 50% 100%, rgba(var(--glow), .28), transparent 70%); }

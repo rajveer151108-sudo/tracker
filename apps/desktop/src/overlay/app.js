@@ -8,6 +8,7 @@
   let curA = targetA.slice(), curB = targetB.slice();
   let style = "steady", thick = 1, strength = 1;
   let beatTarget = 0, beat = 0, energyTarget = 0, energy = 0, vocalTarget = 0, vocal = 0, liftTarget = 0, lift = 0, wordTarget = 0, word = 0;
+  let buildTarget = 0, build = 0, duckTarget = 0, duck = 0, dropTarget = 0, drop = 0, emotionTarget = 0, emotion = 0;
   let lastShadow = "", lastRing = "";
 
   function layout() {
@@ -35,6 +36,10 @@
     vocalTarget = Math.max(0, Math.min(1.5, motion?.vocal || 0));
     liftTarget = Math.max(0, Math.min(1.5, motion?.lift || 0));
     wordTarget = Math.max(0, Math.min(1, motion?.word || 0));
+    buildTarget = Math.max(0, Math.min(1.5, motion?.build || 0));
+    duckTarget = Math.max(0, Math.min(1.5, motion?.duck || 0));
+    dropTarget = Math.max(0, Math.min(1.5, motion?.drop || 0));
+    emotionTarget = Math.max(0, Math.min(1.5, motion?.emotion || 0));
   });
 
   function render() {
@@ -47,17 +52,23 @@
     vocal += (vocalTarget - vocal) * (vocalTarget > vocal ? 0.24 : 0.10);
     lift += (liftTarget - lift) * (liftTarget > lift ? 0.2 : 0.08);
     word += (wordTarget - word) * 0.22;
+    build += (buildTarget - build) * (buildTarget > build ? 0.16 : 0.08);
+    duck += (duckTarget - duck) * (duckTarget > duck ? 0.45 : 0.16);
+    drop += (dropTarget - drop) * (dropTarget > drop ? 0.65 : 0.18);
+    emotion += (emotionTarget - emotion) * (emotionTarget > emotion ? 0.18 : 0.08);
     const A = curA.map(Math.round).join(", "), B = curB.map(Math.round).join(", ");
 
     // soft inner glow (weaker when the moving light is on, so it stands out)
     const soft = style === "steady" ? 1 : 0.45;
     const phraseGlow = word * vocal;
-    const a1 = Math.min(1, (0.32 + 0.24 * energy + 0.20 * vocal + 0.25 * beat + 0.12 * lift + 0.14 * phraseGlow) * strength * soft).toFixed(2);
-    const a2 = Math.min(1, (0.14 + 0.18 * energy + 0.12 * vocal + 0.16 * beat + 0.10 * lift + 0.08 * phraseGlow) * strength * soft).toFixed(2);
-    const b1 = Math.round((58 + 34 * energy + 38 * beat + 24 * lift) * thick);
-    const s1 = Math.round((4 + 18 * energy + 22 * beat + 12 * vocal) * thick);
-    const b2 = Math.round((160 + 70 * energy + 70 * beat + 45 * lift) * thick);
-    const s2 = Math.round((22 + 34 * energy + 42 * beat + 24 * vocal) * thick);
+    const a1 = Math.max(0, Math.min(1, (0.28 + 0.2 * energy + 0.16 * vocal + 0.18 * beat + 0.1 * lift +
+      0.16 * build + 0.52 * drop + 0.2 * emotion + 0.12 * phraseGlow - 0.32 * duck) * strength * soft)).toFixed(2);
+    const a2 = Math.max(0, Math.min(1, (0.12 + 0.14 * energy + 0.09 * vocal + 0.12 * beat + 0.08 * lift +
+      0.1 * build + 0.34 * drop + 0.12 * emotion + 0.06 * phraseGlow - 0.2 * duck) * strength * soft)).toFixed(2);
+    const b1 = Math.round((58 + 28 * energy + 32 * beat + 18 * lift + 28 * build + 72 * drop + 24 * emotion) * thick);
+    const s1 = Math.round((4 + 14 * energy + 18 * beat + 10 * vocal + 18 * build + 46 * drop + 18 * emotion) * thick);
+    const b2 = Math.round((150 + 58 * energy + 58 * beat + 36 * lift + 42 * build + 120 * drop + 42 * emotion) * thick);
+    const s2 = Math.round((20 + 28 * energy + 34 * beat + 20 * vocal + 28 * build + 72 * drop + 28 * emotion) * thick);
     const shadow = "inset 0 0 " + b1 + "px " + s1 + "px rgba(" + A + ", " + a1 + "), " +
                    "inset 0 0 " + b2 + "px " + s2 + "px rgba(" + B + ", " + a2 + ")";
     if (shadow !== lastShadow) { lastShadow = shadow; glowbox.style.boxShadow = shadow; }
@@ -67,7 +78,8 @@
         ? "conic-gradient(rgba(" + B + ",0) 0deg, rgba(" + B + ",0) 190deg, rgba(" + B + ",.9) 300deg, rgba(" + A + ",1) 352deg, rgba(" + A + ",0) 360deg)"
         : "conic-gradient(rgba(" + A + ",1), rgba(" + B + ",1) 50%, rgba(" + A + ",1))";
       if (grad !== lastRing) { lastRing = grad; spin.style.background = grad; }
-      ringwrap.style.opacity = Math.min(1, (0.45 + 0.26 * energy + 0.22 * beat + 0.12 * lift) * Math.min(1.2, strength)).toFixed(2);
+      ringwrap.style.opacity = Math.max(0, Math.min(1, (0.38 + 0.2 * energy + 0.16 * beat + 0.1 * lift +
+        0.18 * build + 0.55 * drop + 0.16 * emotion - 0.3 * duck) * Math.min(1.2, strength))).toFixed(2);
       const baseSpeed = style === "comet" ? 5 : 9;
       spin.style.animationDuration = Math.max(2.4, baseSpeed - energy * 1.8 - lift * 1.4 - beat) + "s";
     }
