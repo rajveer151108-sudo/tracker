@@ -4,7 +4,10 @@ const CLIENT_TOKEN_ENDPOINT = "https://clienttoken.spotify.com/v1/clienttoken";
 const WEB_PLAYER_CLIENT_ID = "d8a5ed958d274c2e8ee717e6a4b0971d";
 const CANVAS_QUERY_HASH = "575138ab27cd5c1b3e54da54d0a7cc8d85485402de26340c2145f0f6bb5e7a9f";
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
+const STREAM_HOST = "video-cf.spotifycdn.com";
+const STREAM_PATH_RE = /^\/segments\/v1\/origins\/[a-f0-9]{32}\/sources\/[a-f0-9]{32}\/encodings\/[a-f0-9]{32}\/profiles\/(\d+)\/(?:inits\/webm|\d+\.webm)$/i;
 let clientTokenCache = null;
+const canvasDebug = (...args) => { if (process.env.AFTERGLOW_CANVAS_DEBUG) console.error("[canvas]", ...args); };
 
 function validCanvasUrl(value) {
   try {
@@ -55,6 +58,136 @@ function findCachedSpotifyCanvas(trackUri, roots) {
     }
   }
   return "";
+}
+
+function browserCacheFiles(root) {
+  const fs = require("fs");
+  let entries;
+  try { entries = fs.readdirSync(root, { withFileTypes: true }); } catch { return []; }
+  return entries.flatMap((entry) => {
+    if (!entry.isFile() || entry.name === "index") return [];
+    const file = require("path").join(root, entry.name);
+    try {
+      const stat = fs.statSync(file);
+      return stat.size <= 10 * 1024 * 1024 ? [{ file, mtime: stat.mtimeMs }] : [];
+    } catch {
+      return [];
+    }
+  }).sort((a, b) => b.mtime - a.mtime).slice(0, 180);
+}
+
+function validStreamUrl(value) {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" || parsed.hostname !== STREAM_HOST || !STREAM_PATH_RE.test(parsed.pathname)) return "";
+    if (!parsed.searchParams.has("fauth") || !parsed.searchParams.has("token_ak") || !parsed.searchParams.has("token_cf")) return "";
+    return parsed.href;
+  } catch {
+    return "";
+  }
+}
+
+function streamDescriptor(url) {
+  const parsed = new URL(url);
+  const match = parsed.pathname.match(STREAM_PATH_RE);
+  if (!match) return null;
+  const prefix = parsed.pathname.replace(/\/profiles\/\d+\/.*$/, "");
+  return {
+    prefix,
+    profile: Number(match[1]),
+    query: parsed.search,
+    key: prefix,
+  };
+}
+
+function findCachedSpotifyStream(trackUri, root) {
+  if (!TRACK_URI_RE.test(String(trackUri || ""))) return null;
+  const fs = require("fs");
+  const trackId = Buffer.from(trackUri.slice("spotify:track:".length));
+  const files = browserCacheFiles(root);
+  let trackTime = 0;
+  const streams = [];
+  for (const entry of files) {
+    let data;
+    try { data = fs.readFileSync(entry.file); } catch { continue; }
+    if (data.indexOf(trackId) >= 0) trackTime = Math.max(trackTime, entry.mtime);
+    const text = data.toString("latin1");
+    const matches = text.match(/https:\/\/video-cf\.spotifycdn\.com\/[\x21-\x7e]+/g) || [];
+    for (const candidate of matches) {
+      const safe = validStreamUrl(candidate);
+      const descriptor = safe && streamDescriptor(safe);
+      if (descriptor) streams.push({ ...descriptor, mtime: entry.mtime });
+    }
+  }
+  if (!trackTime || !streams.length) return null;
+  const near = streams.filter((entry) => Math.abs(entry.mtime - trackTime) <= 45_000);
+  if (!near.length) return null;
+  near.sort((a, b) => {
+    const delta = Math.abs(a.mtime - trackTime) - Math.abs(b.mtime - trackTime);
+    if (delta) return delta;
+    const preference = (value) => value === 2 ? 0 : value === 1 ? 1 : 2;
+    return preference(a.profile) - preference(b.profile);
+  });
+  const nearestKey = near[0].key;
+  const sameStream = near.filter((entry) => entry.key === nearestKey);
+  const preferred = sameStream.find((entry) => entry.profile === 2)
+    || sameStream.find((entry) => entry.profile === 1)
+    || sameStream[0];
+  return preferred ? { prefix: preferred.prefix, profile: preferred.profile, query: preferred.query } : null;
+}
+
+async function fetchWebmPart(url, fetchImpl) {
+  const response = await fetchImpl(url, { signal: AbortSignal.timeout(15_000) });
+  canvasDebug("stream part", new URL(url).pathname.split("/").slice(-2).join("/"), response.status);
+  if (!response.ok) return null;
+  const type = String(response.headers?.get?.("content-type") || "").toLowerCase();
+  if (type && !type.includes("video/webm") && !type.includes("application/octet-stream")) return null;
+  return Buffer.from(await response.arrayBuffer());
+}
+
+async function materializeSpotifyStreamCanvas(trackUri, browserRoot, outputRoot, fetchImpl = fetch) {
+  if (!TRACK_URI_RE.test(String(trackUri || ""))) return "";
+  const fs = require("fs");
+  const path = require("path");
+  const { pathToFileURL } = require("url");
+  const trackId = trackUri.slice("spotify:track:".length);
+  const output = path.join(outputRoot, `${trackId}.webm`);
+  try {
+    if (fs.statSync(output).size > 4096) return pathToFileURL(output).href;
+  } catch {}
+  const stream = findCachedSpotifyStream(trackUri, browserRoot);
+  if (!stream) {
+    canvasDebug("no matching stream cache entry", trackId);
+    return "";
+  }
+  const base = `https://${STREAM_HOST}${stream.prefix}/profiles/${stream.profile}`;
+  const initUrl = validStreamUrl(`${base}/inits/webm${stream.query}`);
+  if (!initUrl) {
+    canvasDebug("invalid init URL", trackId);
+    return "";
+  }
+  const parts = [];
+  try {
+    const init = await fetchWebmPart(initUrl, fetchImpl);
+    if (!init) return "";
+    parts.push(init);
+    for (let second = 0; second <= 60; second += 4) {
+      const segmentUrl = validStreamUrl(`${base}/${second}.webm${stream.query}`);
+      if (!segmentUrl) return "";
+      const segment = await fetchWebmPart(segmentUrl, fetchImpl);
+      if (!segment) break;
+      parts.push(segment);
+    }
+    if (parts.length < 2) return "";
+    fs.mkdirSync(outputRoot, { recursive: true, mode: 0o700 });
+    const temporary = `${output}.${process.pid}.tmp`;
+    fs.writeFileSync(temporary, Buffer.concat(parts), { mode: 0o600 });
+    fs.renameSync(temporary, output);
+    return pathToFileURL(output).href;
+  } catch (error) {
+    canvasDebug("stream assembly failed", error?.message || error);
+    return "";
+  }
 }
 
 function encodeVarint(value) {
@@ -220,4 +353,11 @@ async function fetchSpotifyCanvas(trackUri, accessToken, fetchImpl = fetch) {
   }
 }
 
-module.exports = { encodeCanvasRequest, decodeCanvasResponse, findCachedSpotifyCanvas, fetchSpotifyCanvas };
+module.exports = {
+  encodeCanvasRequest,
+  decodeCanvasResponse,
+  findCachedSpotifyCanvas,
+  findCachedSpotifyStream,
+  materializeSpotifyStreamCanvas,
+  fetchSpotifyCanvas,
+};

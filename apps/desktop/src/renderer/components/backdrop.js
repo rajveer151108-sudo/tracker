@@ -137,15 +137,20 @@
     backdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart");
     revealBackdrop(wrap, old);
     if (settings.backdropStyle !== "canvas" || !trackUri || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    window.tracker.spotifyCanvas(trackUri).then((result) => {
-      if (request !== backdropRequest || settings.backdropStyle !== "canvas" || !result?.ok || !result.url) return;
+    const loadCanvas = (attempt = 0) => window.tracker.spotifyCanvas(trackUri).then((result) => {
+      if (request !== backdropRequest || settings.backdropStyle !== "canvas") return;
+      if (!result?.ok || !result.url) {
+        if (attempt < 4) setTimeout(() => loadCanvas(attempt + 1), 1800 * (attempt + 1));
+        return;
+      }
       const videoWrap = document.createElement("div"),video = document.createElement("video");
       videoWrap.className = "bdw canvasWrap";video.className = "canvasVideo";video.src = result.url;video.autoplay = true;video.loop = true;video.muted = true;video.playsInline = true;video.preload = "auto";video.disablePictureInPicture = true;videoWrap.appendChild(video);box.appendChild(videoWrap);
       const fail = () => videoWrap.remove();
       video.addEventListener("error",fail,{once:true});
       video.addEventListener("canplay",()=>{if(request!==backdropRequest||settings.backdropStyle!=="canvas")return fail();revealBackdrop(videoWrap,[...box.children].filter(element=>element!==videoWrap));video.play().catch(fail);},{once:true});
       video.load();
-    }).catch(()=>{});
+    }).catch(()=>{if(request===backdropRequest&&attempt<4)setTimeout(()=>loadCanvas(attempt+1),1800*(attempt+1));});
+    loadCanvas();
   }
 
 

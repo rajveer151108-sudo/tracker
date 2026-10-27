@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const http = require("http");
 const crypto = require("crypto");
-const { findCachedSpotifyCanvas, fetchSpotifyCanvas } = require("./spotify-canvas");
+const { findCachedSpotifyCanvas, materializeSpotifyStreamCanvas, fetchSpotifyCanvas } = require("./spotify-canvas");
 
 const CLIENT_ID = "6b5feb739f1540f58d5a82acf5ebf724";
 const PORT = 8888;
@@ -178,6 +178,9 @@ function createSpotifyLibrary({ app, safeStorage, shell, isSpotifyUri }) {
     const cacheRoot = path.join(app.getPath("home"), "Library", "Application Support", "Spotify", "PersistentCache", "Users");
     const cached = findCachedSpotifyCanvas(trackUri, cacheRoot);
     if (cached) return { ok: true, url: cached, source: "spotify-cache" };
+    const browserRoot = path.join(app.getPath("home"), "Library", "Caches", "com.spotify.client", "Browser", "Cache", "Cache_Data");
+    const local = await materializeSpotifyStreamCanvas(trackUri, browserRoot, path.join(app.getPath("userData"), "canvas-cache"));
+    if (local) return { ok: true, url: local, source: "spotify-stream-cache" };
     const token = await getToken();
     return fetchSpotifyCanvas(trackUri, token);
   }
