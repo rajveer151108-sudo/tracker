@@ -113,12 +113,15 @@
   function updateTimingInfo() {
     $("estimate").textContent = timingInfo
       ? timingInfo + (settings.lyricsLayout === "wordstream" ? " \u00b7 Word stream"
+        : settings.lyricsLayout === "wordstack" ? " \u00b7 Word stack"
         : settings.lyricsLayout === "stack" ? " \u00b7 Lyric stack" : "")
       : "";
   }
 
   function rebuildLyricsLayout() {
-    lines = settings.lyricsLayout === "wordstream" ? wordStreamRows(sourceLines) : sourceLines;
+    lines = settings.lyricsLayout === "wordstream" || settings.lyricsLayout === "wordstack"
+      ? wordStreamRows(sourceLines)
+      : sourceLines;
     buildLines();
     updateTimingInfo();
   }

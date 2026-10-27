@@ -26,7 +26,7 @@
         activeIdx = idx;
         prevActive = idx;
         document.body.classList.toggle("lyrics-waiting", idx < 0);
-        const stackLayout = settings.lyricsLayout === "stack";
+        const stackLayout = settings.lyricsLayout === "stack" || settings.lyricsLayout === "wordstack";
         const stackLines = Math.max(2, Math.min(6, Number(settings.lyricsHistoryLines) || 4));
         lineEls.forEach((el, i) => {
           el.classList.toggle("active", i === idx);
@@ -36,7 +36,7 @@
         });
         clearFit();
         const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
-        if (settings.lyricsLayout === "wordstream" && idx >= 0) {
+        if ((settings.lyricsLayout === "wordstream" || settings.lyricsLayout === "wordstack") && idx >= 0) {
           const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
           const motion = settings.lyricsMotion || "slide";
           const factor = motion === "cube" ? 900 : motion === "glide" ? 850 : motion === "slide" ? 700 : 450;
