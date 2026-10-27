@@ -11,6 +11,13 @@
   .alb { --S: max(100cqw, 100cqh); --ex: calc((var(--S) - 100cqw) / 2); --ey: calc((var(--S) - 100cqh) / 2);
          position: absolute; left: 50%; top: 50%; width: var(--S); height: var(--S); translate: -50% -50%;
          background-size: cover; background-position: center; will-change: transform; }
+  .canvasWrap { overflow: hidden; background: #08080b; }
+  .canvasWrap:after { content: ""; position: absolute; inset: 0; pointer-events: none;
+                      background: linear-gradient(180deg, rgba(5,5,9,.12), rgba(5,5,9,.3)),
+                                  radial-gradient(ellipse at center, transparent 25%, rgba(5,5,9,.3) 100%); }
+  .canvasVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+                 filter: saturate(1.08) contrast(1.03); transform: scale(1.015); }
+  body[data-performance="battery"] .canvasVideo { filter: saturate(1.02); }
   @keyframes drift {
     from { transform: scale(1.3)  rotate(-6deg) translate(-8%, -5%); }
     to   { transform: scale(1.65) rotate(9deg)  translate(8%, 6%); }

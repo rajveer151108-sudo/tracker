@@ -377,6 +377,8 @@
     try {
       const np = await window.tracker.nowPlaying();
       if (np.state === "playing" || np.state === "paused") {
+        const nextTrackId = currentTrackKey(np);
+        const trackChanged = nextTrackId !== trackId;
         window.tracker.observeForTracker(np);
         $("title").textContent = np.title;
         $("artist").textContent = np.artist;
@@ -384,8 +386,8 @@
         if (np.artwork && $("cover").getAttribute("src") !== np.artwork) {
           $("cover").src = np.artwork;
           lastArtwork = np.artwork;
-          if (settings.backdrop) setBackdrop(np.artwork);
         }
+        if (settings.backdrop && np.artwork && (trackChanged || !$("backdrop").children.length)) setBackdrop(np.artwork, np.uri || np.id);
         durSec = np.durationMs / 1000;
         if (!seeking) {
           posSec = np.positionSec;
@@ -394,7 +396,6 @@
         playing = np.state === "playing";
         sendActive(playing);
         $("dur").textContent = fmt(durSec);
-        const nextTrackId = currentTrackKey(np);
         if (nextTrackId !== trackId) {
           window.tracker.historyAdd({ uri: np.id, name: np.title, artist: np.artist, album: np.album, img: np.artwork });
           loadTrack(np);

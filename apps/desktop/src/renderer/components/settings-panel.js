@@ -39,8 +39,8 @@
     { type: "heading", label: "Background" },
     { key: "backdrop", label: "Show background", type: "toggle" },
     { key: "backdropStyle", label: "Style", type: "choice",
-      hint: "Album tour shows the cover sharp and moves around its artwork.",
-      options: [["blur", "Blurred"], ["album", "Album tour"]] },
+      hint: "Canvas uses Spotify's looping visual when available and falls back to Album tour.",
+      options: [["blur", "Blurred"], ["album", "Album tour"], ["canvas", "Canvas"]] },
     { key: "backdropTourFocus", label: "Album tour focus", type: "choice",
       hint: "Smart artwork finds detailed, colourful areas automatically. Center stage stays near the middle; Classic corners keeps the original route.",
       options: [["smart", "Smart artwork"], ["center", "Center stage"], ["corners", "Classic corners"]] },
@@ -194,7 +194,7 @@
     $("backdrop").style.display = settings.backdrop ? "" : "none";
     root.style.setProperty("--bdop", String((settings.backdropOpacity == null ? 60 : settings.backdropOpacity) / 100));
     const wantedBackdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart");
-    if (settings.backdrop && lastArtwork && (!$("backdrop").children.length || backdropKey !== wantedBackdropKey)) setBackdrop(lastArtwork);
+    if (settings.backdrop && lastArtwork && (!$("backdrop").children.length || backdropKey !== wantedBackdropKey)) setBackdrop(lastArtwork, lastBackdropTrackUri);
     const backdropZoomChanged = appliedBackdropZoom !== null && appliedBackdropZoom !== settings.backdropTourZoom;
     appliedBackdropZoom = settings.backdropTourZoom;
     if (backdropZoomChanged && settings.backdropStyle === "album" && typeof refreshAlbumTours === "function") refreshAlbumTours();

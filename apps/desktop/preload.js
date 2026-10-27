@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("tracker", {
   spLogout: () => ipcRenderer.invoke("sp-logout"),
   spStatus: () => ipcRenderer.invoke("sp-status"),
   spApi: (p) => ipcRenderer.invoke("sp-api", p),
+  spotifyCanvas: (trackUri) => ipcRenderer.invoke("spotify-canvas", trackUri),
   connectTracker: (session) => ipcRenderer.invoke("tracker-connect", session),
   disconnectTracker: () => ipcRenderer.invoke("tracker-disconnect"),
   trackerSyncStatus: () => ipcRenderer.invoke("tracker-sync-status"),

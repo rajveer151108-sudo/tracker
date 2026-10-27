@@ -119,6 +119,7 @@ function registerIpc() {
   ipcMain.handle("sp-logout", spotifyLibrary.logout);
   ipcMain.handle("sp-status", spotifyLibrary.status);
   ipcMain.handle("sp-api", (_event, requestPath) => spotifyLibrary.api(requestPath));
+  ipcMain.handle("spotify-canvas", (_event, trackUri) => spotifyLibrary.canvas(trackUri));
   ipcMain.handle("tracker-connect", (_event, trackerSession) => trackerSync.connect(trackerSession));
   ipcMain.handle("tracker-disconnect", trackerSync.disconnect);
   ipcMain.handle("tracker-sync-status", trackerSync.status);

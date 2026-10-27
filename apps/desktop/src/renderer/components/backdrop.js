@@ -2,7 +2,9 @@
   // Backdrop (blurred album art that cross-fades between songs)
   // =====================================================================
   let lastArtwork = null;
+  let lastBackdropTrackUri = "";
   let backdropKey = null;
+  let backdropRequest = 0;
   let albumTourSeconds = 26;
 
   const TOUR_ROUTES = {
@@ -100,28 +102,50 @@
     }, 120);
   });
 
-  function setBackdrop(url) {
+  function revealBackdrop(wrap, old) {
+    requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add("in")));
+    setTimeout(() => old.forEach((element) => element !== wrap && element.remove()), 1600);
+  }
+
+  function makeAlbumLayer(url, wrap) {
+    const album = document.createElement("div");
+    album.className = "alb";
+    album.style.backgroundImage = 'url("' + String(url).replace(/"/g, "%22") + '")';
+    wrap.appendChild(album);
+    analyseAlbum(url, album);
+    return album;
+  }
+
+  function setBackdrop(url, trackUri = lastBackdropTrackUri) {
     const box = $("backdrop");
     const old = [...box.children];
     const u = 'url("' + String(url).replace(/"/g, "%22") + '")';
     const wrap = document.createElement("div");
     wrap.className = "bdw";
+    const request = ++backdropRequest;
+    if (trackUri) lastBackdropTrackUri = trackUri;
     let albumLayer = null;
-    if (settings.backdropStyle === "album") {
-      const alb = document.createElement("div");
-      alb.className = "alb"; alb.style.backgroundImage = u;
-      wrap.appendChild(alb);
-      albumLayer = alb;
+    if (settings.backdropStyle === "album" || settings.backdropStyle === "canvas") {
+      albumLayer = makeAlbumLayer(url, wrap);
+      if (settings.backdropStyle === "canvas") wrap.classList.add("canvasFallback");
     } else {
       const blur = document.createElement("div");
       blur.className = "bd"; blur.style.backgroundImage = u;
       wrap.appendChild(blur);
     }
     box.appendChild(wrap);
-    if (albumLayer) analyseAlbum(url, albumLayer);
     backdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart");
-    requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add("in")));
-    setTimeout(() => old.forEach((o) => o.remove()), 1600);
+    revealBackdrop(wrap, old);
+    if (settings.backdropStyle !== "canvas" || !trackUri || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    window.tracker.spotifyCanvas(trackUri).then((result) => {
+      if (request !== backdropRequest || settings.backdropStyle !== "canvas" || !result?.ok || !result.url) return;
+      const videoWrap = document.createElement("div"),video = document.createElement("video");
+      videoWrap.className = "bdw canvasWrap";video.className = "canvasVideo";video.src = result.url;video.autoplay = true;video.loop = true;video.muted = true;video.playsInline = true;video.preload = "auto";video.disablePictureInPicture = true;videoWrap.appendChild(video);box.appendChild(videoWrap);
+      const fail = () => videoWrap.remove();
+      video.addEventListener("error",fail,{once:true});
+      video.addEventListener("canplay",()=>{if(request!==backdropRequest||settings.backdropStyle!=="canvas")return fail();revealBackdrop(videoWrap,[...box.children].filter(element=>element!==videoWrap));video.play().catch(fail);},{once:true});
+      video.load();
+    }).catch(()=>{});
   }
 
 
