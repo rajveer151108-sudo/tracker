@@ -1,7 +1,7 @@
 // =====================================================================
   // Library: your playlists, liked songs, recent plays, search, play history
   // =====================================================================
-  const lib = { tab: "playlists", connected: false, detail: null, searchText: "", rid: 0 };
+  const lib = { tab: "playlists", connected: false, writeAccess: false, detail: null, searchText: "", rid: 0 };
   const TABS = [["playlists", "Playlists"], ["liked", "Liked"], ["recent", "Recent"], ["search", "Search"], ["history", "History"], ["account", "Account"]];
 
   function mk(tag, cls, text) {
@@ -20,7 +20,7 @@
   }
 
   async function playFromLibrary(uri, ctx, label) {
-    const r = await window.tracker.playUri(uri, ctx || null);
+    const r = await playSpotifyUri(uri, ctx || null);
     showToast(r && r.ok ? "Playing" + (label ? ": " + label : "") : "Couldn't play: " + ((r && r.error) || "unknown error"));
     setTimeout(poll, 600);
   }
@@ -76,7 +76,7 @@
   async function renderTrackList(body, rid, path, what, dedupe) {
     if (!lib.connected) return needConnect(body);
     body.appendChild(mk("div", "hintline", "Loading " + what + "\u2026"));
-    const res = await window.tracker.spApi(path);
+    const res = await spotifyPaged(path);
     if (rid !== lib.rid) return;
     body.innerHTML = "";
     if (!res.ok) return showApiError(body, what, res);
@@ -95,7 +95,7 @@
     if (!lib.connected) return needConnect(body);
     if (lib.detail) return renderPlaylistDetail(body, rid);
     body.appendChild(mk("div", "hintline", "Loading your playlists\u2026"));
-    const res = await window.tracker.spApi("/me/playlists?limit=50");
+    const res = await spotifyPaged("/me/playlists?limit=50");
     if (rid !== lib.rid) return;
     body.innerHTML = "";
     if (!res.ok) return showApiError(body, "your playlists", res, "You can still play a playlist by pasting its link in the Search tab.");
@@ -123,8 +123,8 @@
     body.appendChild(top);
     const holder = mk("div"); body.appendChild(holder);
     holder.appendChild(mk("div", "hintline", "Loading songs\u2026"));
-    let res = await window.tracker.spApi("/playlists/" + p.id + "/items?limit=100");
-    if (!res.ok && (res.status === 404 || res.status === 400)) res = await window.tracker.spApi("/playlists/" + p.id + "/tracks?limit=100");
+    let res = await spotifyPaged("/playlists/" + p.id + "/items?limit=100");
+    if (!res.ok && (res.status === 404 || res.status === 400)) res = await spotifyPaged("/playlists/" + p.id + "/tracks?limit=100");
     if (rid !== lib.rid) return;
     holder.innerHTML = "";
     if (!res.ok) {
@@ -221,18 +221,21 @@
 
   function renderAccount(body) {
     body.appendChild(mk("div", "hintline", lib.connected
-      ? "Spotify is connected. Your login stays on this Mac."
+      ? (lib.writeAccess ? "Spotify is connected with library and playback controls." : "Spotify is connected for reading. Reconnect once to enable queue, likes, playlists and focus-safe playback.")
       : "Connect your Spotify account so the app can list your playlists and search. Playing songs works without it."));
-    const btn = mk("button", "btn primary", lib.connected ? "Disconnect" : "Connect Spotify");
+    const btn = mk("button", "btn primary", lib.connected ? (lib.writeAccess ? "Reconnect Spotify" : "Enable music controls") : "Connect Spotify");
     btn.addEventListener("click", async () => {
-      if (lib.connected) { await window.tracker.spLogout(); showToast("Disconnected"); renderLibrary(); return; }
       btn.disabled = true; btn.textContent = "Waiting for your browser\u2026";
       const r = await window.tracker.spLogin();
       showToast(r.ok ? "Connected" : "Login failed: " + (r.error || ""));
+      if (r.ok && typeof refreshArcadeHome === "function") refreshArcadeHome(true);
       renderLibrary();
     });
     body.appendChild(btn);
     if (lib.connected) {
+      const disconnect = mk("button", "btn", "Disconnect");
+      disconnect.addEventListener("click", async () => { await window.tracker.spLogout(); showToast("Disconnected"); if (typeof refreshArcadeHome === "function") refreshArcadeHome(true); renderLibrary(); });
+      body.appendChild(disconnect);
       body.appendChild(mk("div", "secTitle", "Check what Spotify lets this app do"));
       const out = mk("pre", "testOut", "Press the button to test.");
       const t = mk("button", "btn", "Run API test");
@@ -246,6 +249,7 @@
     const st = await window.tracker.spStatus();
     if (rid !== lib.rid) return;
     lib.connected = !!st.connected;
+    lib.writeAccess = !!st.writeAccess;
     [...$("tabs").children].forEach((b) => b.classList.toggle("active", b.dataset.tab === lib.tab));
     const body = $("libBody");
     body.innerHTML = "";

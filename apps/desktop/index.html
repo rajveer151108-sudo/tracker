@@ -45,12 +45,19 @@
       <div class="homeLayout">
         <aside class="homeRoster">
           <div class="homeSectionTitle"><span id="homeRosterKicker">GAME LIBRARY</span><h1 id="homeRosterTitle">Choose a song</h1><small id="homeRosterMeta">Recently played</small></div>
+          <div class="homeQuickActions" aria-label="Collection shortcuts">
+            <button id="homeLikedShortcut" class="homeLikedShortcut" type="button">♥ LIKED</button>
+            <button id="homePlayCollection" type="button" title="Play this collection">▶ PLAY</button>
+            <button id="homeShuffleCollection" type="button" title="Shuffle this collection">⤨ SHUFFLE</button>
+          </div>
+          <label class="homeSongSearch"><span aria-hidden="true">⌕</span><input id="homeSongSearch" type="search" placeholder="Filter this collection" autocomplete="off" spellcheck="false" aria-label="Filter songs in this collection" /><kbd>FILTER</kbd></label>
           <div id="arcadeRecent" class="homeSongList"><div class="homeLoading">INSERTING COIN…</div></div>
           <button class="homeTextButton" id="arcadeLibraryBtn">OPEN FULL LIBRARY</button>
         </aside>
         <section id="arcadeNow" class="homeHero" aria-live="polite"></section>
         <aside class="homeCollections">
-          <div class="homeSectionTitle"><span id="homeCollectionsKicker">LIBRARY CONTROL</span><h2 id="homeCollectionsTitle">Choose a collection</h2><small id="homeCollectionsMeta">Liked Songs, Blends and playlists load their games on the left.</small></div>
+          <div class="homeSectionTitle"><span id="homeCollectionsKicker">LIBRARY CONTROL</span><h2 id="homeCollectionsTitle">Browse your library</h2><small id="homeCollectionsMeta">Search songs and playlists, or choose a collection.</small></div>
+          <label class="homeSongSearch homeLibrarySearch"><span aria-hidden="true">⌕</span><input id="homeLibrarySearch" type="search" placeholder="Search songs & playlists" autocomplete="off" spellcheck="false" aria-label="Search Spotify songs and playlists" /><kbd>/</kbd></label>
           <div id="arcadeCollections" class="homeCollectionList"><div class="homeLoading">LOADING COLLECTIONS…</div></div>
         </aside>
       </div>
@@ -99,6 +106,7 @@
     <webview id="trackerView" data-src="https://rajveer151108-sudo.github.io/tracker/" partition="persist:afterglow-tracker" webpreferences="contextIsolation=yes, nodeIntegration=no, sandbox=yes"></webview>
   </div>
   <div id="toast"></div>
+  <div id="homeTrackMenu" class="homeTrackMenu" aria-hidden="true"></div>
 
   <div id="settings">
     <h2>Settings</h2>

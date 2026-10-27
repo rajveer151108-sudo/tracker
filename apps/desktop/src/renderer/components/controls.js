@@ -88,6 +88,13 @@
       else if (document.body.classList.contains("immersive")) window.tracker.toggleFullscreen();
       return;
     }
+    if (e.key === "/" && document.body.dataset.view === "home") {
+      e.preventDefault();
+      const search = $("homeLibrarySearch");
+      search?.focus();
+      search?.select();
+      return;
+    }
     if (e.target && e.target.tagName === "INPUT") return;      // don't hijack keys while using a slider
     if (e.key === " ") { e.preventDefault(); control("playpause"); return; }
     if (e.key === "f" || e.key === "F") { window.tracker.toggleFullscreen(); return; }

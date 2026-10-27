@@ -13,7 +13,12 @@ const SCOPES = [
   "user-library-read",
   "user-read-recently-played",
   "user-read-playback-state",
+  "user-modify-playback-state",
+  "user-library-modify",
+  "playlist-modify-private",
+  "playlist-modify-public",
 ].join(" ");
+const WRITE_SCOPES = ["user-modify-playback-state", "user-library-modify", "playlist-modify-private", "playlist-modify-public"];
 
 const ALLOWED_PATHS = [
   /^\/me(\?|$)/,
@@ -26,6 +31,40 @@ const ALLOWED_PATHS = [
 ];
 
 const base64Url = (buffer) => buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+function normaliseApiRequest(input, isSpotifyUri) {
+  const request = typeof input === "string" ? { path: input } : input;
+  const requestPath = request?.path;
+  const method = String(request?.method || "GET").toUpperCase();
+  if (typeof requestPath !== "string" || !requestPath.startsWith("/") || requestPath.startsWith("//")) return null;
+  if (method === "GET" && ALLOWED_PATHS.some((pattern) => pattern.test(requestPath))) return { path: requestPath, method, body: null };
+  const parsed = new URL(requestPath, "https://api.spotify.com");
+  if (method === "POST" && parsed.pathname === "/me/player/queue") {
+    return isSpotifyUri(parsed.searchParams.get("uri")) ? { path: requestPath, method, body: null } : null;
+  }
+  if (method === "PUT" && parsed.pathname === "/me/library") {
+    const uris = String(parsed.searchParams.get("uris") || "").split(",").filter(Boolean);
+    return uris.length > 0 && uris.length <= 40 && uris.every(isSpotifyUri) ? { path: requestPath, method, body: null } : null;
+  }
+  if (method === "PUT" && parsed.pathname === "/me/player/play") {
+    const body = request?.body || {};
+    const validUris = Array.isArray(body.uris) && body.uris.length > 0 && body.uris.length <= 100 && body.uris.every(isSpotifyUri);
+    const validContext = isSpotifyUri(body.context_uri) && (!body.offset?.uri || isSpotifyUri(body.offset.uri));
+    if (!validUris && !validContext) return null;
+    return { path: requestPath, method, body: validContext ? { context_uri: body.context_uri, offset: body.offset } : { uris: body.uris } };
+  }
+  if (method === "PUT" && parsed.pathname === "/me/player/shuffle") {
+    const state = parsed.searchParams.get("state");
+    return state === "true" || state === "false" ? { path: requestPath, method, body: null } : null;
+  }
+  const playlist = parsed.pathname.match(/^\/playlists\/([A-Za-z0-9]+)\/items$/);
+  if (method === "POST" && playlist) {
+    const uris = request?.body?.uris;
+    if (!Array.isArray(uris) || !uris.length || uris.length > 100 || !uris.every(isSpotifyUri)) return null;
+    return { path: requestPath, method, body: { uris } };
+  }
+  return null;
+}
 
 function createSpotifyLibrary({ app, safeStorage, shell, isSpotifyUri }) {
   const authFile = () => path.join(app.getPath("userData"), "spotify-auth.json");
@@ -70,6 +109,7 @@ function createSpotifyLibrary({ app, safeStorage, shell, isSpotifyUri }) {
     return {
       access: data.access_token,
       refresh: data.refresh_token || auth?.refresh || null,
+      scope: data.scope || auth?.scope || "",
       expiresAt: Date.now() + Math.max(60, (data.expires_in || 3600) - 30) * 1000,
     };
   }
@@ -156,15 +196,18 @@ function createSpotifyLibrary({ app, safeStorage, shell, isSpotifyUri }) {
     });
   }
 
-  async function api(requestPath) {
-    if (typeof requestPath !== "string" || !ALLOWED_PATHS.some((pattern) => pattern.test(requestPath))) {
+  async function api(input) {
+    const request = normaliseApiRequest(input, isSpotifyUri);
+    if (!request) {
       return { ok: false, status: 0, error: "Blocked request" };
     }
     try {
       const token = await getToken();
       if (!token) return { ok: false, status: 401, error: "Not connected" };
-      const response = await fetch(`https://api.spotify.com/v1${requestPath}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(`https://api.spotify.com/v1${request.path}`, {
+        method: request.method,
+        headers: { Authorization: `Bearer ${token}`, ...(request.body ? { "Content-Type": "application/json" } : {}) },
+        ...(request.body ? { body: JSON.stringify(request.body) } : {}),
       });
       const data = await response.json().catch(() => null);
       const error = response.ok ? null : data?.error?.message || data?.error || `HTTP ${response.status}`;
@@ -219,7 +262,10 @@ function createSpotifyLibrary({ app, safeStorage, shell, isSpotifyUri }) {
     return true;
   }
 
-  return { loadAuth, login, logout, status: () => ({ connected: !!auth }), api, canvas, loadHistory, addHistory };
+  return { loadAuth, login, logout, status: () => {
+    const granted = new Set(String(auth?.scope || "").split(/\s+/).filter(Boolean));
+    return { connected: !!auth, writeAccess: !!auth && WRITE_SCOPES.every((scope) => granted.has(scope)) };
+  }, api, canvas, loadHistory, addHistory };
 }
 
-module.exports = { createSpotifyLibrary };
+module.exports = { createSpotifyLibrary, normaliseApiRequest };

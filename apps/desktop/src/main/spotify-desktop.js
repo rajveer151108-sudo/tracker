@@ -92,12 +92,16 @@ async function setVolume(volume) {
 
 function createSpotifyDesktop({ app, getWindow }) {
   function refocus() {
-    [60, 300, 800, 1600].forEach((ms) => setTimeout(() => {
+    const focus = () => {
       const win = getWindow();
       if (!win || win.isDestroyed() || win.isMinimized()) return;
       if (process.platform === "darwin") app.focus({ steal: true });
+      win.show();
+      win.moveTop();
       win.focus();
-    }, ms));
+    };
+    focus();
+    [80, 240, 600].forEach((ms) => setTimeout(focus, ms));
   }
 
   async function playUri(uri, context) {
