@@ -3,13 +3,17 @@ project_id = "tracker"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
 port = 54322
-major_version = 15
+major_version = 17
+
+[db.pooler]
+default_pool_size = 15
+max_client_conn = 200
 
 [studio]
 enabled = true
@@ -17,9 +21,22 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:5173"
-additional_redirect_urls = ["http://localhost:5173"]
+site_url = "https://rajveer151108-sudo.github.io/tracker/"
+additional_redirect_urls = ["https://rajveer151108-sudo.github.io/tracker/**"]
 jwt_expiry = 3600
+
+[auth.email]
+double_confirm_changes = false
+enable_signup = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
 
 [functions.spotify]
 verify_jwt = true
+
+[storage.vector]
+enabled = false
