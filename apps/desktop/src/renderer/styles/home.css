@@ -61,3 +61,63 @@ body[data-home-mode="arcade"] #homeScreen{--game-color:#6659ff}body[data-home-mo
 .gameCartridgePortal{position:fixed;z-index:10;overflow:hidden;pointer-events:none;perspective:900px}.gameCartridgeFlight{position:absolute;inset:0 auto auto 0;width:100%;aspect-ratio:1.55;display:block;padding:10px 11px 15px;border:0;border-radius:8px 8px 4px 4px;color:#101014;background:linear-gradient(180deg,#26272d 0 10%,#0d0e12 11% 88%,#292a30 89%);box-shadow:inset 0 3px #44464e,inset 0 -7px #030306,0 13px 28px #000b;transform-origin:center bottom}.gameCartridgeFlight:before,.gameCartridgeFlight:after{content:"";position:absolute;left:8px;right:8px;height:4px;background:#3b3c43;box-shadow:0 1px #050507}.gameCartridgeFlight:before{top:5px}.gameCartridgeFlight:after{bottom:6px}.gameCartridgeLabel{height:100%;display:grid;grid-template-columns:42% minmax(0,1fr);align-items:center;gap:8px;padding:7px;border:2px solid #b2a16b;border-radius:3px;background:linear-gradient(135deg,#efe2a7,#d9c471);box-shadow:inset 0 0 0 2px #fff6c5;overflow:hidden}.gameCartridgeLabel img{width:100%;height:100%;min-height:0;object-fit:cover;border:1px solid #6e6038;background:#191919}.gameCartridgeLabel strong{display:-webkit-box;overflow:hidden;color:#211c12;font:900 11px/1.05 ui-monospace,monospace;text-align:left;white-space:normal;text-overflow:clip;-webkit-line-clamp:4;-webkit-box-orient:vertical}
 #homeScreen.game-slotting .arcadeGameSlot{animation:rectSlotReady .4s ease-in-out infinite alternate}@keyframes rectSlotReady{to{box-shadow:inset 0 5px 8px #000,0 0 0 2px #fff39a,0 0 34px color-mix(in srgb,var(--game-color) 90%,#fff)}}
 .arcadeDeck{z-index:auto}
+
+/* CD player: a soft product-table scene inspired by the reference loop. */
+body[data-home-mode="vinyl"] #homeScreen{--cd-blue:#7a9cff;--cd-mint:#81ffd0;color:#f8f8f4;background:radial-gradient(circle at 50% 10%,#ffffff18,transparent 34%),#101112;border:1px solid #ffffff18}
+body[data-home-mode="vinyl"] .homeThemeBar{color:#151515;background:#ececea;border-color:#d5d5d0}
+body[data-home-mode="vinyl"] .homeThemeBar button{color:#252525;background:#0000000a}
+body[data-home-mode="vinyl"] .homeThemeBar button.active{color:#fff;background:#111}
+body[data-home-mode="vinyl"] .homeLayout{grid-template-columns:minmax(245px,28%) minmax(480px,1fr) minmax(210px,22%);background:#0f1011}
+body[data-home-mode="vinyl"] .homeRoster,body[data-home-mode="vinyl"] .homeCollections{color:#191919;background:#f4f4f0;border-color:#00000014}
+body[data-home-mode="vinyl"] .homeSectionTitle span,body[data-home-mode="vinyl"] .homeHeroKicker{color:#3159de;opacity:.72}
+body[data-home-mode="vinyl"] .homeSectionTitle h1,body[data-home-mode="vinyl"] .homeSectionTitle h2{color:#141414}
+body[data-home-mode="vinyl"] .homeSong{border-radius:8px;color:#1b1b1b}
+body[data-home-mode="vinyl"] .homeSong:hover,body[data-home-mode="vinyl"] .homeSong.selected{transform:translateX(3px);color:#111;background:#e6ecff;border-color:#93aaff;box-shadow:inset 3px 0 var(--cd-blue)}
+body[data-home-mode="vinyl"] .homeTextButton,body[data-home-mode="vinyl"] .homeCollection{color:#181818;border-color:#0000001c}
+body[data-home-mode="vinyl"] .homeCollection.selected,body[data-home-mode="vinyl"] .homeCollection:hover{color:#111;background:#e9fff7;border-color:#50d8aa}
+body[data-home-mode="vinyl"] .homeHero{grid-template-rows:minmax(0,1fr) auto;align-content:center;padding:clamp(22px,4vw,48px);background:radial-gradient(circle at 72% 36%,#7a9cff22,transparent 35%),linear-gradient(145deg,#191a1c,#0d0e0f)}
+body[data-home-mode="vinyl"] .homeHeroEmpty{max-width:520px;text-align:center}
+body[data-home-mode="vinyl"] .homeHeroEmpty h2{margin:7px 0;font-size:clamp(34px,5vw,70px);line-height:.92;letter-spacing:-.05em}
+.homeCdScene{position:relative;width:min(780px,100%);align-self:end;display:grid;grid-template-columns:minmax(145px,.78fr) minmax(320px,1.7fr);align-items:center;gap:clamp(14px,3vw,34px)}
+.homeCdScene:before{content:"";position:absolute;inset:auto 4% -20px 5%;height:34px;border-radius:50%;background:#0008;filter:blur(18px)}
+.homeCdAlbumStack{position:relative;z-index:2;height:clamp(250px,42vh,390px);min-width:150px}
+.homeCdAlbumCard{position:absolute;left:0;top:0;width:clamp(118px,16vw,178px);aspect-ratio:.76;padding:7px;border-radius:4px;color:#151515;background:#f7f7f2;box-shadow:0 15px 28px #0005;transform-origin:center bottom}
+.homeCdAlbumCard:nth-child(1){z-index:5;transform:translate(20px,82px) rotate(-4deg)}
+.homeCdAlbumCard:nth-child(2){z-index:4;transform:translate(64px,52px) rotate(5deg) scale(.92)}
+.homeCdAlbumCard:nth-child(3){z-index:3;transform:translate(4px,16px) rotate(-8deg) scale(.82)}
+.homeCdAlbumCard:nth-child(4){z-index:2;transform:translate(48px,144px) rotate(7deg) scale(.78)}
+.homeCdAlbumCard:nth-child(5){z-index:1;transform:translate(4px,212px) rotate(-5deg) scale(.66)}
+.homeCdAlbumCard img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#252525}
+.homeCdAlbumCard span{display:block;overflow:hidden;margin-top:5px;font:800 9px/1.1 ui-monospace,monospace;white-space:nowrap;text-overflow:ellipsis}
+.homeCdPlayer{position:relative;z-index:1;padding:18px;border-radius:18px;background:linear-gradient(145deg,#fafaf8,#cfcfca);box-shadow:inset 0 1px #fff,0 28px 70px #0007}
+.homeCdLid{position:absolute;inset:12px 18px auto auto;width:18%;height:9px;border-radius:99px;background:linear-gradient(90deg,var(--cd-blue),var(--cd-mint));box-shadow:0 0 22px #7a9cff66}
+.homeCdDeck{position:relative;display:grid;grid-template-columns:minmax(190px,1fr) 44px;grid-template-rows:minmax(190px,1fr) 54px;gap:13px;padding:15px;border:1px solid #b8b8b2;background:linear-gradient(145deg,#e7e8e3,#c6c8c0);box-shadow:inset 0 0 0 4px #ffffff5c}
+.homeCdDiscTarget{position:relative;grid-row:1;grid-column:1;aspect-ratio:1;align-self:center;border-radius:6px;background:linear-gradient(145deg,#bfc1bd,#eeeee9);box-shadow:inset 0 0 0 1px #8f928d,0 12px 20px #0002}
+.homeCdDisc{position:absolute;inset:8%;border-radius:50%;background:radial-gradient(circle at 50% 50%,#ebeaff 0 5%,transparent 5.3% 13%,#615b72 13.5% 19%,transparent 19.5%),repeating-radial-gradient(circle,#ffffff00 0 7px,#ffffff42 8px 10px),conic-gradient(from 20deg,#e8fff8,#9ab3ff,#ffd2f1,#fff7be,#b7fff0,#e8fff8);box-shadow:inset 0 0 0 9px #ffffff50,inset 0 0 28px #2f3f684d,0 16px 28px #0004;animation:homeCdSpin 8s linear infinite}
+.homeCdDisc:before{content:"";position:absolute;inset:5%;border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 10px,#10101018 11px 12px)}
+.homeCdDisc img{position:absolute;inset:36%;width:28%;height:28%;border-radius:50%;object-fit:cover;box-shadow:0 0 0 5px #e9e8df}
+.homeCdLaser{position:absolute;left:51%;top:46%;width:42%;height:4px;border-radius:999px;background:linear-gradient(90deg,#ffffff00,#6e88ff,#ffffff00);opacity:.6;transform:rotate(-18deg);transform-origin:left center;animation:homeCdLaser 4.8s ease-in-out infinite}
+.homeCdNeedle{position:absolute;right:9%;top:8%;width:18%;height:44%;border-radius:999px;background:linear-gradient(90deg,#8d8f89,#f0f1eb 38%,#8b8e88);box-shadow:0 0 0 3px #4b4d49;transform:rotate(23deg);transform-origin:80% 18%}
+.homeCdNeedle:before{content:"";position:absolute;right:-8px;top:-12px;width:34px;height:34px;border-radius:50%;background:#202123;box-shadow:inset 0 0 0 8px #ecece8}
+.homeCdSlider{grid-row:1;grid-column:2;align-self:stretch;justify-self:center;width:23px;border-radius:4px;background:linear-gradient(90deg,#9fa29d,#e8e9e2 48%,#8d918a);box-shadow:inset 0 0 0 1px #73766f}
+.homeCdSlider:after{content:"";display:block;width:31px;height:12px;margin:62px 0 0 -4px;border-radius:3px;background:#f8f8f4;box-shadow:0 0 0 1px #6b6e68,0 7px 10px #0003}
+.homeCdControls{grid-column:1/3;display:flex;align-items:center;gap:8px;padding:8px;border-radius:999px;background:#e8e8e2;box-shadow:inset 0 0 0 1px #c7c8c1}
+.homeCdButton{height:34px;min-width:38px;padding:0 11px;border:0;border-radius:999px;color:#161616;background:#f8f8f5;box-shadow:inset 0 0 0 1px #cdcdc8;cursor:pointer;font:900 10px/1 ui-monospace,monospace}
+.homeCdButton.primary{color:#fff;background:#151515}.homeCdButton.wide{margin-left:auto}
+.homeCdChips{grid-column:1/3;display:flex;gap:8px;min-width:0}
+.homeCdChips span{min-width:0;max-width:34%;overflow:hidden;padding:6px 10px;border-radius:7px;color:#151515;background:#ffffff8c;font:800 8px/1 ui-monospace,monospace;white-space:nowrap;text-overflow:ellipsis}
+body[data-home-mode="vinyl"] .homeHeroDetails{align-self:start;width:min(720px,100%);padding-top:15px;text-align:center}
+body[data-home-mode="vinyl"] .homeHeroDetails h2{margin-top:8px;color:#fff;font-size:clamp(32px,4.6vw,62px);line-height:.92;letter-spacing:-.055em}
+body[data-home-mode="vinyl"] .homeHeroArtist{color:#ffffffb5}.homeCdFlight{position:fixed;z-index:10000;pointer-events:none;border-radius:50%;background:conic-gradient(from 30deg,#e8fff8,#91a7ff,#ffd7f0,#f8ffcc,#aaffec,#e8fff8);box-shadow:inset 0 0 0 10px #ffffff5c,inset 0 0 28px #50609a66,0 28px 60px #0009}
+.homeCdFlight:before{content:"";position:absolute;inset:5%;border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 10px,#11111118 11px 12px)}
+.homeCdFlight:after{content:"";position:absolute;inset:45%;border-radius:50%;background:#f4f4ef;box-shadow:0 0 0 8px #6e699370}
+.homeCdFlight img{position:absolute;inset:34%;width:32%;height:32%;border-radius:50%;object-fit:cover}
+#homeScreen.cd-loading .homeCdPlayer{animation:homeCdDeckReady .42s ease-in-out infinite alternate}
+#homeScreen.cd-loading .homeCdDisc{opacity:.35;filter:saturate(.5)}
+#homeScreen.cd-seated .homeCdDisc{animation-duration:1.8s}
+@keyframes homeCdSpin{to{transform:rotate(360deg)}}
+@keyframes homeCdLaser{0%,100%{transform:rotate(-18deg);opacity:.38}50%{transform:rotate(18deg);opacity:.85}}
+@keyframes homeCdDeckReady{to{box-shadow:inset 0 1px #fff,0 28px 70px #0007,0 0 38px #7a9cff6b}}
+@media(max-width:1100px){body[data-home-mode="vinyl"] .homeLayout{grid-template-columns:230px minmax(390px,1fr)}body[data-home-mode="vinyl"] .homeCollections{display:none}.homeCdScene{grid-template-columns:minmax(110px,.55fr) minmax(280px,1fr)}.homeCdAlbumCard{width:clamp(92px,13vw,140px)}}
+@media(max-width:700px){.homeCdScene{grid-template-columns:1fr;width:min(430px,100%)}.homeCdAlbumStack{display:none}.homeCdDeck{grid-template-columns:1fr 36px;grid-template-rows:minmax(220px,1fr) auto}.homeCdControls{flex-wrap:wrap}.homeCdButton.wide{margin-left:0}}
+@media(prefers-reduced-motion:reduce){.homeCdDisc,.homeCdLaser,#homeScreen.cd-loading .homeCdPlayer{animation:none}.homeCdFlight{transition:none}}

@@ -3,7 +3,7 @@ const homeState={loadedAt:0,loading:false,collectionLoading:false,nowKey:"",rece
 const homeImage=images=>images?.length?(images[0]?.url||images.at(-1)?.url||""):"";
 const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", ");
 function homeElement(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!=null)el.textContent=text;return el;}
-const HOME_COPY={arcade:["GAME LIBRARY","Choose a stage","PRESS START"],vinyl:["THE RECORD SHELF","Select a record","NOW SPINNING"],tape:["THE VIDEO ARCHIVE","Select a tape","FEATURE PRESENTATION"],midnight:["YOUR MUSIC","Recently played","NOW PLAYING"]};
+const HOME_COPY={arcade:["GAME LIBRARY","Choose a stage","PRESS START"],vinyl:["CD LIBRARY","Choose a disc","NOW LOADED"],tape:["THE VIDEO ARCHIVE","Select a tape","FEATURE PRESENTATION"],midnight:["YOUR MUSIC","Recently played","NOW PLAYING"]};
 const currentHomeMode=()=>document.body.dataset.homeMode||"arcade";
 function setHomeGameColor(item){
   const seed=String(item?.uri||item?.title||"afterglow");let hash=0;for(const char of seed)hash=(hash*31+char.charCodeAt(0))>>>0;
@@ -12,6 +12,12 @@ function setHomeGameColor(item){
 }
 
 async function homePlay(item){if(!item?.uri)return false;const result=await window.tracker.playUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok)setTimeout(poll,250);return !!result?.ok;}
+async function launchHomeItem(item,source){
+  const mode=currentHomeMode();
+  if(mode==="arcade")return launchHomeGame(item,source);
+  if(mode==="vinyl")return launchHomeCd(item,source);
+  return homePlay(item);
+}
 async function launchHomeGame(item,source){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".gameCartridgePortal").forEach(node=>node.remove());
@@ -34,6 +40,33 @@ async function launchHomeGame(item,source){
   setTimeout(()=>{screen.classList.remove("game-slotting");if(!started)homeState.slotItem=null;renderHomeHero();},450);
   setTimeout(()=>{if(homeState.slotItem===item){homeState.slotItem=null;screen.classList.remove("game-slotting");renderHomeHero();}},4000);
 }
+async function launchHomeCd(item,source){
+  if(!item?.uri||homeState.slotItem)return;
+  document.querySelectorAll(".homeCdFlight").forEach(node=>node.remove());
+  homeState.slotItem=item;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("cd-loading");renderHomeHero();
+  await new Promise(resolve=>requestAnimationFrame(resolve));
+  const target=hero.querySelector(".homeCdDiscTarget")?.getBoundingClientRect(),src=(source?.querySelector("img")||hero.querySelector(".homeCdAlbumCard img")||hero).getBoundingClientRect();
+  if(target){
+    const disc=homeElement("div","homeCdFlight"),art=homeElement("img");art.alt="";if(item.img)art.src=item.img;disc.appendChild(art);document.body.appendChild(disc);
+    const size=Math.min(230,Math.max(150,target.width*.96)),left=target.left+target.width/2-size/2,top=target.top+target.height/2-size/2;
+    const startScale=Math.max(.26,Math.min(.62,src.width/size)),dx=src.left+src.width/2-(left+size/2),dy=src.top+src.height/2-(top+size/2);
+    Object.assign(disc.style,{left:`${left}px`,top:`${top}px`,width:`${size}px`,height:`${size}px`});
+    const flight=disc.animate([
+      {transform:`translate3d(${dx}px,${dy}px,0) scale(${startScale}) rotate(-18deg)`,opacity:.1,filter:"blur(1px) saturate(.8)"},
+      {transform:`translate3d(${dx*.38}px,${dy*.5-42}px,0) scale(.82) rotate(12deg)`,opacity:1,filter:"blur(0) saturate(1.15)",offset:.28},
+      {transform:"translate3d(0,-16px,0) scale(1.04) rotate(340deg)",opacity:1,filter:"blur(0) saturate(1.25)",offset:.78},
+      {transform:"translate3d(0,0,0) scale(.82) rotate(460deg)",opacity:0}
+    ],{duration:1220,easing:"cubic-bezier(.5,0,.16,1)",fill:"forwards"});
+    await flight.finished.catch(()=>{});
+    disc.remove();
+  }else{
+    await new Promise(resolve=>setTimeout(resolve,700));
+  }
+  screen.classList.add("cd-seated");
+  const started=await homePlay(item);
+  setTimeout(()=>{screen.classList.remove("cd-loading","cd-seated");if(!started)homeState.slotItem=null;renderHomeHero();},420);
+  setTimeout(()=>{if(homeState.slotItem===item){homeState.slotItem=null;screen.classList.remove("cd-loading","cd-seated");renderHomeHero();}},4000);
+}
 
 function renderHomeRoster(){
   const list=$("arcadeRecent");list.innerHTML="";
@@ -44,7 +77,7 @@ function renderHomeRoster(){
     row.appendChild(homeElement("span","homeSongNumber",String(index+1).padStart(2,"0")));
     const image=homeElement("img");image.alt="";image.loading="lazy";if(item.img)image.src=item.img;row.appendChild(image);
     const copy=homeElement("span","homeSongCopy");copy.append(homeElement("strong","",item.title),homeElement("small","",item.sub||"Unknown artist"));row.appendChild(copy);
-    row.appendChild(homeElement("span","homeSongArrow","▶"));row.addEventListener("click",()=>launchHomeGame(item,row));list.appendChild(row);
+    row.appendChild(homeElement("span","homeSongArrow","▶"));row.addEventListener("click",()=>launchHomeItem(item,row));list.appendChild(row);
   });
 }
 function renderHomeCollections(){
@@ -63,9 +96,23 @@ function renderArcadeCabinet(hero,item){
   const slotZone=homeElement("div","arcadeSlotZone");slotZone.append(homeElement("span","","GAME SLOT"),homeElement("div","arcadeGameSlot",""),homeElement("small","",homeState.slotItem?"LOADING…":"CHOOSE A SONG"));
   const lyrics=homeElement("button","arcadeLyricsButton","MIC // LYRICS");lyrics.addEventListener("click",()=>setAppView("lyrics"));deck.append(transport,slotZone,lyrics);cabinet.append(display,deck);hero.appendChild(cabinet);
 }
+function renderCdPlayer(hero,item,copy){
+  const scene=homeElement("div","homeCdScene"),stack=homeElement("div","homeCdAlbumStack"),cards=(homeState.games.length?homeState.games:[item]).filter(Boolean).slice(0,5);
+  cards.forEach((card,index)=>{const tile=homeElement("div","homeCdAlbumCard");tile.style.setProperty("--i",index);const img=homeElement("img");img.alt="";if(card.img)img.src=card.img;tile.append(img,homeElement("span","",card.title||"Afterglow"));stack.appendChild(tile);});
+  const player=homeElement("div","homeCdPlayer"),deck=homeElement("div","homeCdDeck"),target=homeElement("div","homeCdDiscTarget"),disc=homeElement("div","homeCdDisc");
+  if(item?.img){const img=homeElement("img");img.alt="";img.src=item.img;disc.appendChild(img);}
+  target.append(disc,homeElement("div","homeCdLaser",""),homeElement("div","homeCdNeedle",""));
+  const controls=homeElement("div","homeCdControls"),prev=homeElement("button","homeCdButton","◀"),play=homeElement("button","homeCdButton primary",playing?"Ⅱ":"▶"),next=homeElement("button","homeCdButton","▶"),lyrics=homeElement("button","homeCdButton wide","LYRICS");
+  prev.addEventListener("click",()=>control("previous"));play.addEventListener("click",()=>control("playpause"));next.addEventListener("click",()=>control("next"));lyrics.addEventListener("click",()=>setAppView("lyrics"));controls.append(prev,play,next,lyrics);
+  const chips=homeElement("div","homeCdChips");chips.append(homeElement("span","",playing?"PLAY":"READY"),homeElement("span","",item?.album||"AFTERGLOW"),homeElement("span","","STEREO"));
+  deck.append(target,homeElement("div","homeCdSlider",""),controls,chips);player.append(homeElement("div","homeCdLid",""),deck);
+  const details=homeElement("div","homeHeroDetails");details.append(homeElement("span","homeHeroKicker",`COMPACT DISC // ${copy[2]}`),homeElement("h2","",item.title),homeElement("p","homeHeroArtist",item.sub||"Unknown artist"),homeElement("p","homeHeroAlbum",item.album||"Afterglow library"));
+  scene.append(stack,player);hero.append(scene,details);
+}
 function renderHomeHero(){
-  const hero=$("arcadeNow");hero.innerHTML="";const item=homeState.nowPlaying;const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade;
+  const hero=$("arcadeNow");hero.innerHTML="";const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=(mode==="vinyl"&&homeState.slotItem)||homeState.nowPlaying;
   if(mode==="arcade"){renderArcadeCabinet(hero,item);return;}
+  if(mode==="vinyl"&&item){renderCdPlayer(hero,item,copy);return;}
   if(!item){const empty=homeElement("div","homeHeroEmpty");empty.append(homeElement("span","homeHeroKicker",copy[2]),homeElement("h2","","Your next favourite song lives here"),homeElement("p","","Open the library or start Spotify to fill this space."));hero.appendChild(empty);return;}
   const visual=homeElement("div","homeHeroVisual"),art=homeElement("img","homeHeroArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;visual.append(art,homeElement("div","homeVinyl",""),homeElement("div","homeTapeSpine",item.title));
   const details=homeElement("div","homeHeroDetails");details.append(homeElement("span","homeHeroKicker",`LIVE // ${copy[2]}`),homeElement("h2","",item.title),homeElement("p","homeHeroArtist",item.sub||"Unknown artist"));
