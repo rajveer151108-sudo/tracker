@@ -9,6 +9,7 @@ const currentHomeMode=()=>document.body.dataset.homeMode||"arcade";
 async function homePlay(item){if(!item?.uri)return false;const result=await window.tracker.playUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok)setTimeout(poll,250);return !!result?.ok;}
 async function launchHomeGame(item,source){
   if(!item?.uri||homeState.slotItem)return;
+  document.querySelectorAll(".gameCartridgeFlight").forEach(node=>node.remove());
   homeState.slotItem=item;const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
   const sourceRect=source?.getBoundingClientRect(),heroRect=hero.getBoundingClientRect();
   const cartridge=homeElement("div","gameCartridgeFlight");const art=homeElement("img");art.alt="";if(item.img)art.src=item.img;cartridge.append(art,homeElement("strong","",item.title));document.body.appendChild(cartridge);
@@ -18,9 +19,10 @@ async function launchHomeGame(item,source){
   const flight=cartridge.animate([
     {transform:"translate3d(0,0,0) scale(1) rotateZ(0deg)",opacity:1},
     {transform:`translate3d(${(targetX-startX)*.62}px,${(targetY-startY)*.54-80}px,0) scale(.9) rotateZ(-7deg)`,opacity:1,offset:.58},
-    {transform:`translate3d(${targetX-startX}px,${targetY-startY}px,0) scale(.68) rotateX(72deg)`,opacity:.95}
+    {transform:`translate3d(${targetX-startX}px,${targetY-startY+28}px,0) scale(.12) rotateX(84deg)`,opacity:0}
   ],{duration:780,easing:"cubic-bezier(.22,.8,.25,1)",fill:"forwards"});
-  await flight.finished.catch(()=>{});cartridge.remove();
+  await new Promise(resolve=>setTimeout(resolve,800));
+  flight.cancel();cartridge.remove();
   const started=await homePlay(item);
   setTimeout(()=>{screen.classList.remove("game-slotting");if(!started)homeState.slotItem=null;renderHomeHero();},450);
   setTimeout(()=>{if(homeState.slotItem===item){homeState.slotItem=null;screen.classList.remove("game-slotting");renderHomeHero();}},4000);
