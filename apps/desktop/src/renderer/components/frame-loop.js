@@ -1,20 +1,26 @@
 // =====================================================================
   // Per-frame loop
   // =====================================================================
-  let lastFrameT = performance.now();
+  let lastFrameT = performance.now(), lastUiT = 0;
   function frame(tNow) {
+    requestAnimationFrame(frame);
+    const fps = settings.performanceMode === "smooth" ? 60 : settings.performanceMode === "battery" ? 20 : 30;
+    if (tNow - lastFrameT < 1000 / fps - 1) return;
     const dt = Math.max(0.001, Math.min(0.1, (tNow - lastFrameT) / 1000));
     lastFrameT = tNow;
     beatStep(tNow, dt);
 
     const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0);
     const t = now + offset;
-    const seekPercent = durSec ? Math.max(0, Math.min(100, (now / durSec) * 100)) : 0;
-    $("fill").style.width = seekPercent + "%";
-    $("bar").setAttribute("aria-valuemax", String(Math.round(durSec)));
-    $("bar").setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
-    $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
-    $("pos").textContent = fmt(now);
+    if (tNow - lastUiT >= 100) {
+      lastUiT = tNow;
+      const seekPercent = durSec ? Math.max(0, Math.min(100, (now / durSec) * 100)) : 0;
+      $("fill").style.width = seekPercent + "%";
+      $("bar").setAttribute("aria-valuemax", String(Math.round(durSec)));
+      $("bar").setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
+      $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
+      $("pos").textContent = fmt(now);
+    }
 
     let wordLife = 0, lineEmotion = 0;
     if (lines.length) {
@@ -91,7 +97,6 @@
     lyricMotionEmotion = lineEmotion;
     root.style.setProperty("--word-life", wordLife.toFixed(3));
     root.style.setProperty("--line-emotion", lineEmotion.toFixed(3));
-    requestAnimationFrame(frame);
   }
 
   window.addEventListener("resize", () => { activeIdx = -2; });

@@ -107,14 +107,15 @@
     const wrap = document.createElement("div");
     wrap.className = "bdw";
     let albumLayer = null;
-    const blur = document.createElement("div");
-    blur.className = "bd"; blur.style.backgroundImage = u;
-    wrap.appendChild(blur);
     if (settings.backdropStyle === "album") {
       const alb = document.createElement("div");
       alb.className = "alb"; alb.style.backgroundImage = u;
       wrap.appendChild(alb);
       albumLayer = alb;
+    } else {
+      const blur = document.createElement("div");
+      blur.className = "bd"; blur.style.backgroundImage = u;
+      wrap.appendChild(blur);
     }
     box.appendChild(wrap);
     if (albumLayer) analyseAlbum(url, albumLayer);

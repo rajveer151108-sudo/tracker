@@ -60,7 +60,9 @@
       await audioCtx.resume();
       const src = audioCtx.createMediaStreamSource(new MediaStream(tracks));
       analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;
+      // 1024 bins are enough to separate bass, vocals and brightness while
+      // halving the transform and time-domain work versus the old 2048 size.
+      analyser.fftSize = 1024;
       analyser.minDecibels = -95;
       analyser.maxDecibels = -10;                                  // more headroom, so loud songs don't max out
       analyser.smoothingTimeConstant = 0.45;

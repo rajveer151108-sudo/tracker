@@ -4,7 +4,8 @@
   .bdw { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
   .bdw.in { opacity: 1; }
   .bd { position: absolute; inset: -25%; background-size: cover; background-position: center;
-        filter: blur(70px) saturate(1.5); animation: drift 16s ease-in-out infinite alternate; }
+        filter: blur(56px) saturate(1.45); animation: drift 20s ease-in-out infinite alternate; }
+  body[data-performance="battery"] .bd { filter: blur(42px) saturate(1.35); animation: none; transform: scale(1.35); }
   /* Album tour fills the screen with a square cover. JavaScript chooses focal points from
      the artwork and drives the camera; the cover stays centered while it is analysed. */
   .alb { --S: max(100cqw, 100cqh); --ex: calc((var(--S) - 100cqw) / 2); --ey: calc((var(--S) - 100cqh) / 2);

@@ -230,7 +230,8 @@
   #bar { position: relative; height: 18px; cursor: pointer; outline: none; touch-action: none; }
   #bar::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 4px;
                  background: rgba(255,255,255,.16); border-radius: 999px; }
-  #fill { position: relative; top: 7px; height: 4px; width: 0; border-radius: 999px; background: rgb(var(--glow)); }
+  #fill { position: relative; top: 7px; height: 4px; width: 0; border-radius: 999px; background: rgb(var(--glow));
+          transition: width .1s linear; }
   #fill::after { content: ""; position: absolute; right: -5px; top: -3px; width: 10px; height: 10px; border-radius: 50%;
                  background: #fff; box-shadow: 0 0 10px rgba(var(--glow), .8); opacity: 0; transform: scale(.7); transition: .15s; }
   #bar:hover #fill::after, #bar:focus-visible #fill::after, #bar.scrubbing #fill::after { opacity: 1; transform: scale(1); }

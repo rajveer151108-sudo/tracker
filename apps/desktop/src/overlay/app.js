@@ -10,6 +10,7 @@
   let beatTarget = 0, beat = 0, energyTarget = 0, energy = 0, vocalTarget = 0, vocal = 0, liftTarget = 0, lift = 0, wordTarget = 0, word = 0;
   let buildTarget = 0, build = 0, duckTarget = 0, duck = 0, dropTarget = 0, drop = 0, emotionTarget = 0, emotion = 0;
   let lastShadow = "", lastRing = "";
+  let enabled = false, frameMs = 33, lastFrameT = 0;
 
   function layout() {
     ringwrap.style.display = style === "steady" ? "none" : "block";
@@ -18,12 +19,16 @@
     ringwrap.style.setProperty("--rt", Math.round(14 * thick) + "px");
   }
 
-  window.overlay.onGlow(({ color, color2, on, strength: st, thickness, style: sty }) => {
+  window.overlay.onGlow(({ color, color2, on, strength: st, thickness, style: sty, performance: perf }) => {
     targetA = parse(color); targetB = parse(color2 || color);
     strength = (st == null ? 100 : st) / 100;
     thick = (thickness == null ? 100 : thickness) / 100;
     style = sty || "steady";
-    edge.classList.toggle("on", !!on);
+    enabled = !!on;
+    // Full-screen transparent shadows are the hottest visual in the app. They
+    // remain fluid at 24fps; CSS and temporal smoothing fill the gaps.
+    frameMs = perf === "smooth" ? 17 : perf === "battery" ? 67 : 42;
+    edge.classList.toggle("on", enabled);
     layout();
   });
   window.overlay.onBeat((motion) => {
@@ -42,20 +47,27 @@
     emotionTarget = Math.max(0, Math.min(1.5, motion?.emotion || 0));
   });
 
-  function render() {
+  function render(tNow) {
+    requestAnimationFrame(render);
+    const wantedMs = enabled ? frameMs : 250;
+    if (tNow - lastFrameT < wantedMs - 1) return;
+    const elapsed = lastFrameT ? tNow - lastFrameT : wantedMs;
+    lastFrameT = tNow;
+    const frames = Math.max(1, elapsed / 16.67);
+    const step = (base) => 1 - Math.pow(1 - base, frames);
     for (let i = 0; i < 3; i++) {                       // colours glide toward their targets
-      curA[i] += (targetA[i] - curA[i]) * 0.04;
-      curB[i] += (targetB[i] - curB[i]) * 0.04;
+      curA[i] += (targetA[i] - curA[i]) * step(0.04);
+      curB[i] += (targetB[i] - curB[i]) * step(0.04);
     }
-    beat += (beatTarget - beat) * 0.5;                  // quick attack, quick release
-    energy += (energyTarget - energy) * (energyTarget > energy ? 0.35 : 0.13);
-    vocal += (vocalTarget - vocal) * (vocalTarget > vocal ? 0.24 : 0.10);
-    lift += (liftTarget - lift) * (liftTarget > lift ? 0.2 : 0.08);
-    word += (wordTarget - word) * 0.22;
-    build += (buildTarget - build) * (buildTarget > build ? 0.16 : 0.08);
-    duck += (duckTarget - duck) * (duckTarget > duck ? 0.45 : 0.16);
-    drop += (dropTarget - drop) * (dropTarget > drop ? 0.65 : 0.18);
-    emotion += (emotionTarget - emotion) * (emotionTarget > emotion ? 0.18 : 0.08);
+    beat += (beatTarget - beat) * step(0.5);                  // quick attack, quick release
+    energy += (energyTarget - energy) * step(energyTarget > energy ? 0.35 : 0.13);
+    vocal += (vocalTarget - vocal) * step(vocalTarget > vocal ? 0.24 : 0.10);
+    lift += (liftTarget - lift) * step(liftTarget > lift ? 0.2 : 0.08);
+    word += (wordTarget - word) * step(0.22);
+    build += (buildTarget - build) * step(buildTarget > build ? 0.16 : 0.08);
+    duck += (duckTarget - duck) * step(duckTarget > duck ? 0.45 : 0.16);
+    drop += (dropTarget - drop) * step(dropTarget > drop ? 0.65 : 0.18);
+    emotion += (emotionTarget - emotion) * step(emotionTarget > emotion ? 0.18 : 0.08);
     const A = curA.map(Math.round).join(", "), B = curB.map(Math.round).join(", ");
 
     // soft inner glow (weaker when the moving light is on, so it stands out)
@@ -83,6 +95,5 @@
       const baseSpeed = style === "comet" ? 5 : 9;
       spin.style.animationDuration = Math.max(2.4, baseSpeed - energy * 1.8 - lift * 1.4 - beat) + "s";
     }
-    requestAnimationFrame(render);
   }
   requestAnimationFrame(render);

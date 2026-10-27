@@ -30,6 +30,7 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
       thickness: settings.glowThickness,
       style: settings.glowStyle,
       speed: state.speed,
+      performance: settings.performanceMode || "balanced",
     });
   }
 

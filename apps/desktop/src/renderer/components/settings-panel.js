@@ -74,6 +74,11 @@
         ["shake", "Rock shake"], ["bounce", "Pop bounce"], ["snap", "Electronic snap"], ["subtle", "Subtle"]] },
     { key: "motionStrength", label: "Dance strength", type: "range", min: 0, max: 200, step: 10, unit: "%" },
     { key: "beatStrength", label: "Beat punch", type: "range", min: 0, max: 200, step: 10, unit: "%" },
+
+    { type: "heading", label: "Performance" },
+    { key: "performanceMode", label: "Visual refresh", type: "choice",
+      hint: "Balanced saves substantial CPU while CSS keeps motion smooth. Battery saver is best for long listening sessions.",
+      options: [["battery", "Battery saver"], ["balanced", "Balanced"], ["smooth", "Maximum smoothness"]] },
   ];
   let settings = {};
   const controlsByKey = {};
@@ -160,6 +165,7 @@
     document.body.classList.toggle("word-emoji", !!settings.lyricsEmoji);
     document.body.classList.toggle("word-keywords", !!settings.lyricsKeywords);
     document.body.classList.toggle("music-motion", !!settings.musicMotion);
+    document.body.dataset.performance = settings.performanceMode || "balanced";
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
     appliedLyricsLayout = settings.lyricsLayout;
