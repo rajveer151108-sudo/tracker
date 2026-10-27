@@ -14,21 +14,22 @@ function setHomeGameColor(item){
 async function homePlay(item){if(!item?.uri)return false;const result=await window.tracker.playUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok)setTimeout(poll,250);return !!result?.ok;}
 async function launchHomeGame(item,source){
   if(!item?.uri||homeState.slotItem)return;
-  document.querySelectorAll(".gameCartridgeFlight").forEach(node=>node.remove());
+  document.querySelectorAll(".gameCartridgePortal").forEach(node=>node.remove());
   homeState.slotItem=item;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
   const heroRect=hero.getBoundingClientRect(),slotRect=hero.querySelector(".arcadeGameSlot")?.getBoundingClientRect();
-  const cartridge=homeElement("div","gameCartridgeFlight");const art=homeElement("img");art.alt="";if(item.img)art.src=item.img;cartridge.append(art,homeElement("strong","",item.title));document.body.appendChild(cartridge);
-  const startW=Math.min(150,heroRect.width*.22),slotCenter=slotRect?slotRect.left+slotRect.width/2:heroRect.left+heroRect.width/2,startX=slotCenter-startW/2,startY=(slotRect?.top??heroRect.top+heroRect.height*.72)-startW-54;
-  Object.assign(cartridge.style,{left:`${startX}px`,top:`${startY}px`,width:`${startW}px`});
-  const targetY=(slotRect?.top??heroRect.top+heroRect.height*.72)-startY-startW*.18;
+  const portal=homeElement("div","gameCartridgePortal"),cartridge=homeElement("div","gameCartridgeFlight"),label=homeElement("div","gameCartridgeLabel"),art=homeElement("img");art.alt="";if(item.img)art.src=item.img;label.append(art,homeElement("strong","",item.title));cartridge.append(label);portal.append(cartridge);hero.appendChild(portal);
+  const startW=Math.min(210,heroRect.width*.3),slotCenter=slotRect?slotRect.left+slotRect.width/2:heroRect.left+heroRect.width/2,startX=slotCenter-startW/2,cartridgeH=startW/1.55;
+  const slotTop=slotRect?.top??heroRect.top+heroRect.height*.76,startY=Math.max(heroRect.top+50,slotTop-cartridgeH-120),portalH=slotTop-startY+(slotRect?.height||24)/2;
+  Object.assign(portal.style,{left:`${startX}px`,top:`${startY}px`,width:`${startW}px`,height:`${portalH}px`});
+  const targetY=portalH+8;
   const flight=cartridge.animate([
-    {transform:"translate3d(0,-24px,0) scale(.96) rotateX(0deg)",opacity:0},
-    {transform:"translate3d(0,0,0) scale(1) rotateX(0deg)",opacity:1,offset:.12},
-    {transform:`translate3d(0,${targetY-35}px,0) scale(.92) rotateX(0deg)`,opacity:1,offset:.78},
-    {transform:`translate3d(0,${targetY+8}px,0) scale(.72,.08) rotateX(86deg)`,opacity:0}
-  ],{duration:1000,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});
+    {transform:"translate3d(0,-18px,0)",opacity:0},
+    {transform:"translate3d(0,0,0)",opacity:1,offset:.1},
+    {transform:`translate3d(0,${Math.max(0,portalH-cartridgeH-12)}px,0)`,opacity:1,offset:.72},
+    {transform:`translate3d(0,${targetY}px,0)`,opacity:1}
+  ],{duration:1000,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"});
   await new Promise(resolve=>setTimeout(resolve,1020));
-  flight.cancel();cartridge.remove();
+  flight.cancel();portal.remove();
   const started=await homePlay(item);
   setTimeout(()=>{screen.classList.remove("game-slotting");if(!started)homeState.slotItem=null;renderHomeHero();},450);
   setTimeout(()=>{if(homeState.slotItem===item){homeState.slotItem=null;screen.classList.remove("game-slotting");renderHomeHero();}},4000);
