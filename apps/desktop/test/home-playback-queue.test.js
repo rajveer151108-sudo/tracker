@@ -13,13 +13,13 @@ const homeSource = fs.readFileSync(
   "utf8"
 );
 
-async function routePlayback(spApiResult) {
+async function routePlayback() {
   const calls = { api: 0, desktop: 0 };
   const context = {
     document: { getElementById() {}, documentElement: {} },
     window: {
       tracker: {
-        async spApi() { calls.api += 1; return spApiResult; },
+        async spApi() { calls.api += 1; return { ok: true }; },
         async playUri() { calls.desktop += 1; return { ok: true }; },
       },
     },
@@ -51,15 +51,10 @@ function spotifyTrack(id, name) {
   };
 }
 
-test("a successful Web API play request never sends a second desktop play command", async () => {
-  const { calls, result } = await routePlayback({ ok: true, status: 204 });
-  assert.deepEqual(calls, { api: 1, desktop: 0 });
-  assert.equal(result.source, "web-api");
-});
-
-test("desktop playback is used once only when the Web API request fails", async () => {
-  const { calls, result } = await routePlayback({ ok: false, status: 404 });
-  assert.deepEqual(calls, { api: 1, desktop: 1 });
+test("left-rack playback sends one desktop command and no competing Web API command", async () => {
+  const { calls, result } = await routePlayback();
+  assert.equal(calls.api, 0);
+  assert.equal(calls.desktop, 1);
   assert.equal(result.source, "desktop");
 });
 

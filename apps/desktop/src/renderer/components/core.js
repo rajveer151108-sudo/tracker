@@ -7,11 +7,8 @@ const $ = (id) => document.getElementById(id);
   const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
 
   async function playSpotifyUri(uri, context = null) {
-    const body = context ? { context_uri: context, offset: { uri } } : { uris: [uri] };
-    const remote = await window.tracker.spApi({ path: "/me/player/play", method: "PUT", body }).catch(() => null);
-    if (remote?.ok) return { ok: true, source: "web-api" };
     const fallback = await window.tracker.playUri(uri, context).catch((error) => ({ ok: false, error: error?.message }));
-    return { ...fallback, source: "desktop", apiStatus: remote?.status || 0 };
+    return { ...fallback, source: "desktop" };
   }
 
   function spotifyPagePath(next) {

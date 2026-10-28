@@ -91,29 +91,14 @@ async function setVolume(volume) {
 }
 
 function createSpotifyDesktop({ app, getWindow }) {
-  function refocus() {
-    const focus = () => {
-      const win = getWindow();
-      if (!win || win.isDestroyed() || win.isMinimized()) return;
-      if (process.platform === "darwin") app.focus({ steal: true });
-      win.show();
-      win.moveTop();
-      win.focus();
-    };
-    focus();
-    [80, 240, 600].forEach((ms) => setTimeout(focus, ms));
-  }
-
   async function playUri(uri, context) {
     if (typeof uri !== "string" || !URI_RE.test(uri)) {
       return { ok: false, error: "That isn't a Spotify link" };
     }
-    const win = getWindow();
-    const wasFocused = !!(win && !win.isDestroyed() && win.isFocused());
-    let script = `tell application "Spotify" to play track "${uri}"`;
-    if (typeof context === "string" && URI_RE.test(context)) script += ` in context "${context}"`;
+    let command = `play track "${uri}"`;
+    if (typeof context === "string" && URI_RE.test(context)) command += ` in context "${context}"`;
+    const script = `tell application "Spotify"\n${command}\ndelay 0.08\nset player position to 0\nend tell`;
     const { error, stderr } = await runAppleScript(script, 6000);
-    if (wasFocused) refocus();
     return error ? { ok: false, error: (stderr || error.message).trim() } : { ok: true };
   }
 

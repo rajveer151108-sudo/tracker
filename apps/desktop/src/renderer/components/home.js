@@ -1,5 +1,6 @@
 // Home: one music library, four genuinely different listening spaces.
-const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,queueRequest:0,queueSchedule:0,nowKey:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
+const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,queueRequest:0,queueSchedule:0,nowKey:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,pendingCommandAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
+const HOME_PENDING_ANIMATION_TIMEOUT=5000,HOME_PENDING_PLAYBACK_TIMEOUT=9000;
 const homeImage=images=>images?.length?(images[0]?.url||images.at(-1)?.url||""):"";
 const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", ");
 function homeElement(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!=null)el.textContent=text;return el;}
@@ -103,7 +104,15 @@ function mountArcadeKitten(screen,worldCanvas){
   requestAnimationFrame(tick);
 }
 
-async function homePlay(item){if(!item?.uri)return false;const result=await playSpotifyUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,250);if(currentHomeMode()==="vinyl")scheduleHomeQueueRefresh(item.uri);}return !!result?.ok;}
+function homePendingTransition(pendingUri,pendingAt,pendingCommandAt,np,now=Date.now()){
+  if(!pendingUri)return"none";
+  const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||"");
+  if(!pendingCommandAt)return now-pendingAt<HOME_PENDING_ANIMATION_TIMEOUT?"wait":"expired";
+  if(active&&uri===pendingUri)return"confirmed";
+  return now-pendingCommandAt<HOME_PENDING_PLAYBACK_TIMEOUT?"wait":"expired";
+}
+
+async function homePlay(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await playSpotifyUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,120);setTimeout(poll,700);}return !!result?.ok;}
 
 async function playHomeCollection(shuffle=false){
   if(homeState.collectionLoading||!homeState.games.length){showToast("LOAD A COLLECTION FIRST");return;}
@@ -144,7 +153,7 @@ async function launchHomeItem(item,source){
 async function launchHomeGame(item,source){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".gameCartridgePortal").forEach(node=>node.remove());
-  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
+  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
   const heroRect=hero.getBoundingClientRect(),slotRect=hero.querySelector(".arcadeGameSlot")?.getBoundingClientRect();
   const portal=homeElement("div","gameCartridgePortal"),cartridge=homeElement("div","gameCartridgeFlight"),label=homeElement("div","gameCartridgeLabel"),art=homeElement("img");art.alt="";if(item.img)art.src=item.img;label.append(art,homeElement("strong","",item.title));cartridge.append(label);portal.append(cartridge);hero.appendChild(portal);
   const startW=Math.min(210,heroRect.width*.3),slotCenter=slotRect?slotRect.left+slotRect.width/2:heroRect.left+heroRect.width/2,startX=slotCenter-startW/2,cartridgeH=startW/1.55;
@@ -161,14 +170,14 @@ async function launchHomeGame(item,source){
   flight.cancel();portal.remove();
   screen.classList.remove("game-slotting");renderHomeHero();
   const started=await homePlay(item);
-  if(!started){homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;renderHomeHero();return;}
+  if(!started){homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;renderHomeHero();return;}
   setTimeout(()=>{if(homeState.slotItem?.uri===item.uri&&homeState.nowPlaying?.uri!==item.uri)clearHomePending(true);},5000);
 }
 async function launchHomeCd(item,source){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".homeCdFlight,.homeCdFlightSleeve").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
-  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");renderHomeHero();
+  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");renderHomeHero();
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const target=hero.querySelector(".homeCdDisc")?.getBoundingClientRect(),src=sourceRect||(hero.querySelector(".homeCdAlbumCard img")||hero).getBoundingClientRect();
   if(target){
@@ -317,7 +326,7 @@ async function refreshHomeQueue(force=false,expectedUri=""){
 }
 function scheduleHomeQueueRefresh(uri){
   const schedule=++homeState.queueSchedule;homeState.queue=[];homeState.queueLoadedAt=0;if(currentHomeMode()==="vinyl")renderHomeHero();
-  [250,850,1750].forEach(delay=>setTimeout(()=>{if(schedule===homeState.queueSchedule)refreshHomeQueue(true,uri);},delay));
+  [200,700,1600,3200,6000].forEach(delay=>setTimeout(()=>{if(schedule===homeState.queueSchedule)refreshHomeQueue(true,uri);},delay));
 }
 async function loadHomeCollection(collection){
   if(!collection||homeState.collectionLoading)return;
@@ -343,20 +352,20 @@ function homeNowPlayingKey(np){if(!np||!(np.state==="playing"||np.state==="pause
 function enrichHomeItem(item){if(!item?.uri)return item;const known=[...homeState.games,...homeState.recent,...homeState.queue].find(track=>track.uri===item.uri);return known?{...item,sub:known.sub||item.sub,album:known.album||item.album,img:known.img||item.img}:item;}
 function clearHomePending(render=false){
   if(!homeState.slotItem&&!homeState.pendingUri)return;
-  homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.loadSequence++;$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated");if(render)renderHomeHero();
+  homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;homeState.loadSequence++;$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated");if(render)renderHomeHero();
 }
 function updateHomeNowPlaying(np){
-  const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume),pendingAge=homeState.pendingAt?Date.now()-homeState.pendingAt:0;let pendingCleared=false;
+  const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume),previousUri=homeState.nowPlaying?.uri||"";let pendingCleared=false;
   if(Number.isFinite(volume))updateHomeVolumeUi(volume);
   if(homeState.pendingUri&&homeState.slotItem){
-    if(active&&uri&&uri!==homeState.pendingUri&&pendingAge<6000)return;
-    if(active&&uri===homeState.pendingUri){clearHomePending();pendingCleared=true;}
-    else if((!active&&pendingAge>3500)||(active&&uri&&uri!==homeState.pendingUri&&pendingAge>=6000)){clearHomePending();pendingCleared=true;}
+    const transition=homePendingTransition(homeState.pendingUri,homeState.pendingAt,homeState.pendingCommandAt,np);
+    if(transition==="wait")return;
+    clearHomePending();pendingCleared=true;
   }
   if(key===homeState.nowKey){if(pendingCleared||homeState.slotItem)renderHomeHero();return;}
   homeState.nowKey=key;homeState.nowPlaying=active?enrichHomeItem({uri,title:np.title||"Unknown track",sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}):null;if(homeState.nowPlaying)setHomeGameColor(homeState.nowPlaying);
-  if(!homeState.pendingUri||!active||uri===homeState.pendingUri)clearHomePending();
-  renderHome();if(active&&currentHomeMode()==="vinyl")scheduleHomeQueueRefresh(uri);
+  renderHome();if(active&&uri&&uri!==previousUri&&currentHomeMode()==="vinyl")scheduleHomeQueueRefresh(uri);
 }
+function onHomeModeChange(previous,next){if(previous!==next&&next==="vinyl")scheduleHomeQueueRefresh(homeState.nowPlaying?.uri||"");}
 function setAppView(view){const wanted=view==="lyrics"?"lyrics":"home";if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();document.body.dataset.view=wanted;$("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");if(wanted==="home")refreshArcadeHome();else activeIdx=-2;}
 function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("arcadeLibraryBtn").addEventListener("click",()=>{setTab("recent");openLibrary();});$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openLibrary();setTab("account");}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}

@@ -171,8 +171,10 @@
     document.body.classList.toggle("word-keywords", !!settings.lyricsKeywords);
     document.body.classList.toggle("music-motion", !!settings.musicMotion);
     document.body.dataset.performance = settings.performanceMode || "balanced";
-    document.body.dataset.homeMode = settings.homeMode || "arcade";
+    const previousHomeMode=document.body.dataset.homeMode||"",nextHomeMode=settings.homeMode||"arcade";
+    document.body.dataset.homeMode = nextHomeMode;
     if (typeof renderHome === "function") renderHome();
+    if(previousHomeMode&&typeof onHomeModeChange==="function")onHomeModeChange(previousHomeMode,nextHomeMode);
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
     appliedLyricsLayout = settings.lyricsLayout;
