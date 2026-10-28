@@ -25,6 +25,7 @@ const ALLOWED_PATHS = [
   /^\/me\/playlists(\?|$)/,
   /^\/me\/tracks(\?|$)/,
   /^\/me\/player\/recently-played(\?|$)/,
+  /^\/me\/player\/devices(\?|$)/,
   /^\/me\/player\/queue(\?|$)/,
   /^\/search\?/,
   /^\/playlists\/[A-Za-z0-9]+\/(items|tracks)(\?|$)/,
@@ -74,10 +75,18 @@ function normaliseApiRequest(input, isSpotifyUri) {
   }
   if (method === "PUT" && parsed.pathname === "/me/player/play") {
     const body = request?.body || {};
+    const deviceId = parsed.searchParams.get("device_id");
+    if ([...parsed.searchParams.keys()].some((key) => key !== "device_id") || (deviceId && !/^[A-Za-z0-9_-]{1,160}$/.test(deviceId))) return null;
     const validUris = Array.isArray(body.uris) && body.uris.length > 0 && body.uris.length <= 100 && body.uris.every(isSpotifyUri);
     const validContext = isSpotifyUri(body.context_uri) && (!body.offset?.uri || isSpotifyUri(body.offset.uri));
     if (!validUris && !validContext) return null;
     return { path: requestPath, method, body: validContext ? { context_uri: body.context_uri, offset: body.offset } : { uris: body.uris } };
+  }
+  if (method === "PUT" && parsed.pathname === "/me/player") {
+    const body = request?.body || {};
+    const ids = body.device_ids;
+    if (!Array.isArray(ids) || ids.length !== 1 || !/^[A-Za-z0-9_-]{1,160}$/.test(String(ids[0] || "")) || (body.play != null && typeof body.play !== "boolean")) return null;
+    return { path: requestPath, method, body: { device_ids: [ids[0]], play: !!body.play } };
   }
   if (method === "PUT" && parsed.pathname === "/me/player/shuffle") {
     const state = parsed.searchParams.get("state");

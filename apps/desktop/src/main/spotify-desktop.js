@@ -98,11 +98,25 @@ function createSpotifyDesktop({ app, getWindow }) {
     win.focus();
   }
 
+  function shieldAfterglow(win) {
+    if (!win || win.isDestroyed()) return () => {};
+    const wasAlwaysOnTop = win.isAlwaysOnTop();
+    try { win.setAlwaysOnTop(true, "floating", 1); } catch {}
+    restoreAfterglowFocus(win);
+    const timers = [45, 140, 320].map((delay) => setTimeout(() => restoreAfterglowFocus(win), delay));
+    return () => setTimeout(() => {
+      timers.forEach(clearTimeout);
+      restoreAfterglowFocus(win);
+      try { if (!wasAlwaysOnTop) win.setAlwaysOnTop(false); } catch {}
+    }, 520);
+  }
+
   async function playUri(uri, context) {
     if (typeof uri !== "string" || !URI_RE.test(uri)) {
       return { ok: false, error: "That isn't a Spotify link" };
     }
     const win = getWindow();
+    const releaseShield = shieldAfterglow(win);
     let command = `play track "${uri}"`;
     if (typeof context === "string" && URI_RE.test(context)) command += ` in context "${context}"`;
     const { error, stderr } = await runAppleScript(`tell application "Spotify" to ${command}`, 6000);
@@ -117,6 +131,7 @@ function createSpotifyDesktop({ app, getWindow }) {
       // without the repeated focus bouncing the older implementation caused.
       setTimeout(() => restoreAfterglowFocus(win), 140);
     }
+    releaseShield();
     return error ? { ok: false, error: (stderr || error.message).trim() } : { ok: true };
   }
 

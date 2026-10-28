@@ -13,21 +13,26 @@ const homeSource = fs.readFileSync(
   "utf8"
 );
 
-async function routePlayback({ apiResult = { ok: true } } = {}) {
-  const calls = { api: 0, desktop: 0 };
+async function routePlayback({ apiResults = [{ ok: true }], contextUri = null, nowPlayingResults = [] } = {}) {
+  const calls = { api: 0, desktop: 0, nowPlaying: 0, requests: [] };
   const context = {
     document: { getElementById() {}, documentElement: {} },
     window: {
       tracker: {
-        async spApi() { calls.api += 1; return apiResult; },
+        async spApi(request) { calls.api += 1; calls.requests.push(request); return apiResults.shift() || { ok: false, status: 500, error: "No mock response" }; },
         async playUri() { calls.desktop += 1; return { ok: true }; },
+        async nowPlaying() {
+          calls.nowPlaying += 1;
+          return nowPlayingResults.shift() || { state: "playing", uri: "spotify:track:1234567890" };
+        },
       },
     },
+    setTimeout(callback) { callback(); return 1; },
     calls,
     result: null,
   };
   await vm.runInNewContext(
-    `${coreSource}\nresult = playSpotifyUri("spotify:track:1234567890");`,
+    `${coreSource}\nresult = playSpotifyUri("spotify:track:1234567890", ${JSON.stringify(contextUri)});`,
     context
   );
   return { calls, result: await context.result };
@@ -58,12 +63,52 @@ test("left-rack playback uses one focus-safe Web API command when available", as
   assert.equal(result.source, "web-api");
 });
 
-test("left-rack playback never raises Spotify when Web API control is unavailable", async () => {
-  const { calls, result } = await routePlayback({ apiResult: { ok: false, status: 401, error: "Not connected" } });
-  assert.equal(calls.api, 1);
+test("left-rack playback wakes an available device before using desktop fallback", async () => {
+  const { calls, result } = await routePlayback({ apiResults: [
+    { ok: false, status: 404, error: "No active device" },
+    { ok: true, data: { devices: [{ id: "mac_device_1", type: "Computer", is_restricted: false }] } },
+    { ok: true },
+    { ok: true },
+  ] });
+  assert.equal(calls.api, 4);
   assert.equal(calls.desktop, 0);
-  assert.equal(result.source, "web-api");
-  assert.equal(result.ok, false);
+  assert.equal(result.source, "web-api-device");
+  assert.equal(calls.requests[2].path, "/me/player");
+  assert.match(calls.requests[3].path, /device_id=mac_device_1/);
+});
+
+test("left-rack playback retries a stale playlist item directly", async () => {
+  const { calls, result } = await routePlayback({
+    contextUri: "spotify:playlist:ABCDEFGHIJ",
+    apiResults: [{ ok: false, status: 403, error: "Invalid context" }, { ok: true }],
+  });
+  assert.equal(calls.api, 2);
+  assert.equal(calls.desktop, 0);
+  assert.equal(result.source, "web-api-direct");
+  assert.deepEqual(JSON.parse(JSON.stringify(calls.requests[1].body)), { uris: ["spotify:track:1234567890"] });
+});
+
+test("left-rack playback uses the shielded desktop command when the API session is unavailable", async () => {
+  const { calls, result } = await routePlayback({ apiResults: [{ ok: false, status: 401, error: "Not connected" }] });
+  assert.equal(calls.api, 1);
+  assert.equal(calls.desktop, 1);
+  assert.equal(result.source, "desktop-shielded");
+  assert.equal(result.ok, true);
+});
+
+test("left-rack playback rejects a false API success and recovers through the desktop player", async () => {
+  const stopped = { state: "stopped" };
+  const { calls, result } = await routePlayback({
+    apiResults: [
+      { ok: true, status: 204 },
+      { ok: true, data: { devices: [] } },
+    ],
+    nowPlayingResults: [stopped, stopped, stopped, { state: "playing", uri: "spotify:track:1234567890" }],
+  });
+  assert.equal(calls.api, 2);
+  assert.equal(calls.desktop, 1);
+  assert.equal(result.source, "desktop-shielded");
+  assert.equal(result.ok, true);
 });
 
 test("queue cards accept only the requested playback context and exclude the current song", () => {

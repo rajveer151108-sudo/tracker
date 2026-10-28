@@ -74,7 +74,6 @@ async function refreshQueuePanel(silent = false) {
 }
 
 function openQueuePanel() {
-  if (document.body.dataset.view !== "lyrics") setAppView("lyrics");
   $("queuePanel").classList.add("open");
   $("queuePanel").setAttribute("aria-hidden", "false");
   $("queueBtn").setAttribute("aria-expanded", "true");
