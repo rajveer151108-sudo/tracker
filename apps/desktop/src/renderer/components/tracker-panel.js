@@ -3,6 +3,13 @@
 // =====================================================================
 let trackerLoaded = false;
 
+function freshTrackerUrl(rawUrl) {
+  const url = new URL(rawUrl);
+  url.searchParams.set("afterglow-ui", "2");
+  url.searchParams.set("loaded", Date.now().toString());
+  return url.toString();
+}
+
 function setTrackerLoading(title, detail = "Loading your private archive…") {
   const host = $("trackerLoading");
   const meter = document.createElement("span");meter.className = "trackerLoader";
@@ -28,7 +35,10 @@ function openTracker() {
       $("trackerLoading").classList.add("show");
       return;
     }
-    view.setAttribute("src", trackerUrl);
+    // GitHub Pages caches index.html for several minutes. A fresh document URL
+    // prevents the persistent Electron partition from pinning an older UI while
+    // hashed JS/CSS assets can still use their normal long-lived cache.
+    view.setAttribute("src", freshTrackerUrl(trackerUrl));
     trackerLoaded = true;
   }
 }
@@ -71,6 +81,7 @@ $("trackerBtn").addEventListener("click", openTracker);
 $("closeTracker").addEventListener("click", closeTracker);
 $("reloadTracker").addEventListener("click", () => {
   setTrackerLoading("RECALIBRATING LISTENING SIGNAL");
-  trackerView.reload();
+  if (typeof trackerView.reloadIgnoringCache === "function") trackerView.reloadIgnoringCache();
+  else trackerView.setAttribute("src", freshTrackerUrl(trackerView.dataset.src));
 });
 $("externalTracker").addEventListener("click", () => window.tracker.openTrackerExternal());
