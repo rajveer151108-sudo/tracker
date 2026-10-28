@@ -136,13 +136,19 @@ function Root() {
   return (
     <>
       <nav className="nav" aria-label="Main">
-        <a href="#" aria-current={route === "home" ? "page" : undefined}>Dashboard</a>
-        <a href="#stats" aria-current={route === "stats" ? "page" : undefined}>Stats</a>
-        {!embeddedInAfterglow && <a href="#host" aria-current={route === "host" ? "page" : undefined}>Host</a>}
-        <a href="#files" aria-current={route === "files" ? "page" : undefined}>My files</a>
-        <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}>Playlists</a>
-        <a href="#import" aria-current={["imports", "lastfm", "spotify-import"].includes(route) ? "page" : undefined}>Import</a>
-        <a href="#account" aria-current={route === "account" ? "page" : undefined}>Account</a>
+        <a className="tracker-brand" href="#" aria-label="Afterglow Tracker dashboard">
+          <span className="brand-mark"><i /><i /><i /><i /></span>
+          <span><b>AFTERGLOW</b><small>TRACKER</small></span>
+        </a>
+        <div className="nav-links">
+          <a href="#" aria-current={route === "home" ? "page" : undefined}><i>⌂</i><span>Dashboard</span></a>
+          <a href="#stats" aria-current={route === "stats" ? "page" : undefined}><i>⌁</i><span>Insights</span></a>
+          {!embeddedInAfterglow && <a href="#host" aria-current={route === "host" ? "page" : undefined}><i>◉</i><span>Host</span></a>}
+          <a href="#files" aria-current={route === "files" ? "page" : undefined}><i>◇</i><span>Files</span></a>
+          <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}><i>≋</i><span>Playlists</span></a>
+          <a href="#import" aria-current={["imports", "lastfm", "spotify-import"].includes(route) ? "page" : undefined}><i>↓</i><span>Import</span></a>
+          <a href="#account" aria-current={route === "account" ? "page" : undefined}><i>◌</i><span>Account</span></a>
+        </div>
         <SyncButton onDone={() => setTick((t) => t + 1)} />
       </nav>
       {route === "stats" ? <Stats key={tick} />

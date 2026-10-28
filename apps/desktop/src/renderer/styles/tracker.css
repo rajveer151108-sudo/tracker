@@ -1,18 +1,14 @@
 /* ---- embedded Tracker dashboard ---- */
-#trackerPanel { position: absolute; inset: 0; z-index: 12; display: none; flex-direction: column;
-                background: #171533; -webkit-app-region: no-drag; }
-#trackerPanel.open { display: flex; }
-.trackerTop { min-height: 68px; padding: 12px 16px 11px 20px; display: flex; align-items: center;
-              justify-content: space-between; gap: 12px; background: rgba(8,8,14,.72); border-bottom: 1px solid rgba(255,255,255,.1); }
-.trackerTop h2 { margin: 0; font-size: 18px; }
-.trackerTop span { display: block; opacity: .5; font-size: 11px; margin-top: 2px; }
-.trackerActions { display: flex; align-items: center; gap: 6px; }
-.trackerActions .btn { padding: 7px 10px; white-space: nowrap; }
-#trackerView { flex: 1; width: 100%; min-height: 0; background: #171533; }
-#trackerLoading { position: absolute; inset: 68px 0 0; z-index: 1; display: none; align-items: center;
-                  justify-content: center; padding: 30px; text-align: center; color: rgba(255,255,255,.65); background: #171533; }
-#trackerLoading.show { display: flex; }
-@media (max-width: 620px) {
-  .trackerTop span, #externalTracker { display: none; }
-  .trackerTop { padding-left: 14px; }
-}
+#trackerPanel { position:absolute;inset:0;z-index:12;display:none;flex-direction:column;overflow:hidden;background:#070912;-webkit-app-region:no-drag }
+#trackerPanel:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 8% 0%,#8f78ff26,transparent 30rem),radial-gradient(circle at 92% 8%,#73f6e11c,transparent 27rem)}
+#trackerPanel.open{display:flex;animation:trackerReveal .32s cubic-bezier(.2,.8,.2,1)}@keyframes trackerReveal{from{opacity:0;transform:scale(.992)}to{opacity:1;transform:none}}
+.trackerTop{position:relative;z-index:2;min-height:82px;padding:12px 16px 11px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:#090b14e8;border-bottom:1px solid #ffffff12;box-shadow:0 12px 35px #0005;backdrop-filter:blur(22px)}
+.trackerIdentity{display:flex;align-items:center;gap:13px;min-width:0}.trackerFrameMark{width:42px;height:42px;display:flex;align-items:center;justify-content:center;gap:3px;flex:none;border:1px solid #9a86ff66;border-radius:13px;background:linear-gradient(145deg,#9a86ff2b,#73f6e10d);box-shadow:inset 0 0 18px #9a86ff18,0 0 25px #9a86ff12}.trackerFrameMark i{width:3px;border-radius:5px;background:linear-gradient(#73f6e1,#9a86ff);animation:trackerWave 1.2s ease-in-out infinite}.trackerFrameMark i:nth-child(1){height:9px}.trackerFrameMark i:nth-child(2){height:22px;animation-delay:-.2s}.trackerFrameMark i:nth-child(3){height:14px;animation-delay:-.4s}.trackerFrameMark i:nth-child(4){height:27px;animation-delay:-.6s}@keyframes trackerWave{50%{transform:scaleY(.45);opacity:.55}}
+.trackerTop h2{margin:2px 0 3px;font:800 18px/1.05 system-ui,sans-serif;letter-spacing:-.025em}.trackerFrameEyebrow{display:block;color:#73f6e1!important;opacity:1!important;font:700 7px ui-monospace,monospace!important;letter-spacing:.16em}.trackerTop #trackerSyncState{display:flex;align-items:center;gap:6px;margin:0;color:#9da4b8;opacity:1;font:600 9px system-ui,sans-serif}.trackerTop #trackerSyncState i{width:6px;height:6px;border-radius:50%;background:#73f6e1;box-shadow:0 0 10px #73f6e1;animation:trackerBlink 1.8s ease-in-out infinite}@keyframes trackerBlink{50%{opacity:.35}}
+.trackerTop #trackerSyncState[data-state="offline"] i,.trackerTop #trackerSyncState[data-state="waiting"] i{background:#ffd166;box-shadow:0 0 10px #ffd166}.trackerTop #trackerSyncState[data-state="error"] i{background:#ff789a;box-shadow:0 0 10px #ff789a}
+.trackerActions{display:flex;align-items:center;gap:7px}.trackerActions .btn{min-width:42px;height:40px;padding:0 12px;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #ffffff14;border-radius:12px;color:#bdc2d2;background:#ffffff08;box-shadow:inset 0 1px #ffffff08;white-space:nowrap;transition:transform .2s,border-color .2s,background .2s}.trackerActions .btn:hover{transform:translateY(-2px);border-color:#9a86ff73;background:#9a86ff17}.trackerActions .btn b{font:700 15px ui-monospace,monospace}.trackerActions .btn span{font-size:10px}.trackerActions .btn.primary{border-color:#9a86ff52;color:#fff;background:linear-gradient(135deg,#9a86ff3b,#73f6e112)}
+#trackerView{position:relative;z-index:1;flex:1;width:100%;min-height:0;background:#070912}
+#trackerLoading{position:absolute;inset:82px 0 0;z-index:3;display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding:30px;text-align:center;color:#c8ccdb;background:radial-gradient(circle at 50% 44%,#9a86ff18,transparent 18rem),#070912}
+#trackerLoading:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:38px 38px;mask-image:radial-gradient(circle,#000,transparent 72%)}#trackerLoading.show{display:flex}.trackerLoader{height:54px;display:flex;align-items:center;gap:5px;margin-bottom:13px}.trackerLoader i{width:5px;border-radius:5px;background:linear-gradient(#73f6e1,#9a86ff);box-shadow:0 0 16px #9a86ff4f;animation:trackerLoadWave .9s ease-in-out infinite alternate}.trackerLoader i:nth-child(1){height:18px}.trackerLoader i:nth-child(2){height:42px;animation-delay:-.2s}.trackerLoader i:nth-child(3){height:28px;animation-delay:-.4s}.trackerLoader i:nth-child(4){height:50px;animation-delay:-.6s}@keyframes trackerLoadWave{to{transform:scaleY(.35);opacity:.45}}#trackerLoading strong{z-index:1;font:800 11px ui-monospace,monospace;letter-spacing:.16em}#trackerLoading small{z-index:1;color:#737b91;font-size:10px}
+@media(max-width:620px){.trackerFrameEyebrow,.trackerTop #trackerSyncState,#externalTracker span{display:none}.trackerTop{padding-left:12px}.trackerActions .btn{padding:0 10px}.trackerActions .btn span{display:none}}
+@media(prefers-reduced-motion:reduce){#trackerPanel.open,.trackerFrameMark i,.trackerTop #trackerSyncState i,.trackerLoader i{animation:none}}

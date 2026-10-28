@@ -3,6 +3,17 @@
 // =====================================================================
 let trackerLoaded = false;
 
+function setTrackerLoading(title, detail = "Loading your private archive…") {
+  const host = $("trackerLoading");
+  const meter = document.createElement("span");meter.className = "trackerLoader";
+  for(let index=0;index<4;index++)meter.appendChild(document.createElement("i"));
+  const strong=document.createElement("strong"),small=document.createElement("small");strong.textContent=title;small.textContent=detail;host.replaceChildren(meter,strong,small);
+}
+
+function setTrackerSyncState(text, state = "live") {
+  const label = $("trackerSyncState");if(!label)return;const dot=document.createElement("i");label.replaceChildren(dot,document.createTextNode(text));label.dataset.state=state;
+}
+
 function openTracker() {
   closeLibrary();
   closeSettings();
@@ -13,7 +24,7 @@ function openTracker() {
   if (!trackerLoaded) {
     const trackerUrl = view.dataset.src;
     if (!trackerUrl) {
-      $("trackerLoading").textContent = "Tracker URL is missing from this build.";
+      setTrackerLoading("TRACKER LINK MISSING", "This build does not include a dashboard address.");
       $("trackerLoading").classList.add("show");
       return;
     }
@@ -29,11 +40,11 @@ function closeTracker() {
 }
 
 const trackerView = $("trackerView");
-trackerView.addEventListener("did-start-loading", () => $("trackerLoading").classList.add("show"));
+trackerView.addEventListener("did-start-loading", () => {setTrackerLoading("CALIBRATING LISTENING SIGNAL");$("trackerLoading").classList.add("show");});
 trackerView.addEventListener("did-stop-loading", () => $("trackerLoading").classList.remove("show"));
 trackerView.addEventListener("did-fail-load", (event) => {
   if (event.errorCode === -3) return;
-  $("trackerLoading").textContent = "Tracker couldn't load. Check your internet connection, then press Reload.";
+  setTrackerLoading("SIGNAL LOST", "Check your internet connection, then press Reload.");
   $("trackerLoading").classList.add("show");
 });
 trackerView.addEventListener("ipc-message", async (event) => {
@@ -48,12 +59,10 @@ trackerView.addEventListener("ipc-message", async (event) => {
 });
 
 window.tracker.onTrackerSyncStatus((status) => {
-  const label = $("trackerSyncState");
-  if (!label) return;
-  if (status.error) label.textContent = status.error;
-  else if (!status.connected) label.textContent = "Open Tracker and log in to enable live tracking.";
-  else if (status.queued) label.textContent = `${status.queued} play${status.queued === 1 ? "" : "s"} waiting to sync`;
-  else label.textContent = "Live tracking connected";
+  if (status.error) setTrackerSyncState(status.error,"error");
+  else if (!status.connected) setTrackerSyncState("Log in to enable live tracking","offline");
+  else if (status.queued) setTrackerSyncState(`${status.queued} play${status.queued === 1 ? "" : "s"} waiting to sync`,"waiting");
+  else setTrackerSyncState("Live tracking connected","live");
 });
 
 window.tracker.trackerSyncStatus();
@@ -61,7 +70,7 @@ window.tracker.trackerSyncStatus();
 $("trackerBtn").addEventListener("click", openTracker);
 $("closeTracker").addEventListener("click", closeTracker);
 $("reloadTracker").addEventListener("click", () => {
-  $("trackerLoading").textContent = "Loading Tracker…";
+  setTrackerLoading("RECALIBRATING LISTENING SIGNAL");
   trackerView.reload();
 });
 $("externalTracker").addEventListener("click", () => window.tracker.openTrackerExternal());

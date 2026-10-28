@@ -121,46 +121,53 @@ export default function Stats() {
   }
 
   const max = ranked[0]?.n ?? 1;
+  const activeRange = RANGES.find((item) => item.id === range)?.label ?? "Selected range";
+  const activeTab = TABS.find((item) => item.id === tab)?.label ?? "Insights";
 
   return (
-    <main className="shell">
-      <h2>Stats</h2>
+    <main className="shell insights-shell">
+      <header className="page-hero compact">
+        <div><span className="eyebrow"><i className="live-dot" /> DEEP LISTENING ANALYSIS</span><h1>Your patterns,<br /><em>made visible.</em></h1></div>
+        <div className="insight-readout"><span>ACTIVE VIEW</span><strong>{activeTab}</strong><small>{activeRange}</small></div>
+      </header>
 
-      <div className="chips" role="group" aria-label="Time range">
-        {RANGES.map((r) => (
-          <button key={r.id} className="chip" aria-pressed={range === r.id} onClick={() => setRange(r.id)}>
-            {r.label}
-          </button>
-        ))}
-      </div>
+      <section className="control-deck">
+        <div><span className="control-label">TIME WINDOW</span><div className="chips" role="group" aria-label="Time range">
+          {RANGES.map((r) => (
+            <button key={r.id} className="chip" aria-pressed={range === r.id} onClick={() => setRange(r.id)}>{r.label}</button>
+          ))}
+        </div></div>
+        <div><span className="control-label">SIGNAL TYPE</span><div className="chips" role="group" aria-label="Stat type">
+          {TABS.map((t) => (
+            <button key={t.id} className="chip" aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>
+          ))}
+        </div></div>
+      </section>
 
-      <div className="chips" role="group" aria-label="Stat type">
-        {TABS.map((t) => (
-          <button key={t.id} className="chip" aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <section className="stats-readout">
+        <div><span>TOTAL PLAYS</span><strong>{total === null ? "—" : total.toLocaleString()}</strong></div>
+        <div><span>DISPLAYING</span><strong>{tab === "order" ? recent.length : ranked.length}</strong></div>
+        <div><span>PERIOD</span><strong>{activeRange.replace("Last ", "")}</strong></div>
+      </section>
 
-      {total !== null && <p className="total">{total.toLocaleString()} plays in this range</p>}
-      {loading && <p className="muted">Loading…</p>}
+      {loading && <div className="loading-signal"><i /><span>DECODING YOUR LISTENING SIGNAL…</span></div>}
       {error && <p className="error" role="alert">{error}</p>}
 
       {!loading && tab !== "order" && (
         ranked.length === 0 ? (
-          <p className="muted">Nothing in this range yet.</p>
+          <div className="empty-state large"><span>NO SIGNAL IN RANGE</span><p>Try a wider time window or keep listening.</p></div>
         ) : (
-          <ol className="list">
+          <ol className="list insight-list">
             {ranked.map((r, i) => (
               <li key={`${r.name}|${r.artist ?? ""}|${i}`} className="ranked">
                 <div className="fill" style={{ width: `${(r.n / max) * 100}%` }} />
-                <span className="rank">{i + 1}</span>
+                <span className="rank">{String(i + 1).padStart(2, "0")}</span>
                 <img src={r.image ?? undefined} alt="" className="cover" />
                 <div className="meta">
                   <strong>{r.name}</strong>
                   {r.artist && <span>{r.artist}</span>}
                 </div>
-                <span className="count">{Number(r.n).toLocaleString()} plays</span>
+                <span className="count"><b>{Number(r.n).toLocaleString()}</b><small>plays</small></span>
               </li>
             ))}
           </ol>
@@ -169,13 +176,14 @@ export default function Stats() {
 
       {!loading && tab === "order" && (
         recent.length === 0 ? (
-          <p className="muted">Nothing in this range yet.</p>
+          <div className="empty-state large"><span>NO TRANSMISSIONS</span><p>Nothing was captured in this range.</p></div>
         ) : (
           <>
-            <p className="muted">Showing the latest 100 plays in this range.</p>
-            <ol className="list">
+            <div className="order-heading"><span className="eyebrow">STREAMING ORDER</span><p>Latest 100 plays in this range, newest first.</p></div>
+            <ol className="list order-list">
               {recent.map((r, i) => (
                 <li key={`${r.played_at}|${r.track_name}|${i}`}>
+                  <span className="activity-index">{String(i + 1).padStart(2, "0")}</span>
                   <img src={r.album_image ?? undefined} alt="" className="cover" />
                   <div className="meta">
                     <strong>{r.track_name}</strong>

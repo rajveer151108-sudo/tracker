@@ -91,18 +91,21 @@
 
   <div id="trackerPanel" aria-hidden="true">
     <div class="trackerTop">
-      <div>
-        <h2>Tracker</h2>
-        <span>Your listening stats, inside Afterglow.</span>
-        <span id="trackerSyncState">Checking live tracking…</span>
+      <div class="trackerIdentity">
+        <span class="trackerFrameMark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <span class="trackerFrameEyebrow">AFTERGLOW SYSTEMS // 01</span>
+          <h2>Listening Intelligence</h2>
+          <span id="trackerSyncState"><i></i> Checking live tracking…</span>
+        </div>
       </div>
       <div class="trackerActions">
-        <button class="btn" id="reloadTracker">Reload</button>
-        <button class="btn" id="externalTracker">Open in browser</button>
-        <button class="btn primary" id="closeTracker">Close</button>
+        <button class="btn" id="reloadTracker"><b>↻</b><span>Reload</span></button>
+        <button class="btn" id="externalTracker"><b>↗</b><span>Browser</span></button>
+        <button class="btn primary" id="closeTracker"><b>×</b><span>Close</span></button>
       </div>
     </div>
-    <div id="trackerLoading">Loading Tracker…</div>
+    <div id="trackerLoading"><span class="trackerLoader"><i></i><i></i><i></i><i></i></span><strong>CALIBRATING LISTENING SIGNAL</strong><small>Loading your private archive…</small></div>
     <webview id="trackerView" data-src="https://rajveer151108-sudo.github.io/tracker/" partition="persist:afterglow-tracker" webpreferences="contextIsolation=yes, nodeIntegration=no, sandbox=yes"></webview>
   </div>
   <div id="toast"></div>
