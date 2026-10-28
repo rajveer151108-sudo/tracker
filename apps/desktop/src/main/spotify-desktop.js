@@ -91,14 +91,27 @@ async function setVolume(volume) {
 }
 
 function createSpotifyDesktop({ app, getWindow }) {
+  function restoreAfterglowFocus(win) {
+    if (!win || win.isDestroyed() || win.isMinimized()) return;
+    if (process.platform === "darwin") app.focus({ steal: true });
+    win.show();
+    win.focus();
+  }
+
   async function playUri(uri, context) {
     if (typeof uri !== "string" || !URI_RE.test(uri)) {
       return { ok: false, error: "That isn't a Spotify link" };
     }
+    const win = getWindow();
+    const keepAfterglowFocused = !!(win && !win.isDestroyed() && win.isFocused());
     let command = `play track "${uri}"`;
     if (typeof context === "string" && URI_RE.test(context)) command += ` in context "${context}"`;
-    const script = `tell application "Spotify"\n${command}\ndelay 0.08\nset player position to 0\nend tell`;
-    const { error, stderr } = await runAppleScript(script, 6000);
+    const { error, stderr } = await runAppleScript(`tell application "Spotify" to ${command}`, 6000);
+    if (keepAfterglowFocused) restoreAfterglowFocus(win);
+    // Keep the foreground command as short as possible, then correct Spotify's
+    // occasional resume position without giving its window another chance to
+    // take focus.
+    if (!error) setTimeout(() => runAppleScript('tell application "Spotify" to set player position to 0'), 80);
     return error ? { ok: false, error: (stderr || error.message).trim() } : { ok: true };
   }
 
