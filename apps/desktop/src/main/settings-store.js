@@ -64,7 +64,7 @@ const ENUMS = {
   glowDisplays: ["all", "main"],
   lyricsDanceStyle: ["auto", "float", "punch", "sway", "shake", "bounce", "snap", "subtle"],
   performanceMode: ["battery", "balanced", "smooth"],
-  homeMode: ["arcade", "vinyl", "tape", "midnight"],
+  homeMode: ["arcade", "vinyl", "cd", "midnight"],
 };
 
 function clean(key, value) {
@@ -85,6 +85,9 @@ function createSettingsStore(app) {
   function load() {
     try {
       const saved = JSON.parse(fs.readFileSync(file(), "utf8"));
+      // Tape archive occupied the third home slot in older builds. That slot is
+      // now the dedicated CD stereo, so existing installs move across cleanly.
+      if (saved.homeMode === "tape") saved.homeMode = "cd";
       for (const key of Object.keys(DEFAULTS)) {
         const value = clean(key, saved[key]);
         if (value !== undefined) settings[key] = value;

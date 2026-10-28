@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("tracker", {
   getSettings: () => ipcRenderer.invoke("settings-get"),
   setSettings: (patch) => ipcRenderer.send("settings-set", patch),
   onSettings: (cb) => ipcRenderer.on("settings", (_e, s) => cb(s)),
+  onAuthRestored: (cb) => ipcRenderer.on("auth-restored", () => cb()),
   sendGlow: (p) => ipcRenderer.send("glow-update", p),
   sendBeat: (v) => ipcRenderer.send("beat", v),
   toggleFullscreen: () => ipcRenderer.send("fullscreen-toggle"),

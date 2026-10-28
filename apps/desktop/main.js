@@ -58,7 +58,7 @@ function setImmersive(on) {
   mainWindow.webContents.send("fullscreen", on);
 }
 
-function createWindow() {
+function createWindow(loadContent = true) {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -86,7 +86,7 @@ function createWindow() {
       event.preventDefault();
     }
   });
-  mainWindow.loadFile(path.join(rootDir, "index.html"));
+  if (loadContent) mainWindow.loadFile(path.join(rootDir, "index.html"));
   glow.setMainWindow(mainWindow);
 }
 
@@ -162,12 +162,18 @@ function registerIpc() {
 
 app.whenReady().then(() => {
   settingsStore.load();
-  spotifyLibrary.loadAuth();
-  trackerSync.load();
   registerIpc();
+  // Paint the full player before asking macOS Keychain to decrypt saved
+  // sessions. A freshly rebuilt local app may need one approval; keeping the
+  // renderer alive means Afterglow and that prompt remain visible meanwhile.
   createWindow();
   glow.createOverlays();
   glow.watchDisplays();
+  mainWindow.webContents.once("did-finish-load", () => setTimeout(() => {
+    spotifyLibrary.loadAuth();
+    trackerSync.load();
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("auth-restored");
+  }, 250));
 });
 
 app.on("window-all-closed", () => app.quit());

@@ -5,7 +5,7 @@
     { type: "heading", label: "Home" },
     { key: "homeMode", label: "Home style", type: "choice",
       hint: "The same music library, rebuilt as four different listening spaces.",
-      options: [["arcade", "Arcade"], ["vinyl", "CD player"], ["tape", "Tape archive"], ["midnight", "Midnight"]] },
+      options: [["arcade", "Arcade"], ["vinyl", "Vinyl player"], ["cd", "CD player"], ["midnight", "Midnight"]] },
 
     { type: "heading", label: "Lyrics" },
     { key: "showLyrics", label: "Show lyrics", type: "toggle" },
