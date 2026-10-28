@@ -43,8 +43,11 @@ test("line-by-line layouts receive one semantic emoji without changing their lyr
   ];
   const decorated = effects.decorateLines(rows);
   assert.equal(decorated[0].emoji, "❤️");
+  assert.equal(decorated[0].emojiWordIndex, 1);
   assert.ok(decorated[1].emoji);
+  assert.ok(decorated[1].emojiWordIndex >= 0);
   assert.equal(decorated[2].emoji, null);
+  assert.equal(decorated[2].emojiWordIndex, -1);
   assert.deepEqual(decorated.map((row) => row.text), rows.map((row) => row.text));
 });
 

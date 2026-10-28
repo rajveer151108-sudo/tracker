@@ -169,13 +169,20 @@
         s.className = "w";
         s.textContent = w;
         div.appendChild(s);
+        if (l.lineEmoji && l.emoji && i === l.emojiWordIndex) {
+          const emoji = document.createElement("span");
+          emoji.className = "lyric-emoji line-emoji";
+          emoji.textContent = l.emoji;
+          emoji.setAttribute("aria-hidden", "true");
+          div.appendChild(emoji);
+        }
         if (i < words.length - 1) div.appendChild(document.createTextNode(" "));
         return s;
       });
       const W = { spans, cache: spans.map(() => -1), cur: -1, timed };
-      if (l.emoji) {
+      if (l.emoji && !l.lineEmoji) {
         const emoji = document.createElement("span");
-        emoji.className = `lyric-emoji${l.lineEmoji ? " line-emoji" : ""}`;
+        emoji.className = "lyric-emoji";
         emoji.textContent = l.emoji;
         emoji.setAttribute("aria-hidden", "true");
         div.appendChild(document.createTextNode(" "));
