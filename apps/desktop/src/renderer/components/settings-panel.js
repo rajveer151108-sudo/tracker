@@ -24,7 +24,7 @@
       hint: "Cube rolls each word away like one face turning into the next—without drawing a literal cube.",
       options: [["punch", "Punch"], ["slide", "Slide"], ["glide", "Glide"], ["cube", "Cube"]] },
     { key: "lyricsEmoji", label: "Emoji accents", type: "toggle",
-      hint: "Adds occasional emojis to expressive words without changing the lyric text." },
+      hint: "Adds semantic emojis to expressive lyric lines and words without changing the lyric text." },
     { key: "lyricsKeywords", label: "Highlight keywords", type: "toggle",
       hint: "Gives words like love, fire, ice, and money a visual accent in Word stream." },
     { key: "lyricsFit", label: "Make short lines bigger", type: "toggle",

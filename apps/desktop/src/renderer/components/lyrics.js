@@ -130,7 +130,7 @@
   function rebuildLyricsLayout() {
     lines = settings.lyricsLayout === "wordstream" || settings.lyricsLayout === "wordstack"
       ? wordStreamRows(sourceLines)
-      : sourceLines;
+      : window.LyricEffects.decorateLines(sourceLines);
     buildLines();
     updateTimingInfo();
   }
@@ -173,9 +173,9 @@
         return s;
       });
       const W = { spans, cache: spans.map(() => -1), cur: -1, timed };
-      if (l.wordStream && l.emoji) {
+      if (l.emoji) {
         const emoji = document.createElement("span");
-        emoji.className = "lyric-emoji";
+        emoji.className = `lyric-emoji${l.lineEmoji ? " line-emoji" : ""}`;
         emoji.textContent = l.emoji;
         emoji.setAttribute("aria-hidden", "true");
         div.appendChild(document.createTextNode(" "));

@@ -363,5 +363,15 @@
     });
   }
 
-  return { cleanWord, decorateRows, effectForWord, expressionForText, isHighlightCandidate, selectHighlights };
+  function decorateLines(rows) {
+    let previousEmoji = null;
+    return rows.map((row) => {
+      const effects = String(row.text || "").split(/\s+/).map(effectForWord).filter(Boolean);
+      const effect = effects.find((candidate) => candidate.emoji !== previousEmoji) || effects[0] || null;
+      if (effect?.emoji) previousEmoji = effect.emoji;
+      return { ...row, emoji: effect?.emoji || null, tone: effect?.tone || null, lineEmoji: !!effect?.emoji };
+    });
+  }
+
+  return { cleanWord, decorateLines, decorateRows, effectForWord, expressionForText, isHighlightCandidate, selectHighlights };
 });

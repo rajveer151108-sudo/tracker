@@ -35,6 +35,19 @@ test("emoji accents are semantic, spaced out and avoid immediate repeats", () =>
   assert.equal(effects.effectForWord("ordinary"), null);
 });
 
+test("line-by-line layouts receive one semantic emoji without changing their lyrics", () => {
+  const rows = [
+    { text: "I love you forever" },
+    { text: "We dance beneath the moon" },
+    { text: "An ordinary sentence" },
+  ];
+  const decorated = effects.decorateLines(rows);
+  assert.equal(decorated[0].emoji, "❤️");
+  assert.ok(decorated[1].emoji);
+  assert.equal(decorated[2].emoji, null);
+  assert.deepEqual(decorated.map((row) => row.text), rows.map((row) => row.text));
+});
+
 test("expressive lyric lines carry more visual weight than filler", () => {
   const powerful = effects.expressionForText("She cries to the heaven above");
   const ordinary = effects.expressionForText("We got one coming up");
