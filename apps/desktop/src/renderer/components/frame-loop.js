@@ -21,7 +21,7 @@
       $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
       $("pos").textContent = fmt(now);
       $("homeScreen")?.style.setProperty("--home-progress", seekPercent.toFixed(2) + "%");
-      document.querySelectorAll(".arcadeStageProgress,.homeCdProgress,.homeCdDisc").forEach((homeProgress) => {
+      document.querySelectorAll(".arcadeStageProgress,.homeCdProgress,.homeCdDisc,.homeStereoSeek").forEach((homeProgress) => {
         homeProgress.setAttribute("aria-valuemax", String(Math.round(durSec)));
         homeProgress.setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
         homeProgress.setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));

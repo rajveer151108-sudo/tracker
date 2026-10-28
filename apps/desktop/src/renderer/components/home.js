@@ -225,14 +225,14 @@ async function launchHomeCd(item,source){
   const target=hero.querySelector(".homeStereoSlot")?.getBoundingClientRect(),src=sourceRect||hero.getBoundingClientRect();
   if(target){
     const disc=homeElement("div","homeStereoFlight"),label=homeElement("img");label.alt="";if(item.img)label.src=item.img;disc.append(label,homeElement("i",""));document.body.appendChild(disc);
-    const size=Math.min(150,Math.max(104,target.width*.36)),left=target.left+target.width/2-size/2,top=target.top+target.height/2-size/2;
+    const size=Math.min(260,Math.max(190,target.width*.82)),left=target.left+target.width/2-size/2,top=target.top+target.height/2-size/2;
     const startScale=Math.max(.34,Math.min(.78,src.width/size)),dx=src.left+src.width/2-(left+size/2),dy=src.top+src.height/2-(top+size/2);
     Object.assign(disc.style,{left:`${left}px`,top:`${top}px`,width:`${size}px`,height:`${size}px`});
     const flight=disc.animate([
       {transform:`translate3d(${dx}px,${dy}px,0) scale(${startScale}) rotateZ(-18deg) rotateX(0deg)`,opacity:1},
       {transform:`translate3d(${dx*.55}px,${dy*.55-28}px,90px) scale(.98) rotateZ(135deg) rotateX(28deg)`,opacity:1,offset:.42},
-      {transform:`translate3d(${dx*.12}px,${dy*.12-13}px,28px) scale(.82) rotateZ(300deg) rotateX(72deg)`,opacity:1,offset:.78},
-      {transform:"translate3d(0,2px,0) scale(.68) rotateZ(360deg) rotateX(86deg)",opacity:1}
+      {transform:`translate3d(${dx*.12}px,${dy*.12-13}px,28px) scale(.96) rotateZ(300deg) rotateX(72deg)`,opacity:1,offset:.78},
+      {transform:"translate3d(0,2px,0) scale(.94) rotateZ(360deg) rotateX(86deg)",opacity:1}
     ],{duration:1120,easing:"cubic-bezier(.24,.72,.2,1)",fill:"forwards"});
     await flight.finished.catch(()=>{});
     if(sequence===homeState.loadSequence){screen.classList.add("stereo-seated");await new Promise(resolve=>setTimeout(resolve,110));}
