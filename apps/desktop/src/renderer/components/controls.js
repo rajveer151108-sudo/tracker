@@ -82,7 +82,8 @@
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if ($("trackerPanel").classList.contains("open")) closeTracker();
+      if ($("queuePanel").classList.contains("open")) closeQueuePanel();
+      else if ($("trackerPanel").classList.contains("open")) closeTracker();
       else if ($("library").classList.contains("open")) closeLibrary();
       else if ($("settings").classList.contains("open")) closeSettings();
       else if (document.body.classList.contains("immersive")) window.tracker.toggleFullscreen();
@@ -100,6 +101,7 @@
     if (e.key === "f" || e.key === "F") { window.tracker.toggleFullscreen(); return; }
     if (e.key === "h" || e.key === "H") { setAppView("home"); return; }
     if (e.key === "y" || e.key === "Y") { setAppView("lyrics"); return; }
+    if (e.key === "q" || e.key === "Q") { $("queuePanel").classList.contains("open") ? closeQueuePanel() : openQueuePanel(); return; }
     if (e.key === "l" || e.key === "L") { $("library").classList.contains("open") ? closeLibrary() : openLibrary(); return; }
     if (e.key === "t" || e.key === "T") { $("trackerPanel").classList.contains("open") ? closeTracker() : openTracker(); return; }
     if (e.key === "s" || e.key === "S") { $("settings").classList.contains("open") ? closeSettings() : openSettings(); return; }

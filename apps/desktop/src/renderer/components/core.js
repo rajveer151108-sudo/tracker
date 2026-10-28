@@ -6,9 +6,21 @@ const $ = (id) => document.getElementById(id);
   const ICON_PLAY  = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
   const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
 
+  function spotifyPlaybackBody(uri, context = null) {
+    if (context) return { context_uri: context, offset: { uri } };
+    return /^spotify:(?:track|episode):/.test(uri) ? { uris: [uri] } : { context_uri: uri };
+  }
+
   async function playSpotifyUri(uri, context = null) {
-    const fallback = await window.tracker.playUri(uri, context).catch((error) => ({ ok: false, error: error?.message }));
-    return { ...fallback, source: "desktop" };
+    // The Web API changes the active Spotify player without raising Spotify's
+    // window. It is deliberately the only command: a desktop fallback would
+    // raise Spotify, while competing commands caused restart/double-play.
+    const remote = await window.tracker.spApi({
+      path: "/me/player/play",
+      method: "PUT",
+      body: spotifyPlaybackBody(uri, context),
+    }).catch((error) => ({ ok: false, status: 0, error: error?.message }));
+    return { ...remote, source: "web-api" };
   }
 
   function spotifyPagePath(next) {

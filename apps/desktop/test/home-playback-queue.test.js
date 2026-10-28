@@ -13,13 +13,13 @@ const homeSource = fs.readFileSync(
   "utf8"
 );
 
-async function routePlayback() {
+async function routePlayback({ apiResult = { ok: true } } = {}) {
   const calls = { api: 0, desktop: 0 };
   const context = {
     document: { getElementById() {}, documentElement: {} },
     window: {
       tracker: {
-        async spApi() { calls.api += 1; return { ok: true }; },
+        async spApi() { calls.api += 1; return apiResult; },
         async playUri() { calls.desktop += 1; return { ok: true }; },
       },
     },
@@ -51,11 +51,19 @@ function spotifyTrack(id, name) {
   };
 }
 
-test("left-rack playback sends one desktop command and no competing Web API command", async () => {
+test("left-rack playback uses one focus-safe Web API command when available", async () => {
   const { calls, result } = await routePlayback();
-  assert.equal(calls.api, 0);
-  assert.equal(calls.desktop, 1);
-  assert.equal(result.source, "desktop");
+  assert.equal(calls.api, 1);
+  assert.equal(calls.desktop, 0);
+  assert.equal(result.source, "web-api");
+});
+
+test("left-rack playback never raises Spotify when Web API control is unavailable", async () => {
+  const { calls, result } = await routePlayback({ apiResult: { ok: false, status: 401, error: "Not connected" } });
+  assert.equal(calls.api, 1);
+  assert.equal(calls.desktop, 0);
+  assert.equal(result.source, "web-api");
+  assert.equal(result.ok, false);
 });
 
 test("queue cards accept only the requested playback context and exclude the current song", () => {

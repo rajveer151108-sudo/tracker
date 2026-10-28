@@ -64,9 +64,12 @@
         if (impactLayout && settings.lyricsFit && idx >= 0) {
           fitLine(lineEls[idx], lines[idx].text);
         }
-        lineEls.forEach((el) => el.classList.remove("flash", "word-hit"));
+        lineEls.forEach((el) => el.classList.remove("flash", "word-hit", "line-arrive"));
+        if (idx >= 0) {
+          void lineEls[idx].offsetWidth;
+          lineEls[idx].classList.add("line-arrive");
+        }
         if (idx >= 0 && impactLayout) {
-          void lineEls[idx].offsetWidth;            // restart the animation
           lineEls[idx].classList.add(settings.lyricsLayout === "wordstream" ? "word-hit" : "flash");
         }
         if (idx >= 0) {

@@ -25,8 +25,19 @@
   #glow { position: absolute; inset: 0; pointer-events: none;
           opacity: calc(.62 + var(--pulse) * .2 + var(--motion-energy) * .22 + var(--motion-build) * .18 + var(--motion-drop) * .55 - var(--motion-duck) * .34 + var(--motion-lift) * .1);
           background:
+            radial-gradient(ellipse 42% 68% at calc(18% + var(--motion-sway) * 3%) 52%, rgba(var(--glow), calc(.05 + var(--motion-vocal) * .2 + var(--motion-phrase) * .1)), transparent 74%),
+            radial-gradient(ellipse 38% 64% at calc(82% - var(--motion-sway) * 3%) 46%, rgba(255,255,255, calc(.015 + var(--motion-sibilance) * .09)), transparent 76%),
             radial-gradient(ellipse 90% 55% at 50% 0%, rgba(var(--glow), .40), transparent 70%),
-            radial-gradient(ellipse 90% 45% at 50% 100%, rgba(var(--glow), .28), transparent 70%); }
+            radial-gradient(ellipse 90% 45% at 50% 100%, rgba(var(--glow), .28), transparent 70%);
+          filter: saturate(calc(1 + var(--motion-vocal) * .3)) brightness(calc(1 + var(--motion-syllable) * .07)); }
+
+  #viewTransitionGlow { position: absolute; z-index: 12; inset: -18%; pointer-events: none; opacity: 0;
+                        background: radial-gradient(circle at 50% 48%, rgba(var(--glow),.36), rgba(8,8,12,.72) 37%, transparent 68%);
+                        mix-blend-mode: screen; }
+  body.view-enter-lyrics #viewTransitionGlow { animation: lyricsPortal .78s cubic-bezier(.16,.78,.2,1) both; }
+  body.view-enter-home #viewTransitionGlow { animation: homePortal .58s cubic-bezier(.2,.7,.25,1) both; }
+  @keyframes lyricsPortal { 0% { opacity: 0; transform: scale(.42); filter: blur(24px); } 42% { opacity: .74; } 100% { opacity: 0; transform: scale(1.22); filter: blur(4px); } }
+  @keyframes homePortal { 0% { opacity: .5; transform: scale(1.1); } 100% { opacity: 0; transform: scale(.72); } }
 
   header { position: relative; display: flex; align-items: center; gap: 14px; padding: 20px 22px 8px;
            -webkit-app-region: drag; }

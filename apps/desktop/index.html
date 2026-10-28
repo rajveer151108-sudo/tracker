@@ -8,6 +8,7 @@
 <body data-view="home" data-home-mode="arcade">
   <div id="backdrop"></div>
   <div id="glow"></div>
+  <div id="viewTransitionGlow" aria-hidden="true"></div>
   <header>
     <img id="cover" alt="" crossorigin="anonymous" />
     <div id="meta">
@@ -68,6 +69,19 @@
     <div id="estimate"></div>
     <div id="notice"></div>
   </div>
+  <button id="queueBtn" type="button" aria-controls="queuePanel" aria-expanded="false" title="Open Spotify queue (Q)">
+    <span class="queueButtonIcon" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span><b>QUEUE</b><small id="queueCount">UP NEXT</small></span>
+  </button>
+  <aside id="queuePanel" aria-hidden="true" aria-label="Spotify queue">
+    <div class="queuePanelHead">
+      <div><span>PLAYBACK CONTROL</span><h2>Your queue</h2><small id="queueStatus">Synced with Spotify</small></div>
+      <div><button id="queueRefresh" type="button" title="Refresh queue">↻</button><button id="queueClose" type="button" title="Close queue">×</button></div>
+    </div>
+    <div id="queueNow" class="queueNow"></div>
+    <div class="queueListLabel"><span>UP NEXT</span><b id="queueListCount">0 TRACKS</b></div>
+    <div id="queueList" class="queueList"></div>
+  </aside>
   <footer>
     <div id="bar" role="slider" tabindex="0" aria-label="Song position" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><div id="fill"></div></div>
     <div id="time"><span id="pos">0:00</span><span id="dur">0:00</span></div>
@@ -129,6 +143,7 @@
 <script src="src/renderer/components/lyrics.js"></script>
 <script src="src/renderer/components/beat.js"></script>
 <script src="src/renderer/components/frame-loop.js"></script>
+<script src="src/renderer/components/queue-panel.js"></script>
 <script src="src/renderer/components/controls.js"></script>
 <script src="src/renderer/components/library.js"></script>
 <script src="src/renderer/components/home.js"></script>

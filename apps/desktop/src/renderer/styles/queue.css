@@ -1,0 +1,53 @@
+/* ---- lyrics queue drawer ---- */
+#queueBtn {
+  position: fixed; z-index: 18; left: 18px; top: 50%; translate: 0 -50%; width: 92px;
+  display: none; align-items: center; gap: 9px; padding: 10px 11px; border: 1px solid rgba(255,255,255,.18);
+  border-radius: 15px; background: rgba(9,10,16,.54); color: #fff; cursor: pointer;
+  box-shadow: 0 14px 38px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.09);
+  backdrop-filter: blur(18px) saturate(1.25); transition: transform .25s ease, background .25s, border-color .25s, opacity .3s;
+}
+body[data-view="lyrics"] #queueBtn { display: flex; animation: queueButtonIn .55s .38s cubic-bezier(.2,.82,.24,1) both; }
+#queueBtn:hover, #queueBtn[aria-expanded="true"] { transform: translateX(4px); border-color: rgba(var(--glow),.72); background: rgba(var(--glow),.16); }
+#queueBtn > span:last-child { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+#queueBtn b { font: 800 10px/1.1 ui-monospace, monospace; letter-spacing: .13em; }
+#queueBtn small { max-width: 48px; margin-top: 4px; overflow: hidden; color: rgba(255,255,255,.52); font: 700 7px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.queueButtonIcon { width: 18px; height: 19px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.queueButtonIcon i { height: 2px; border-radius: 3px; background: rgb(var(--glow)); box-shadow: 0 0 8px rgba(var(--glow),.65); }
+.queueButtonIcon i:nth-child(2) { width: 72%; }.queueButtonIcon i:nth-child(3) { width: 45%; }
+
+#queuePanel {
+  position: fixed; z-index: 30; top: 96px; bottom: 112px; left: 18px; width: min(360px, calc(100vw - 36px));
+  display: flex; flex-direction: column; overflow: hidden; padding: 17px; border: 1px solid rgba(255,255,255,.15);
+  border-radius: 22px; background: linear-gradient(155deg, rgba(18,20,30,.94), rgba(7,8,13,.9));
+  box-shadow: 0 28px 80px rgba(0,0,0,.52), inset 0 1px rgba(255,255,255,.08);
+  backdrop-filter: blur(28px) saturate(1.35); opacity: 0; visibility: hidden; transform: translateX(calc(-100% - 32px)) scale(.96);
+  transform-origin: left center; transition: transform .5s cubic-bezier(.18,.82,.22,1), opacity .32s ease, visibility .5s;
+}
+#queuePanel.open { opacity: 1; visibility: visible; transform: translateX(0) scale(1); }
+.queuePanelHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 3px 3px 14px; border-bottom: 1px solid rgba(255,255,255,.09); }
+.queuePanelHead span, .queueListLabel span { color: rgb(var(--glow)); font: 800 8px/1 ui-monospace, monospace; letter-spacing: .18em; }
+.queuePanelHead h2 { margin: 7px 0 3px; font-size: 24px; line-height: 1; letter-spacing: -.03em; }
+.queuePanelHead small { color: rgba(255,255,255,.45); font-size: 10px; }
+.queuePanelHead > div:last-child { display: flex; gap: 6px; }
+.queuePanelHead button { width: 31px; height: 31px; border: 1px solid rgba(255,255,255,.1); border-radius: 9px; background: rgba(255,255,255,.045); cursor: pointer; }
+.queuePanelHead button:hover { border-color: rgba(var(--glow),.55); background: rgba(var(--glow),.12); }
+.queueNow { min-height: 76px; margin: 14px 0; padding: 10px; border: 1px solid rgba(var(--glow),.26); border-radius: 14px; background: linear-gradient(120deg, rgba(var(--glow),.13), rgba(255,255,255,.025)); }
+.queueNow:empty { display: none; }
+.queueListLabel { display: flex; justify-content: space-between; padding: 2px 3px 9px; }
+.queueListLabel b { color: rgba(255,255,255,.38); font: 700 8px ui-monospace, monospace; letter-spacing: .1em; }
+.queueList { min-height: 0; overflow: auto; padding-right: 3px; scrollbar-width: thin; scrollbar-color: rgba(var(--glow),.35) transparent; }
+.queueTrack { width: 100%; display: grid; grid-template-columns: 44px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 8px; border: 1px solid transparent; border-radius: 12px; background: transparent; text-align: left; cursor: pointer; transition: background .2s, border-color .2s, transform .2s; }
+.queueTrack:hover { transform: translateX(3px); border-color: rgba(255,255,255,.09); background: rgba(255,255,255,.055); }
+.queueTrack img { width: 44px; height: 44px; border-radius: 9px; object-fit: cover; background: #151620; }
+.queueTrack > span { min-width: 0; display: flex; flex-direction: column; }
+.queueTrack strong, .queueTrack small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queueTrack strong { font-size: 12px; }.queueTrack small { margin-top: 3px; color: rgba(255,255,255,.48); font-size: 9px; }
+.queueTrack em { color: rgb(var(--glow)); font: normal 13px/1 ui-monospace, monospace; opacity: 0; transition: opacity .2s; }
+.queueTrack:hover em { opacity: 1; }
+.queueEmpty { padding: 36px 16px; color: rgba(255,255,255,.46); text-align: center; font-size: 12px; line-height: 1.6; }
+.queueNow .queueTrack { padding: 0; }.queueNow .queueTrack strong::before { content: "NOW PLAYING"; display: block; margin-bottom: 5px; color: rgb(var(--glow)); font: 800 7px ui-monospace, monospace; letter-spacing: .14em; }
+body.queue-open #stage { transform: translateX(min(9vw,110px)) scale(.985); filter: saturate(.88); }
+#stage { transition: transform .55s cubic-bezier(.18,.82,.22,1), filter .4s ease; }
+@keyframes queueButtonIn { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: translateX(0); } }
+@media (max-width: 720px) { #queueBtn { left: 10px; width: 42px; padding: 10px; } #queueBtn > span:last-child { display: none; } #queuePanel { left: 9px; top: 86px; bottom: 100px; } body.queue-open #stage { transform: none; } }
+@media (prefers-reduced-motion: reduce) { #queuePanel, #queueBtn, #stage { transition-duration: 0ms !important; animation: none !important; } }

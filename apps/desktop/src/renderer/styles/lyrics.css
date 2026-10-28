@@ -1,7 +1,24 @@
 /* ---- lyrics ---- */
-  #stage { position: relative; flex: 1; overflow: hidden; margin-top: 6px;
+  #stage { position: relative; isolation: isolate; flex: 1; overflow: hidden; margin-top: 6px;
            -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
                    mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
+  #stage::before, #stage::after { content: ""; position: absolute; z-index: -1; pointer-events: none; border-radius: 50%; opacity: 0; }
+  #stage::before { width: 52vw; height: 52vw; left: -20vw; top: 5%; border: 1px solid rgba(var(--glow),.22);
+                   box-shadow: 0 0 90px rgba(var(--glow),.08), inset 0 0 90px rgba(var(--glow),.06);
+                   opacity: calc(var(--motion-vocal) * .4 + var(--motion-phrase) * .16);
+                   transform: translateX(calc(var(--motion-sway) * 16px)) scale(calc(.78 + var(--motion-phrase) * .18));
+                   filter: blur(calc(4px - var(--motion-vocal) * 2px)); }
+  #stage::after { width: 38vw; height: 74vh; right: -15vw; top: 8%;
+                  background: linear-gradient(140deg, transparent 28%, rgba(255,255,255,.08), rgba(var(--glow),.12), transparent 68%);
+                  opacity: calc(var(--motion-sibilance) * .28 + var(--motion-syllable) * .13);
+                  transform: rotate(calc(-18deg + var(--motion-sway) * 3deg)) translateX(calc(var(--motion-sibilance) * -18px));
+                  filter: blur(18px); }
+  body.view-enter-lyrics #stage { animation: lyricsStageIn .72s cubic-bezier(.16,.82,.22,1) both; }
+  body.view-enter-lyrics footer { animation: lyricsFooterIn .7s .1s cubic-bezier(.16,.82,.22,1) both; }
+  body.view-enter-lyrics header { animation: lyricsHeaderSettle .58s cubic-bezier(.2,.74,.25,1) both; }
+  @keyframes lyricsStageIn { 0% { opacity: 0; transform: translateY(36px) scale(.965); filter: blur(14px); } 55% { filter: blur(1px); } 100% { opacity: 1; transform: none; filter: none; } }
+  @keyframes lyricsFooterIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+  @keyframes lyricsHeaderSettle { 0% { opacity: .55; transform: translateY(-12px); } 100% { opacity: 1; transform: none; } }
   #lines { position: absolute; left: 0; right: 0; top: 0; padding: 0 32px;
            opacity: 1; transition: transform var(--lines-ms, 550ms) cubic-bezier(.22,.8,.25,1), opacity .3s ease; }
   body.lyrics-waiting #lines { opacity: 0; }
@@ -155,6 +172,8 @@
   @media (prefers-reduced-motion: reduce) {
     body:is([data-layout="wordstream"], [data-layout="wordstack"]) #lines { transition-duration: 0ms !important; }
     body[data-layout="wordstream"] .line.word-hit { animation: none !important; }
+    body.view-enter-lyrics #stage, body.view-enter-lyrics footer, body.view-enter-lyrics header,
+    .line.line-arrive, #viewTransitionGlow { animation: none !important; }
   }
 
   .w { display: inline-block; transition: transform .22s ease; }
@@ -163,10 +182,21 @@
   .w.nearR { transform: translateX(.07em) scale(.93); }
   .line.active { transform: scale(calc(1 + var(--pulse) * .028));
                  transition: color .4s, filter .4s, opacity .4s; }
+  .line.line-arrive { animation: lyricLineArrive .52s cubic-bezier(.16,.78,.22,1); }
+  @keyframes lyricLineArrive {
+    0% { opacity: 0; transform: translateY(.38em) scale(.95); filter: blur(8px) brightness(1.45); }
+    62% { opacity: 1; transform: translateY(-.035em) scale(1.018); filter: blur(0) brightness(1.12); }
+    100% { opacity: 1; }
+  }
   body.music-motion .line.active {
-    translate: calc(var(--motion-sway) * 7px) calc((var(--motion-lift) * var(--word-life) + var(--motion-emotion) * .7) * -9px);
-    scale: calc(1 + var(--motion-energy) * .03 + var(--motion-vocal) * var(--word-life) * .02 + var(--motion-build) * .025 + var(--motion-drop) * .075 + var(--motion-emotion) * .08);
+    translate: calc(var(--motion-sway) * 7px) calc((var(--motion-lift) * var(--word-life) + var(--motion-phrase) * .48 + var(--motion-emotion) * .7) * -9px);
+    scale: calc(1 + var(--motion-energy) * .025 + var(--motion-vocal) * var(--word-life) * .03 + var(--motion-syllable) * .018 + var(--motion-build) * .025 + var(--motion-drop) * .075 + var(--motion-emotion) * .08);
     opacity: calc(1 - var(--motion-duck) * .24);
+  }
+  body.music-motion .line.active .w.cur {
+    translate: 0 calc(var(--motion-syllable) * -5px);
+    scale: calc(1.08 + var(--motion-syllable) * .075 + var(--motion-vocal) * .025);
+    filter: brightness(calc(1 + var(--motion-syllable) * .22)) drop-shadow(0 0 calc(7px + var(--motion-syllable) * 17px) rgba(var(--glow),.62));
   }
   /* "whole line" highlight (used for R&B): the line fades up as one piece, no per-word tracking */
   body[data-hl="whole"] .line.active .w { background: none; -webkit-background-clip: border-box; background-clip: border-box;

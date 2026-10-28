@@ -416,5 +416,16 @@ function updateHomeNowPlaying(np){
   renderHome();if(active&&uri&&uri!==previousUri&&currentHomeMode()==="vinyl")scheduleHomeQueueRefresh(uri);
 }
 function onHomeModeChange(previous,next){if(previous!==next&&next==="vinyl")scheduleHomeQueueRefresh(homeState.nowPlaying?.uri||"");}
-function setAppView(view){const wanted=view==="lyrics"?"lyrics":"home";if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();document.body.dataset.view=wanted;$("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");if(wanted==="home")refreshArcadeHome();else activeIdx=-2;}
+let viewTransitionTimer=0;
+function setAppView(view){
+  const wanted=view==="lyrics"?"lyrics":"home",previous=document.body.dataset.view||"home";
+  if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();
+  if(previous===wanted){if(wanted==="home")refreshArcadeHome();else activeIdx=-2;return;}
+  if(wanted==="home")closeQueuePanel();
+  clearTimeout(viewTransitionTimer);document.body.classList.remove("view-enter-home","view-enter-lyrics");void document.body.offsetWidth;
+  document.body.dataset.view=wanted;document.body.classList.add(`view-enter-${wanted}`);
+  $("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");
+  if(wanted==="home")refreshArcadeHome();else activeIdx=-2;
+  viewTransitionTimer=setTimeout(()=>document.body.classList.remove(`view-enter-${wanted}`),900);
+}
 function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("arcadeLibraryBtn").addEventListener("click",()=>{setTab("recent");openLibrary();});$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openLibrary();setTab("account");}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);window.tracker.onAuthRestored?.(()=>{homeState.loadedAt=0;refreshArcadeHome(true);});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}

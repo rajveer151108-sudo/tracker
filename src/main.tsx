@@ -32,6 +32,77 @@ declare global {
 }
 
 let lastDesktopAccessToken = "";
+const TRACKER_BG_KEY = "afterglow-tracker-background";
+const TRACKER_BG_OPACITY_KEY = "afterglow-tracker-background-opacity";
+
+function storedValue(key: string, fallback = "") {
+  try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
+}
+
+async function prepareBackground(file: File) {
+  if (!file.type.startsWith("image/")) throw new Error("Choose an image file");
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const node = new Image();
+      node.onload = () => resolve(node);
+      node.onerror = () => reject(new Error("That image could not be opened"));
+      node.src = url;
+    });
+    const scale = Math.min(1, 1920 / image.naturalWidth, 1200 / image.naturalHeight);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Image processing is unavailable");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/webp", .82);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function TrackerBackgroundControl({ image, opacity, onImage, onOpacity }: {
+  image: string;
+  opacity: number;
+  onImage: (value: string) => void;
+  onOpacity: (value: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+
+  async function choose(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setNote("Preparing background…");
+    try {
+      onImage(await prepareBackground(file));
+      setNote("Background saved on this device");
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : "Couldn't use that image");
+    }
+  }
+
+  return (
+    <div className="background-control">
+      <button className="background-trigger" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} title="Customize tracker background">
+        <i aria-hidden="true" /> <span>Backdrop</span>
+      </button>
+      {open && <div className="background-popover">
+        <div className="background-popover-head"><span>PERSONAL DISPLAY</span><button type="button" onClick={() => setOpen(false)}>×</button></div>
+        <h3>Make it yours</h3>
+        <p>Choose an image stored only on this device, then balance it behind your listening data.</p>
+        <label className="background-file"><input type="file" accept="image/*" onChange={choose} /><span>{image ? "Change image" : "Choose image"}</span></label>
+        <label className="background-opacity">
+          <span><b>IMAGE PRESENCE</b><strong>{Math.round(opacity * 100)}%</strong></span>
+          <input type="range" min="0" max="100" value={Math.round(opacity * 100)} onChange={(event) => onOpacity(Number(event.target.value) / 100)} />
+        </label>
+        <div className="background-popover-foot"><small role="status">{note || (image ? "Custom background active" : "Default atmosphere active")}</small>{image && <button type="button" onClick={() => { onImage(""); setNote("Default background restored"); }}>Reset</button>}</div>
+      </div>}
+    </div>
+  );
+}
 
 function connectAfterglow(session: Session | null) {
   if (!window.afterglowDesktop) return;
@@ -120,6 +191,11 @@ function SyncButton({ onDone }: { onDone: () => void }) {
 function Root() {
   const [hash, setHash] = useState(window.location.hash);
   const [tick, setTick] = useState(0);
+  const [trackerBackground, setTrackerBackground] = useState(() => storedValue(TRACKER_BG_KEY));
+  const [trackerBackgroundOpacity, setTrackerBackgroundOpacity] = useState(() => {
+    const value = Number(storedValue(TRACKER_BG_OPACITY_KEY, ".42"));
+    return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : .42;
+  });
   const embeddedInAfterglow = !!window.afterglowDesktop;
   useEffect(() => {
     const onChange = () => setHash(window.location.hash);
@@ -131,10 +207,20 @@ function Root() {
     const { data: auth } = supabase.auth.onAuthStateChange((_event, session) => connectAfterglow(session));
     return () => auth.subscription.unsubscribe();
   }, []);
+  useEffect(() => {
+    try {
+      if (trackerBackground) localStorage.setItem(TRACKER_BG_KEY, trackerBackground);
+      else localStorage.removeItem(TRACKER_BG_KEY);
+      localStorage.setItem(TRACKER_BG_OPACITY_KEY, String(trackerBackgroundOpacity));
+    } catch {
+      // Keep the current session's image even if browser storage is full.
+    }
+  }, [trackerBackground, trackerBackgroundOpacity]);
   const requestedRoute = routeFor(hash);
   const route = embeddedInAfterglow && requestedRoute === "host" ? "home" : requestedRoute;
   return (
     <>
+      <div className="tracker-user-background" aria-hidden="true" style={{ backgroundImage: trackerBackground ? `url(${JSON.stringify(trackerBackground)})` : undefined, opacity: trackerBackgroundOpacity }} />
       <nav className="nav" aria-label="Main">
         <a className="tracker-brand" href="#" aria-label="Afterglow Tracker dashboard">
           <span className="brand-mark"><i /><i /><i /><i /></span>
@@ -149,6 +235,7 @@ function Root() {
           <a href="#import" aria-current={["imports", "lastfm", "spotify-import"].includes(route) ? "page" : undefined}><i>↓</i><span>Import</span></a>
           <a href="#account" aria-current={route === "account" ? "page" : undefined}><i>◌</i><span>Account</span></a>
         </div>
+        <TrackerBackgroundControl image={trackerBackground} opacity={trackerBackgroundOpacity} onImage={setTrackerBackground} onOpacity={setTrackerBackgroundOpacity} />
         <SyncButton onDone={() => setTick((t) => t + 1)} />
       </nav>
       {route === "stats" ? <Stats key={tick} />

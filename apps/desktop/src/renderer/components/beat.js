@@ -1,10 +1,11 @@
 // =====================================================================
   // Beat reaction: listens to system audio, finds bass hits, pulses the UI + screen glow
   // =====================================================================
-  let audioCtx = null, analyser = null, freq = null, wave = null, beatStream = null;
+  let audioCtx = null, analyser = null, freq = null, wave = null, previousSpectrum = null, beatStream = null;
   let beatOn = false, beatStarting = false;
   let pulse = 0, avgBass = 0, lastBeat = 0, outLevel = 0, lastSend = 0, lastBass = 0, peak = 0;
-  let motionEnergy = 0, motionVocal = 0, motionLift = 0, energyPeak = 0.08, vocalPeak = 0.08;
+  let motionEnergy = 0, motionVocal = 0, motionLift = 0, motionSyllable = 0, motionPhrase = 0, motionSibilance = 0;
+  let energyPeak = 0.08, vocalPeak = 0.08, vocalFloor = 0.015, fluxPeak = 0.025;
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0;
 
@@ -69,6 +70,7 @@
       src.connect(analyser);                                      // not connected to speakers, so no echo
       freq = new Uint8Array(analyser.frequencyBinCount);
       wave = new Uint8Array(analyser.fftSize);
+      previousSpectrum = new Float32Array(analyser.frequencyBinCount);
       beatStream = stream;
       tracks[0].addEventListener("ended", () => stopBeat("Audio stopped"));
       beatOn = true;
@@ -86,8 +88,8 @@
     beatOn = false;
     try { if (beatStream) beatStream.getTracks().forEach((t) => t.stop()); } catch (e) {}
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
-    beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null;
-    motionEnergy = motionVocal = motionLift = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
+    beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null;
+    motionEnergy = motionVocal = motionLift = motionSyllable = motionPhrase = motionSibilance = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
     applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0 });
     setBeatStatus(msg || "");
   }
@@ -95,7 +97,7 @@
   // live sound level in the settings row, so you can see whether audio is reaching the app
   setInterval(() => {
     if (beatOn && $("settings").classList.contains("open")) {
-      setBeatStatus("Listening \u00B7 energy " + Math.round(motionEnergy * 100) + "% \u00B7 lift " + Math.round(motionLift * 100) + "%");
+      setBeatStatus("Listening \u00B7 voice " + Math.round(motionVocal * 100) + "% \u00B7 energy " + Math.round(motionEnergy * 100) + "% \u00B7 lift " + Math.round(motionLift * 100) + "%");
     }
   }, 300);
 
@@ -114,6 +116,37 @@
     return sum / Math.max(1, (hi - lo + 1) * 255);
   }
 
+  // This is intentionally a voice-aware mix analyser, not a claim of stem
+  // separation. Vocal body, formants and consonant presence are balanced
+  // against bass dominance and broadband noise; spectral flux then finds
+  // syllable attacks without turning every kick into a lyric pulse.
+  function vocalFeatures(binHz, bass) {
+    const body = bandLevel(180, 720, binHz);
+    const formant = bandLevel(720, 2400, binHz);
+    const presence = bandLevel(2400, 5200, binHz);
+    const air = bandLevel(5200, 9000, binHz);
+    const lo = Math.max(1, Math.floor(180 / binHz));
+    const hi = Math.min(freq.length - 1, Math.ceil(5200 / binHz));
+    let logSum = 0, arithmetic = 0, flux = 0, count = 0;
+    for (let i = lo; i <= hi; i++) {
+      const value = freq[i] / 255;
+      const before = previousSpectrum ? previousSpectrum[i] : value;
+      const weight = i * binHz < 420 ? .55 : i * binHz > 3800 ? .72 : 1;
+      flux += Math.max(0, value - before) * weight;
+      arithmetic += value;
+      logSum += Math.log(Math.max(.0001, value));
+      if (previousSpectrum) previousSpectrum[i] = value;
+      count++;
+    }
+    const mean = arithmetic / Math.max(1, count);
+    const flatness = mean > .0001 ? Math.exp(logSum / Math.max(1, count)) / mean : 1;
+    const balance = Math.min(1, Math.min(body, formant) / Math.max(.015, Math.max(body, formant)) * 1.45);
+    const tonal = Math.max(.45, 1 - Math.max(0, flatness - .5) * 1.05);
+    const bassPenalty = Math.max(0, bass - (body + formant) * .48) * .32;
+    const raw = Math.max(0, (body * .33 + formant * .43 + presence * .24) * (.68 + balance * .32) * tonal - bassPenalty);
+    return { raw, flux: flux / Math.max(1, count), presence, air };
+  }
+
   function applyMusicMotion(motion) {
     const enabled = !!settings.musicMotion;
     const strength = enabled ? (settings.motionStrength == null ? 100 : settings.motionStrength) / 100 : 0;
@@ -124,6 +157,9 @@
     const duck = clampMotion(motion.duck * strength);
     const drop = clampMotion(motion.drop * strength);
     const emotion = clampMotion(motion.emotion * strength);
+    const syllable = clampMotion(motion.syllable * strength);
+    const phrase = clampMotion(motion.phrase * strength);
+    const sibilance = clampMotion(motion.sibilance * strength);
     const sway = Math.max(-1, Math.min(1, Number(motion.sway) || 0)) * Math.min(1.5, strength);
     const shake = Math.max(-1.5, Math.min(1.5, Number(motion.shake) || 0)) * Math.min(1.5, strength);
     root.style.setProperty("--motion-energy", energy.toFixed(3));
@@ -133,9 +169,12 @@
     root.style.setProperty("--motion-duck", duck.toFixed(3));
     root.style.setProperty("--motion-drop", drop.toFixed(3));
     root.style.setProperty("--motion-emotion", emotion.toFixed(3));
+    root.style.setProperty("--motion-syllable", syllable.toFixed(3));
+    root.style.setProperty("--motion-phrase", phrase.toFixed(3));
+    root.style.setProperty("--motion-sibilance", sibilance.toFixed(3));
     root.style.setProperty("--motion-sway", sway.toFixed(3));
     root.style.setProperty("--motion-shake", shake.toFixed(3));
-    return { impact: clampMotion(motion.impact), energy, vocal, lift, build, duck, drop, emotion,
+    return { impact: clampMotion(motion.impact), energy, vocal, lift, build, duck, drop, emotion, syllable, phrase, sibilance,
       word: clampMotion(motion.word), sway };
   }
 
@@ -152,7 +191,7 @@
     analyser.getByteTimeDomainData(wave);
     const binHz = audioCtx.sampleRate / analyser.fftSize;
     const bass = bandLevel(38, 170, binHz);
-    const vocalRaw = bandLevel(220, 3600, binHz);
+    const voice = vocalFeatures(binHz, bass);
     let squareSum = 0;
     for (const sample of wave) { const x = (sample - 128) / 128; squareSum += x * x; }
     const rms = Math.sqrt(squareSum / Math.max(1, wave.length));
@@ -171,9 +210,16 @@
     root.style.setProperty("--pulse", (outLevel * profile.impact).toFixed(3));
 
     energyPeak = Math.max(rms, energyPeak * Math.exp(-dt / 6));
-    vocalPeak = Math.max(vocalRaw, vocalPeak * Math.exp(-dt / 6));
+    vocalFloor = follow(vocalFloor, voice.raw, voice.raw < vocalFloor ? .45 : 8, voice.raw < vocalFloor ? .45 : 8, dt);
+    vocalPeak = Math.max(voice.raw, vocalPeak * Math.exp(-dt / 4.5));
+    fluxPeak = Math.max(voice.flux, fluxPeak * Math.exp(-dt / 2.2));
     const energyTarget = energyPeak > 0.025 ? Math.min(1, rms / energyPeak) : 0;
-    const vocalTarget = vocalPeak > 0.025 ? Math.min(1, vocalRaw / vocalPeak) : 0;
+    const vocalRange = Math.max(.018, vocalPeak - vocalFloor * .55);
+    const timingGate = .72 + Math.max(lyricMotionLife, lyricMotionEmotion) * .28;
+    const vocalTarget = clamp01((voice.raw - vocalFloor * .55) / vocalRange) * timingGate;
+    const syllableTarget = fluxPeak > .002 ? clamp01(voice.flux / fluxPeak * 1.18 - .16) * (.36 + vocalTarget * .64) : 0;
+    const sibilanceRaw = voice.presence * .68 + voice.air * .32;
+    const sibilanceTarget = clamp01(sibilanceRaw / Math.max(.035, vocalPeak * 1.22)) * vocalTarget;
 
     // A brightness centroid over the vocal/melodic range follows upward and
     // downward movement in the whole mix without pretending to isolate vocals.
@@ -190,6 +236,9 @@
     motionEnergy = follow(motionEnergy, energyTarget, 0.045, 0.22, dt);
     motionVocal = follow(motionVocal, vocalTarget, 0.07, 0.28, dt);
     motionLift = follow(motionLift, liftTarget, 0.09, 0.3, dt);
+    motionSyllable = follow(motionSyllable, syllableTarget, .024, .13, dt);
+    motionPhrase = follow(motionPhrase, vocalTarget, .24, .58, dt);
+    motionSibilance = follow(motionSibilance, sibilanceTarget, .035, .18, dt);
 
     motionShort = follow(motionShort, energyTarget, 0.08, 0.22, dt);
     motionLong = follow(motionLong, energyTarget, 0.9, 1.6, dt);
@@ -220,6 +269,9 @@
       duck: motionDuck,
       drop: dropFlash * profile.drop,
       emotion: expressiveVocal,
+      syllable: motionSyllable,
+      phrase: motionPhrase,
+      sibilance: motionSibilance,
       word: lyricMotionLife,
       sway,
       shake,
