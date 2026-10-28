@@ -31,6 +31,32 @@ const ALLOWED_PATHS = [
 ];
 
 const base64Url = (buffer) => buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const PLAYLIST_ID_RE = /^[A-Za-z0-9]{10,40}$/;
+
+function parsePlaylistEmbed(html, expectedId, isSpotifyUri) {
+  if (typeof html !== "string" || !PLAYLIST_ID_RE.test(String(expectedId || ""))) return null;
+  const marker = '<script id="__NEXT_DATA__" type="application/json">';
+  const start = html.indexOf(marker);
+  if (start < 0) return null;
+  const end = html.indexOf("</script>", start + marker.length);
+  if (end < 0) return null;
+  try {
+    const entity = JSON.parse(html.slice(start + marker.length, end))?.props?.pageProps?.state?.data?.entity;
+    if (entity?.type !== "playlist" || entity.id !== expectedId || !Array.isArray(entity.trackList)) return null;
+    const tracks = entity.trackList.flatMap((track) => {
+      if (track?.entityType !== "track" || track.isPlayable === false || !isSpotifyUri(track.uri)) return [];
+      return [{
+        uri: track.uri,
+        title: String(track.title || "Unknown track").slice(0, 300),
+        artist: String(track.subtitle || "Unknown artist").replace(/\u00a0/g, " ").slice(0, 300),
+        durationMs: Number(track.duration) || 0,
+      }];
+    });
+    return { id: entity.id, uri: entity.uri, title: entity.title || entity.name || "Playlist", tracks };
+  } catch {
+    return null;
+  }
+}
 
 function normaliseApiRequest(input, isSpotifyUri) {
   const request = typeof input === "string" ? { path: input } : input;
@@ -228,6 +254,23 @@ function createSpotifyLibrary({ app, safeStorage, shell, isSpotifyUri }) {
     return fetchSpotifyCanvas(trackUri, token);
   }
 
+  async function publicPlaylist(playlistId) {
+    if (!PLAYLIST_ID_RE.test(String(playlistId || ""))) return { ok: false, error: "Invalid playlist" };
+    try {
+      const response = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`, {
+        headers: { Accept: "text/html" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) return { ok: false, status: response.status, error: `Spotify embed returned HTTP ${response.status}` };
+      const html = await response.text();
+      if (html.length > 8000000) return { ok: false, error: "Spotify playlist response was too large" };
+      const data = parsePlaylistEmbed(html, playlistId, isSpotifyUri);
+      return data?.tracks?.length ? { ok: true, data } : { ok: false, error: "Spotify did not expose playable songs for this playlist" };
+    } catch (error) {
+      return { ok: false, error: String(error?.message || error) };
+    }
+  }
+
   function loadHistory() {
     if (history) return history;
     try {
@@ -265,7 +308,7 @@ function createSpotifyLibrary({ app, safeStorage, shell, isSpotifyUri }) {
   return { loadAuth, login, logout, status: () => {
     const granted = new Set(String(auth?.scope || "").split(/\s+/).filter(Boolean));
     return { connected: !!auth, writeAccess: !!auth && WRITE_SCOPES.every((scope) => granted.has(scope)) };
-  }, api, canvas, loadHistory, addHistory };
+  }, api, canvas, publicPlaylist, loadHistory, addHistory };
 }
 
-module.exports = { createSpotifyLibrary, normaliseApiRequest };
+module.exports = { createSpotifyLibrary, normaliseApiRequest, parsePlaylistEmbed };

@@ -103,15 +103,20 @@ function createSpotifyDesktop({ app, getWindow }) {
       return { ok: false, error: "That isn't a Spotify link" };
     }
     const win = getWindow();
-    const keepAfterglowFocused = !!(win && !win.isDestroyed() && win.isFocused());
     let command = `play track "${uri}"`;
     if (typeof context === "string" && URI_RE.test(context)) command += ` in context "${context}"`;
     const { error, stderr } = await runAppleScript(`tell application "Spotify" to ${command}`, 6000);
-    if (keepAfterglowFocused) restoreAfterglowFocus(win);
+    restoreAfterglowFocus(win);
     // Keep the foreground command as short as possible, then correct Spotify's
     // occasional resume position without giving its window another chance to
     // take focus.
-    if (!error) setTimeout(() => runAppleScript('tell application "Spotify" to set player position to 0'), 80);
+    if (!error) {
+      setTimeout(() => runAppleScript('tell application "Spotify" to set player position to 0'), 80);
+      // Spotify occasionally raises its window a beat after acknowledging the
+      // command. One delayed reclaim prevents those intermittent escapes
+      // without the repeated focus bouncing the older implementation caused.
+      setTimeout(() => restoreAfterglowFocus(win), 140);
+    }
     return error ? { ok: false, error: (stderr || error.message).trim() } : { ok: true };
   }
 

@@ -306,6 +306,7 @@ function renderHome(){
 }
 const localHomeTracks=history=>(history||[]).slice(0,16).map(t=>({uri:t.uri,title:t.name||"Unknown track",sub:t.artist||t.album||"Local history",img:t.img||""}));
 function normaliseHomeTracks(rows,context){return(rows||[]).flatMap(row=>{const t=row?.track||row?.item||row;if(!t?.uri||!String(t.uri).startsWith("spotify:track:"))return[];return[{uri:t.uri,context,title:t.name||"Unknown track",sub:homeArtists(t.artists),album:t.album?.name||"",img:homeImage(t.album?.images)}];});}
+function normalisePublicPlaylistTracks(rows,collection){return(rows||[]).flatMap(track=>{if(!track?.uri||!String(track.uri).startsWith("spotify:track:"))return[];return[{uri:track.uri,context:collection?.uri||null,title:track.title||"Unknown track",sub:track.artist||"Unknown artist",album:collection?.title||"",img:collection?.img||""}];});}
 function homeQueueFromResponse(response,expectedUri=""){
   if(!response?.ok)return null;
   const currentUri=String(response.data?.currently_playing?.uri||"");
@@ -334,10 +335,12 @@ async function loadHomeCollection(collection){
   try{
     if(collection.kind==="recent")homeState.games=homeState.recent.slice();
     else{
-      let response=await spotifyPaged(collection.kind==="liked"?"/me/tracks?limit=50":`/playlists/${collection.id}/items?limit=100`);
-      if(!response.ok&&collection.kind==="playlist")response=await spotifyPaged(`/playlists/${collection.id}/tracks?limit=100`);
-      if(response.ok)homeState.games=normaliseHomeTracks(response.data?.items,collection.kind==="playlist"?collection.uri:null);
-      else showToast(`COULDN'T LOAD ${collection.title}`);
+      let response=null;
+      if(collection.kind==="liked")response=await spotifyPaged("/me/tracks?limit=50");
+      else if(collection.editable!==false){response=await spotifyPaged(`/playlists/${collection.id}/items?limit=100`);if(!response.ok)response=await spotifyPaged(`/playlists/${collection.id}/tracks?limit=100`);}
+      if(response?.ok)homeState.games=normaliseHomeTracks(response.data?.items,collection.kind==="playlist"?collection.uri:null);
+      if(collection.kind==="playlist"&&!homeState.games.length){const publicResult=await window.tracker.spotifyPublicPlaylist(collection.id).catch(()=>null);if(publicResult?.ok){homeState.games=normalisePublicPlaylistTracks(publicResult.data?.tracks,collection);const declared=Number(String(collection.sub||"").match(/\d+/)?.[0]);if(declared>homeState.games.length)homeState.activeCollection={...collection,sub:`${homeState.games.length} available · ${collection.sub}`};}}
+      if(!homeState.games.length)showToast(`COULDN'T LOAD ${collection.title}`);
     }
   }finally{homeState.collectionLoading=false;renderHome();}
 }
