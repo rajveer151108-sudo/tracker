@@ -258,12 +258,19 @@
 
   /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
   body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
-    inset: 0; padding: 0; transform: none; transition: opacity .25s ease;
+    inset: 0; padding: 0; transform: none; transition: opacity .25s ease; z-index: 1;
   }
   body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
     position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
   }
   body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
+    animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
+  }
+  @keyframes creativeSpawn {
+    from { opacity: 0; scale: .72; filter: blur(7px) brightness(1.45); }
+    to { filter: none; }
+  }
 
   /* 01 — the video's stacked kinetic-word composition. */
   body[data-layout="kinetic"] .line { left: 50%; top: 50%; width: max-content; max-width: 76%; color: rgba(255,242,198,.38);
@@ -278,16 +285,16 @@
   body.music-motion[data-layout="kinetic"] .line[data-slot="0"] { scale: calc(1 + var(--motion-vocal) * .055 + var(--motion-drop) * .08); }
 
   /* 02 — words become points on a lyric constellation. */
-  #constellationMap { display: none; position: absolute; inset: 5% 4%; width: 92%; height: 90%; z-index: -1; overflow: visible; }
-  #constellationMap polyline { fill: none; stroke: rgba(var(--glow),.48); stroke-width: 1.5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 8px rgba(var(--glow),.75)); stroke-dasharray: 3 7; animation: constellationDrift 9s linear infinite; }
-  #constellationMap circle { fill: rgb(var(--glow)); opacity: .58; filter: drop-shadow(0 0 5px rgba(var(--glow),.9)); }
-  #constellationMap circle.current { fill: #fff7cf; opacity: 1; animation: constellationPulse 1.15s ease-in-out infinite; }
+  #constellationMap { display: none; position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: visible; }
+  #constellationMap polyline { fill: none; stroke: rgba(var(--glow),.56); stroke-width: 1.35; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 7px rgba(var(--glow),.62)); }
+  #constellationMap circle { fill: rgb(var(--glow)); opacity: .68; filter: drop-shadow(0 0 7px rgba(var(--glow),.9)); }
+  #constellationMap circle.current { fill: #fff; opacity: 1; animation: constellationPulse 1.15s ease-in-out infinite; }
   body[data-layout="constellation"] #constellationMap { display: block; }
-  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 28%; font-size: calc(var(--lyric-size) * .58); font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.4); opacity: .48; transform: translate(-50%,-50%) scale(.82); transition: left .5s cubic-bezier(.2,.75,.2,1), top .5s cubic-bezier(.2,.75,.2,1), transform .32s, opacity .32s; }
-  body[data-layout="constellation"] .line[data-slot="0"] { z-index: 2; opacity: 1; color: #fff; transform: translate(-50%,-50%) scale(1.65); letter-spacing: .035em; text-shadow: 0 0 22px rgba(var(--glow),.88); }
-  body[data-layout="constellation"] .line[data-slot="0"] .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
-  @keyframes constellationDrift { to { stroke-dashoffset: -100; } }
-  @keyframes constellationPulse { 50% { r: 15; opacity: .62; } }
+  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 15.5%; white-space: normal; overflow-wrap: break-word; font-size: calc(var(--lyric-size) * var(--node-font-scale,.44)); line-height: 1.08; font-weight: 650; letter-spacing: .055em; text-transform: uppercase; color: rgba(255,255,255,.56); opacity: .72; transform: translate(-50%,-50%) scale(1); transition: opacity .22s, color .22s, text-shadow .22s; }
+  body[data-layout="constellation"] .line.constellation-current { z-index: 2; opacity: 1; color: #fff; transform: translate(-50%,-50%) scale(1.12); letter-spacing: .035em; text-shadow: 0 0 19px rgba(var(--glow),.9); }
+  body[data-layout="constellation"] .line.constellation-current .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
+  body.music-motion[data-layout="constellation"] .line.active { translate: 0 0; scale: calc(1 + var(--motion-vocal) * .025 + var(--motion-drop) * .035); }
+  @keyframes constellationPulse { 50% { r: 7; opacity: .78; } }
 
   /* 03 — stacked subtitles with a live highlight card. */
   body[data-layout="captioncards"] .line { left: 50%; top: 50%; width: min(84%, 1050px); font-family: ui-serif, "New York", Georgia, serif; font-size: calc(var(--lyric-size) * 1.18); line-height: 1.38; opacity: 0; transform: translate(-50%,-50%) scale(.92); }
@@ -325,7 +332,7 @@
   /* Broken neon frame from the video, usable with every lyric composition. */
   #lyricEdgeFrame { display:none;position:absolute;inset:1.5%;width:97%;height:97%;z-index:4;pointer-events:none;overflow:visible; }
   #lyricEdgeFrame path { fill:none;stroke:rgba(var(--glow),calc(.38 + var(--motion-energy) * .22 + var(--motion-vocal) * .3));stroke-width:2;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 calc(5px + var(--motion-vocal) * 18px + var(--motion-drop) * 20px) rgba(var(--glow),.9)); }
-  #lyricEdgeFrame .edgeSpark { stroke:#fff4cb;stroke-width:3;stroke-linecap:round;stroke-dasharray:55 945;stroke-dashoffset:calc(-1000 * var(--motion-phrase));opacity:calc(.5 + var(--motion-vocal) * .5); }
+  #lyricEdgeFrame .edgeSpark { stroke:#fff4cb;stroke-width:3;stroke-linecap:round;stroke-dasharray:55 945;stroke-dashoffset:var(--edge-offset,0);opacity:calc(.5 + var(--motion-vocal) * .5); }
   body[data-view="lyrics"][data-glow-style="frame"] #stage { -webkit-mask-image:none;mask-image:none; }
   body[data-view="lyrics"][data-glow-style="frame"] #lyricEdgeFrame { display:block;animation:edgeFrameBreathe 3.8s ease-in-out infinite; }
   @keyframes edgeFrameBreathe { 50% { opacity:.76;transform:scale(.996); } }

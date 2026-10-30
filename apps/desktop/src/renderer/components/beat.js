@@ -7,7 +7,7 @@
   let motionEnergy = 0, motionVocal = 0, motionLift = 0, motionSyllable = 0, motionPhrase = 0, motionSibilance = 0;
   let energyPeak = 0.08, vocalPeak = 0.08, vocalFloor = 0.015, fluxPeak = 0.025;
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
-  let lyricMotionLife = 0, lyricMotionEmotion = 0;
+  let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
 
   const MOTION_PROFILES = {
     rap:        { impact: 1.25, energy: .85, vocal: 1.0,  lift: .6,  build: .75, drop: 1.25, sway: .08, shake: .12, rate: 1.2 },
@@ -174,8 +174,9 @@
     root.style.setProperty("--motion-sibilance", sibilance.toFixed(3));
     root.style.setProperty("--motion-sway", sway.toFixed(3));
     root.style.setProperty("--motion-shake", shake.toFixed(3));
+    root.style.setProperty("--motion-pace", clampMotion(motion.pace).toFixed(3));
     return { impact: clampMotion(motion.impact), energy, vocal, lift, build, duck, drop, emotion, syllable, phrase, sibilance,
-      word: clampMotion(motion.word), sway };
+      word: clampMotion(motion.word), pace: clampMotion(motion.pace), sway };
   }
 
   function beatStep(tNow, dt) {
@@ -273,6 +274,7 @@
       phrase: motionPhrase,
       sibilance: motionSibilance,
       word: lyricMotionLife,
+      pace: lyricWordPace,
       sway,
       shake,
     });

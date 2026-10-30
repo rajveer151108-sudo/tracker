@@ -9,10 +9,10 @@
   let targetA = [29, 185, 84], targetB = [29, 185, 84];
   let curA = targetA.slice(), curB = targetB.slice();
   let style = "steady", thick = 1, strength = 1;
-  let beatTarget = 0, beat = 0, energyTarget = 0, energy = 0, vocalTarget = 0, vocal = 0, liftTarget = 0, lift = 0, wordTarget = 0, word = 0;
+  let beatTarget = 0, beat = 0, energyTarget = 0, energy = 0, vocalTarget = 0, vocal = 0, liftTarget = 0, lift = 0, wordTarget = 0, word = 0, paceTarget = 0, pace = 0;
   let buildTarget = 0, build = 0, duckTarget = 0, duck = 0, dropTarget = 0, drop = 0, emotionTarget = 0, emotion = 0;
   let lastShadow = "", lastRing = "";
-  let enabled = false, frameMs = 33, lastFrameT = 0;
+  let enabled = false, frameMs = 33, lastFrameT = 0, framePhase = 0;
 
   function layout() {
     ringwrap.style.display = style === "rotate" || style === "comet" ? "block" : "none";
@@ -44,6 +44,7 @@
     vocalTarget = Math.max(0, Math.min(1.5, motion?.vocal || 0));
     liftTarget = Math.max(0, Math.min(1.5, motion?.lift || 0));
     wordTarget = Math.max(0, Math.min(1, motion?.word || 0));
+    paceTarget = Math.max(0, Math.min(1.5, motion?.pace || 0));
     buildTarget = Math.max(0, Math.min(1.5, motion?.build || 0));
     duckTarget = Math.max(0, Math.min(1.5, motion?.duck || 0));
     dropTarget = Math.max(0, Math.min(1.5, motion?.drop || 0));
@@ -67,6 +68,7 @@
     vocal += (vocalTarget - vocal) * step(vocalTarget > vocal ? 0.24 : 0.10);
     lift += (liftTarget - lift) * step(liftTarget > lift ? 0.2 : 0.08);
     word += (wordTarget - word) * step(0.22);
+    pace += (paceTarget - pace) * step(paceTarget > pace ? 0.24 : 0.09);
     build += (buildTarget - build) * step(buildTarget > build ? 0.16 : 0.08);
     duck += (duckTarget - duck) * step(duckTarget > duck ? 0.45 : 0.16);
     drop += (dropTarget - drop) * step(dropTarget > drop ? 0.65 : 0.18);
@@ -106,7 +108,9 @@
       frame.style.setProperty("--frame-b", Math.round((10 + vocal * 22 + energy * 10 + drop * 28) * thick) + "px");
       const frameDash = Math.round(42 + vocal * 65 + word * 28);
       frameSpark.style.strokeDasharray = frameDash + " " + (1000 - frameDash);
-      frame.style.setProperty("--frame-offset", String(Math.round(-1000 * ((tNow / 14500 + lift * .08 + word * .04) % 1))));
+      const frameRate = .025 + pace * .16 + energy * .045 + beat * .09 + drop * .28;
+      framePhase = (framePhase + elapsed / 1000 * frameRate) % 1;
+      frame.style.setProperty("--frame-offset", String(Math.round(-1000 * framePhase)));
     }
   }
   requestAnimationFrame(render);
