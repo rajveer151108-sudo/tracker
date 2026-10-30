@@ -39,8 +39,8 @@
     { type: "heading", label: "Background" },
     { key: "backdrop", label: "Show background", type: "toggle" },
     { key: "backdropStyle", label: "Style", type: "choice",
-      hint: "Canvas uses Spotify's looping visual when available and falls back to Album tour.",
-      options: [["blur", "Blurred"], ["album", "Album tour"], ["canvas", "Canvas"]] },
+      hint: "Canvas uses Spotify's looping visual when available. Blackout removes every background light for distraction-free lyrics.",
+      options: [["blur", "Blurred"], ["album", "Album tour"], ["canvas", "Canvas"], ["black", "Blackout"]] },
     { key: "backdropTourFocus", label: "Album tour focus", type: "choice",
       hint: "Smart artwork finds detailed, colourful areas automatically. Center stage stays near the middle; Classic corners keeps the original route.",
       options: [["smart", "Smart artwork"], ["center", "Center stage"], ["corners", "Classic corners"]] },
@@ -193,10 +193,19 @@
     }
     lyricsWereOn = settings.showLyrics;
 
-    $("backdrop").style.display = settings.backdrop ? "" : "none";
-    root.style.setProperty("--bdop", String((settings.backdropOpacity == null ? 60 : settings.backdropOpacity) / 100));
+    const backdrop = $("backdrop");
+    const backdropStyle = settings.backdropStyle || "blur";
+    document.body.dataset.backdropStyle = settings.backdrop ? backdropStyle : "off";
+    backdrop.style.display = settings.backdrop ? "" : "none";
+    root.style.setProperty("--bdop", backdropStyle === "black" ? "1" : String((settings.backdropOpacity == null ? 60 : settings.backdropOpacity) / 100));
     const wantedBackdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart");
-    if (settings.backdrop && lastArtwork && (!$("backdrop").children.length || backdropKey !== wantedBackdropKey)) setBackdrop(lastArtwork, lastBackdropTrackUri);
+    if (settings.backdrop && backdropStyle === "black" && (!backdrop.children.length || backdropKey !== wantedBackdropKey)) setBackdrop("", lastBackdropTrackUri);
+    else if (settings.backdrop && lastArtwork && (!backdrop.children.length || backdropKey !== wantedBackdropKey)) setBackdrop(lastArtwork, lastBackdropTrackUri);
+    else if (settings.backdrop && !lastArtwork && backdropKey !== wantedBackdropKey) {
+      backdrop.replaceChildren();
+      backdropKey = wantedBackdropKey;
+      backdropRequest++;
+    }
     const backdropZoomChanged = appliedBackdropZoom !== null && appliedBackdropZoom !== settings.backdropTourZoom;
     appliedBackdropZoom = settings.backdropTourZoom;
     if (backdropZoomChanged && settings.backdropStyle === "album" && typeof refreshAlbumTours === "function") refreshAlbumTours();

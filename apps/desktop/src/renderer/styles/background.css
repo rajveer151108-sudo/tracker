@@ -3,6 +3,12 @@
               opacity: var(--bdop, .6); }
   .bdw { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
   .bdw.in { opacity: 1; }
+  .blackBackdrop { background: #000; transition-duration: .35s; }
+  body[data-view="lyrics"][data-backdrop-style="black"] { background: #000; }
+  body[data-view="lyrics"][data-backdrop-style="black"] #glow,
+  body[data-view="lyrics"][data-backdrop-style="black"] #viewTransitionGlow,
+  body[data-view="lyrics"][data-backdrop-style="black"] #stage::before,
+  body[data-view="lyrics"][data-backdrop-style="black"] #stage::after { opacity: 0 !important; animation: none !important; }
   .bd { position: absolute; inset: -25%; background-size: cover; background-position: center;
         filter: blur(56px) saturate(1.45); animation: drift 20s ease-in-out infinite alternate; }
   body[data-performance="battery"] .bd { filter: blur(42px) saturate(1.35); animation: none; transform: scale(1.35); }

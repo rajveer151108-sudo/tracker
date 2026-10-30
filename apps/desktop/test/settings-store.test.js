@@ -16,3 +16,18 @@ test("the retired tape slot migrates to the dedicated CD player", () => {
     fs.rmSync(userData, { recursive: true, force: true });
   }
 });
+
+test("the lyrics backdrop can persist a full blackout style", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    store.update({ backdropStyle: "black" });
+    assert.equal(store.get().backdropStyle, "black");
+
+    const reloaded = createSettingsStore({ getPath: () => userData });
+    assert.equal(reloaded.load().backdropStyle, "black");
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});

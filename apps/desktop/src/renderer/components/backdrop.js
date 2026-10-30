@@ -125,7 +125,9 @@
     const request = ++backdropRequest;
     if (trackUri) lastBackdropTrackUri = trackUri;
     let albumLayer = null;
-    if (settings.backdropStyle === "album" || settings.backdropStyle === "canvas") {
+    if (settings.backdropStyle === "black") {
+      wrap.classList.add("blackBackdrop");
+    } else if (settings.backdropStyle === "album" || settings.backdropStyle === "canvas") {
       albumLayer = makeAlbumLayer(url, wrap);
       if (settings.backdropStyle === "canvas") wrap.classList.add("canvasFallback");
     } else {
