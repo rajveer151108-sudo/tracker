@@ -119,11 +119,12 @@
     return window.LyricEffects.decorateRows(rows);
   }
 
-  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "constellation", "orbit"]);
-  const CREATIVE_LAYOUTS = new Set(["kinetic", "constellation", "captioncards", "orbit", "poster"]);
+  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "constellation", "orbit"]);
+  const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"]);
   const LAYOUT_LABELS = {
     wordstream: "Word stream", wordstack: "Word stack", stack: "Lyric stack",
-    kinetic: "Kinetic stack", constellation: "Constellation", captioncards: "Caption cards",
+    kinetic: "Kinetic stack", morphstack: "Morph stack", buildstack: "Phrase builder",
+    constellation: "Constellation", captioncards: "Caption cards",
     orbit: "Orbit", poster: "Poster cutout",
   };
   function isWordLayout(layout = settings.lyricsLayout) { return WORD_LAYOUTS.has(layout); }
@@ -188,7 +189,7 @@
         if (i < words.length - 1) div.appendChild(document.createTextNode(" "));
         return s;
       });
-      const W = { spans, cache: spans.map(() => -1), cur: -1, timed };
+      const W = { spans, cache: spans.map(() => -1), cur: -1, timed, revealed: spans.map(() => false) };
       if (l.emoji && !l.lineEmoji) {
         const emoji = document.createElement("span");
         emoji.className = "lyric-emoji";

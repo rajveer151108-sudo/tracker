@@ -148,8 +148,12 @@
   }
 
   function applyMusicMotion(motion) {
-    const enabled = !!settings.musicMotion;
-    const strength = enabled ? (settings.motionStrength == null ? 100 : settings.motionStrength) / 100 : 0;
+    const legacyEnabled = settings.musicMotion !== false;
+    const lyricsEnabled = settings.lyricsDance == null ? legacyEnabled : !!settings.lyricsDance;
+    const glowEnabled = settings.glowDance == null ? legacyEnabled : !!settings.glowDance;
+    const baseStrength = (settings.motionStrength == null ? 100 : settings.motionStrength) / 100;
+    const strength = lyricsEnabled ? baseStrength : 0;
+    const glowStrength = glowEnabled ? baseStrength : 0;
     const energy = clampMotion(motion.energy * strength);
     const vocal = clampMotion(motion.vocal * strength);
     const lift = clampMotion(motion.lift * strength);
@@ -174,9 +178,19 @@
     root.style.setProperty("--motion-sibilance", sibilance.toFixed(3));
     root.style.setProperty("--motion-sway", sway.toFixed(3));
     root.style.setProperty("--motion-shake", shake.toFixed(3));
-    root.style.setProperty("--motion-pace", clampMotion(motion.pace).toFixed(3));
-    return { impact: clampMotion(motion.impact), energy, vocal, lift, build, duck, drop, emotion, syllable, phrase, sibilance,
-      word: clampMotion(motion.word), pace: clampMotion(motion.pace), sway };
+    root.style.setProperty("--motion-pace", clampMotion(motion.pace * strength).toFixed(3));
+    root.style.setProperty("--lyrics-pulse", (lyricsEnabled ? clampMotion(motion.impact * strength) : 0).toFixed(3));
+    const forGlow = (value) => clampMotion(value * glowStrength);
+    const glowEnergy = forGlow(motion.energy);
+    const glowVocal = forGlow(motion.vocal);
+    const glowDrop = forGlow(motion.drop);
+    root.style.setProperty("--glow-motion-energy", glowEnergy.toFixed(3));
+    root.style.setProperty("--glow-motion-vocal", glowVocal.toFixed(3));
+    root.style.setProperty("--glow-motion-drop", glowDrop.toFixed(3));
+    return { impact: forGlow(motion.impact), energy: glowEnergy, vocal: glowVocal, lift: forGlow(motion.lift),
+      build: forGlow(motion.build), duck: forGlow(motion.duck), drop: glowDrop, emotion: forGlow(motion.emotion),
+      syllable: forGlow(motion.syllable), phrase: forGlow(motion.phrase), sibilance: forGlow(motion.sibilance),
+      word: forGlow(motion.word), pace: forGlow(motion.pace), sway: (Number(motion.sway) || 0) * Math.min(1.5, glowStrength) };
   }
 
   function beatStep(tNow, dt) {

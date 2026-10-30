@@ -50,6 +50,15 @@
     if (!Number.isFinite(gap) || gap <= 0) return 0;
     return Math.max(0, Math.min(1.5, (1 / gap - .7) / 3.8));
   }
+  function starPath(cx, cy, outer, inner = outer * .44, points = 5) {
+    const vertices = [];
+    for (let i = 0; i < points * 2; i++) {
+      const angle = -Math.PI / 2 + i * Math.PI / points;
+      const radius = i % 2 ? inner : outer;
+      vertices.push((cx + Math.cos(angle) * radius).toFixed(2) + "," + (cy + Math.sin(angle) * radius).toFixed(2));
+    }
+    return "M" + vertices.join(" L") + " Z";
+  }
   function updateCreativeLayout(idx) {
     const layout = settings.lyricsLayout;
     const creative = isCreativeLayout(layout);
@@ -74,7 +83,7 @@
         }
       } else {
         el.classList.remove("constellation-current");
-        const visibleRange = layout === "kinetic" ? 1 : 0;
+        const visibleRange = layout === "kinetic" || layout === "morphstack" ? 1 : 0;
         el.classList.toggle("creative-hidden", creative && Math.abs(relative) > visibleRange);
       }
     });
@@ -94,12 +103,11 @@
     }
     path.setAttribute("points", visible.map(({ point }) => point[0] * 10 + "," + point[1] * 6).join(" "));
     nodes.replaceChildren(...visible.map(({ current, point }) => {
-      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      circle.setAttribute("cx", String(point[0] * 10));
-      circle.setAttribute("cy", String(point[1] * 6));
-      circle.setAttribute("r", current ? "5" : "3.5");
-      if (current) circle.classList.add("current");
-      return circle;
+      const star = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      star.classList.add("constellation-star");
+      star.setAttribute("d", starPath(point[0] * 10, point[1] * 6, current ? 8.5 : 5.4));
+      if (current) star.classList.add("current");
+      return star;
     }));
   }
 
@@ -148,11 +156,18 @@
         document.body.classList.toggle("lyrics-waiting", idx < 0);
         const stackLayout = settings.lyricsLayout === "stack" || settings.lyricsLayout === "wordstack";
         const stackLines = Math.max(2, Math.min(6, Number(settings.lyricsHistoryLines) || 4));
+        const buildStack = settings.lyricsLayout === "buildstack";
         lineEls.forEach((el, i) => {
           el.classList.toggle("active", i === idx);
           el.classList.toggle("stack-hidden", stackLayout && idx >= 0 && (i > idx || i <= idx - stackLines));
           el.dataset.d = idx < 0 ? "4" : String(Math.min(Math.abs(i - idx), 4));
           el.dataset.side = idx < 0 ? "next" : i < idx ? "past" : i > idx ? "next" : "current";
+          if (buildStack) {
+            el._w.spans.forEach((span, wordIndex) => {
+              span.classList.remove("revealed", "build-enter");
+              el._w.revealed[wordIndex] = false;
+            });
+          }
         });
         updateCreativeLayout(idx);
         clearFit();
@@ -199,7 +214,8 @@
         // the line "finishes" a little before the next one starts so it reads as sung
         const span = Math.max(0.4, Math.min(end - start, 8) * 0.9);
         const p = clamp01((t - start) / span);
-        const mode = document.body.dataset.hl || settings.lyricsHighlight;
+        const buildStack = settings.lyricsLayout === "buildstack";
+        const mode = buildStack ? "word" : (document.body.dataset.hl || settings.lyricsHighlight);
 
         let curIdx = -1;
         for (let i = 0; i < W.spans.length; i++) {
@@ -210,6 +226,16 @@
           if (pw > 0 && pw < 1) curIdx = i;
           const key = Math.round(pw * 200);
           if (W.cache[i] !== key) { W.cache[i] = key; W.spans[i].style.setProperty("--p", (pw * 100).toFixed(1) + "%"); }
+          if (buildStack) {
+            const revealed = pw > 0;
+            if (revealed && !W.revealed[i]) {
+              W.spans[i].classList.remove("build-enter");
+              void W.spans[i].offsetWidth;
+              W.spans[i].classList.add("build-enter");
+            }
+            W.spans[i].classList.toggle("revealed", revealed);
+            W.revealed[i] = revealed;
+          }
         }
         const popIdx = mode === "word" ? curIdx : -1;
         if (W.cur !== popIdx) setPop(W, popIdx);

@@ -17,9 +17,10 @@
       hint: "Uses exact word timing when a source provides it, then falls back to a musical estimate.",
       options: [["word", "Word by word"], ["sweep", "Sweep"], ["whole", "Whole line"]] },
     { key: "lyricsLayout", label: "Layout", type: "choice",
-      hint: "Five classic views plus three styles rebuilt from your reference, with Orbit and Poster as calmer Afterglow originals.",
+      hint: "Classic views, both lyric transitions from your newest reference, and Afterglow's creative layouts.",
       options: [["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"], ["wordstream", "Word stream"],
-        ["kinetic", "Kinetic stack"], ["constellation", "Constellation"], ["captioncards", "Caption cards"],
+        ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["buildstack", "Phrase builder"],
+        ["constellation", "Constellation"], ["captioncards", "Caption cards"],
         ["orbit", "Orbit"], ["poster", "Poster cutout"]] },
     { key: "lyricsHistoryLines", label: "Lines in lyric stack", type: "range", min: 2, max: 6, step: 1, unit: "" },
     { key: "lyricsMotion", label: "Word transition", type: "choice",
@@ -73,8 +74,10 @@
     { type: "heading", label: "Music motion" },
     { key: "beat", label: "Listen and react to the song", type: "toggle", status: true,
       hint: "Analyses the audio your Mac is playing. macOS may ask for permission the first time." },
-    { key: "musicMotion", label: "Lyrics and lights dance", type: "toggle",
-      hint: "Follows energy, vocals, melodic lift, held words and beat drops instead of using only a single pulse." },
+    { key: "lyricsDance", label: "Lyrics dance", type: "toggle",
+      hint: "Lets the type follow vocals, syllables, melodic lift and beat drops." },
+    { key: "glowDance", label: "Glow dance", type: "toggle",
+      hint: "Lets the screen-edge glow react independently from the lyrics." },
     { key: "lyricsDanceStyle", label: "Lyrics dance style", type: "choice",
       hint: "Auto gives each genre its own movement, or choose one style for every song.",
       options: [["auto", "Auto by genre"], ["float", "Vocal float"], ["punch", "Rap punch"], ["sway", "Jazz sway"],
@@ -172,7 +175,11 @@
     document.body.dataset.motion = settings.lyricsMotion || "slide";
     document.body.classList.toggle("word-emoji", !!settings.lyricsEmoji);
     document.body.classList.toggle("word-keywords", !!settings.lyricsKeywords);
-    document.body.classList.toggle("music-motion", !!settings.musicMotion);
+    const lyricsDance = settings.lyricsDance !== false;
+    const glowDance = settings.glowDance !== false;
+    document.body.classList.toggle("music-motion", lyricsDance);
+    document.body.classList.toggle("lyrics-motion", lyricsDance);
+    document.body.classList.toggle("glow-motion", glowDance);
     document.body.dataset.performance = settings.performanceMode || "balanced";
     const previousHomeMode=document.body.dataset.homeMode||"",nextHomeMode=settings.homeMode||"arcade";
     document.body.dataset.homeMode = nextHomeMode;

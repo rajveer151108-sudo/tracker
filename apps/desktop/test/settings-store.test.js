@@ -35,7 +35,7 @@ test("the lyrics backdrop can persist a full blackout style", () => {
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const lyricsLayout of ["kinetic", "constellation", "captioncards", "orbit", "poster"]) {
+    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"]) {
       const store = createSettingsStore({ getPath: () => userData });
       store.load();
       store.update({ lyricsLayout, glowStyle: "frame" });
@@ -43,6 +43,35 @@ test("creative lyric layouts and broken frame glow persist", () => {
       assert.equal(reloaded.load().lyricsLayout, lyricsLayout);
       assert.equal(reloaded.get().glowStyle, "frame");
     }
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
+test("lyrics and glow dance settings persist independently", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    store.update({ lyricsDance: false, glowDance: true });
+
+    const reloaded = createSettingsStore({ getPath: () => userData });
+    const settings = reloaded.load();
+    assert.equal(settings.lyricsDance, false);
+    assert.equal(settings.glowDance, true);
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
+test("the old combined dance switch migrates to both new controls", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    fs.writeFileSync(path.join(userData, "settings.json"), JSON.stringify({ musicMotion: false }));
+    const store = createSettingsStore({ getPath: () => userData });
+    const settings = store.load();
+    assert.equal(settings.lyricsDance, false);
+    assert.equal(settings.glowDance, false);
   } finally {
     fs.rmSync(userData, { recursive: true, force: true });
   }
