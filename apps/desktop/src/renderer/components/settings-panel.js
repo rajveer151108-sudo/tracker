@@ -60,7 +60,7 @@
       options: [["steady", "Steady"], ["rotate", "Rotating"], ["comet", "Comet"], ["frame", "Broken frame"],
         ["flowline", "Flow streak"]] },
     { key: "glowStrength", label: "Glow level", type: "range", min: 10, max: 200, step: 10, unit: "%" },
-    { key: "glowThickness", label: "Thickness", type: "range", min: 40, max: 200, step: 10, unit: "%" },
+    { key: "glowThickness", label: "Thickness", type: "range", min: 40, max: 400, step: 10, unit: "%" },
     { key: "glowOverride", label: "Use my own colours", hint: "Otherwise the glow takes two colours from the album cover.", type: "toggle" },
     { key: "glowColorA", label: "Colour 1", type: "color" },
     { key: "glowColorB", label: "Colour 2", type: "color" },

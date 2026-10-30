@@ -47,7 +47,7 @@ const LIMITS = {
   lyricsSize: [18, 110],
   lyricsHistoryLines: [2, 6],
   glowStrength: [0, 300],
-  glowThickness: [20, 300],
+  glowThickness: [20, 400],
   backdropOpacity: [0, 100],
   backdropTourZoom: [20, 140],
   beatStrength: [0, 300],

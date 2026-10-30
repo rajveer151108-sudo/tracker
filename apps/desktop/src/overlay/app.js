@@ -111,7 +111,10 @@
       frame.style.setProperty("--frame-a", A);
       frame.style.setProperty("--frame-bc", B);
       frame.style.setProperty("--frame-o", Math.max(edgeLine ? 0 : .2, Math.min(1, (.34 + energy * .18 + vocal * .27 + beat * .13 + drop * .35 - duck * .24) * strength)).toFixed(2));
-      frame.style.setProperty("--streak-o", Math.max(.2, Math.min(1, (.64 + energy * .08 + beat * .08 - duck * .08) * Math.min(1.2, strength))).toFixed(2));
+      const streakOpacity = Math.max(.2, Math.min(1, (.64 + energy * .08 + beat * .08 - duck * .08) * Math.min(1.2, strength)));
+      frame.style.setProperty("--streak-o", streakOpacity.toFixed(2));
+      frame.style.setProperty("--flow-aura-o", (streakOpacity * .22).toFixed(3));
+      frame.style.setProperty("--flow-halo-o", (streakOpacity * .58).toFixed(3));
       frame.style.setProperty("--frame-w", Math.max(1, ((edgeLine ? 9.5 : 2.2) + (edgeLine ? beat * .45 : vocal * 1.2 + beat * .7)) * thick).toFixed(1) + "px");
       frame.style.setProperty("--frame-b", Math.round((10 + vocal * 22 + energy * 10 + drop * 28) * thick) + "px");
       const frameDash = Math.round(edgeLine ? 500 : 42 + vocal * 65 + word * 28);

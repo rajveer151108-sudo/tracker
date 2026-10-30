@@ -9,8 +9,17 @@
     <div id="glowbox"></div>
     <div id="ringwrap"><div id="ring"><div id="spin"></div></div></div>
     <svg id="frame" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="flowGradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="600">
+          <stop class="flowStopA" offset="0" />
+          <stop class="flowStopB" offset=".52" />
+          <stop class="flowStopA" offset="1" />
+        </linearGradient>
+      </defs>
       <path d="M18 30H402Q432 30 440 9H560Q568 30 598 30H982V402M982 468V570H620M380 570H18V210M18 145V30" pathLength="1000" />
       <path class="spark" d="M18 30H402Q432 30 440 9H560Q568 30 598 30H982V402M982 468V570H620M380 570H18V210M18 145V30" pathLength="1000" />
+      <path class="flowAura" d="M1 1H999V599H1Z" pathLength="1000" />
+      <path class="flowHalo" d="M1 1H999V599H1Z" pathLength="1000" />
       <path class="flow" d="M1 1H999V599H1Z" pathLength="1000" />
     </svg>
   </div>

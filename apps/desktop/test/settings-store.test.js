@@ -63,10 +63,11 @@ test("phrase builder editorial accents and larger lyric sizes persist", () => {
   try {
     const store = createSettingsStore({ getPath: () => userData });
     store.load();
-    store.update({ phraseAccents: "cards", lyricsSize: 104 });
+    store.update({ phraseAccents: "cards", lyricsSize: 104, glowThickness: 360 });
     const settings = createSettingsStore({ getPath: () => userData }).load();
     assert.equal(settings.phraseAccents, "cards");
     assert.equal(settings.lyricsSize, 104);
+    assert.equal(settings.glowThickness, 360);
   } finally {
     fs.rmSync(userData, { recursive: true, force: true });
   }
