@@ -13,4 +13,9 @@
   #spin { position: absolute; left: 50%; top: 50%; width: 125vmax; height: 125vmax; margin: -62.5vmax 0 0 -62.5vmax; }
   #spin.rotate { animation: spin 9s linear infinite; }
   #spin.comet { animation: spin 5s linear infinite; }
+  #frame { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  #frame path { fill: none; stroke: rgba(var(--frame-a), var(--frame-o, .6)); stroke-width: var(--frame-w, 3px); vector-effect: non-scaling-stroke;
+                filter: drop-shadow(0 0 var(--frame-b, 18px) rgba(var(--frame-a), .95)); }
+  #frame .spark { stroke: rgba(var(--frame-bc), .98); stroke-width: calc(var(--frame-w, 3px) * 1.25); stroke-linecap: round;
+                  stroke-dasharray: var(--frame-dash, 55) calc(1000 - var(--frame-dash, 55)); stroke-dashoffset: var(--frame-offset, 0); }
   @keyframes spin { to { transform: rotate(360deg); } }

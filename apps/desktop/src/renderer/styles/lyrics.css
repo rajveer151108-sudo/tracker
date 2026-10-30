@@ -174,6 +174,7 @@
     body[data-layout="wordstream"] .line.word-hit { animation: none !important; }
     body.view-enter-lyrics #stage, body.view-enter-lyrics footer, body.view-enter-lyrics header,
     .line.line-arrive, #viewTransitionGlow { animation: none !important; }
+    #constellationMap polyline, #constellationMap circle, #orbitDecor::before, #orbitDecor::after, #lyricEdgeFrame { animation: none !important; }
   }
 
   .w { display: inline-block; transition: transform .22s ease; }
@@ -254,6 +255,80 @@
     color: var(--word-accent); -webkit-text-fill-color: var(--word-accent); box-shadow: none;
     text-shadow: 0 0 .35em color-mix(in srgb, var(--word-accent) 45%, transparent);
   }
+
+  /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
+    inset: 0; padding: 0; transform: none; transition: opacity .25s ease;
+  }
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
+    position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
+  }
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+
+  /* 01 — the video's stacked kinetic-word composition. */
+  body[data-layout="kinetic"] .line { left: 50%; top: 50%; width: max-content; max-width: 76%; color: rgba(255,242,198,.38);
+    font-family: ui-serif, "New York", Georgia, serif; font-size: calc(var(--lyric-size) * .72); letter-spacing: .015em;
+    transition: left var(--word-step-ms,180ms) cubic-bezier(.2,.8,.2,1), top var(--word-step-ms,180ms) cubic-bezier(.2,.8,.2,1), opacity .24s, transform .28s cubic-bezier(.16,.86,.22,1), filter .24s; }
+  body[data-layout="kinetic"] .line[data-slot="-2"] { left: 66%; top: 22%; opacity: .25; transform: translate(-50%,-50%) rotate(2deg) scale(.72); }
+  body[data-layout="kinetic"] .line[data-slot="-1"] { left: 38%; top: 35%; opacity: .48; transform: translate(-50%,-50%) rotate(-2deg) scale(.88); }
+  body[data-layout="kinetic"] .line[data-slot="0"] { left: 50%; top: 50%; opacity: 1; transform: translate(-50%,-50%) scale(2.4); color: #fff8db; text-shadow: 0 0 14px rgba(var(--glow),.52), 0 .08em .7em rgba(var(--glow),.35); }
+  body[data-layout="kinetic"] .line[data-slot="1"] { left: 62%; top: 66%; opacity: .52; transform: translate(-50%,-50%) rotate(1.5deg) scale(.94); }
+  body[data-layout="kinetic"] .line[data-slot="2"] { left: 34%; top: 79%; opacity: .24; transform: translate(-50%,-50%) rotate(-2deg) scale(.7); }
+  body[data-layout="kinetic"] .line[data-slot="0"] .w { color: #fff8db; -webkit-text-fill-color: #fff8db; background: none; }
+  body.music-motion[data-layout="kinetic"] .line[data-slot="0"] { scale: calc(1 + var(--motion-vocal) * .055 + var(--motion-drop) * .08); }
+
+  /* 02 — words become points on a lyric constellation. */
+  #constellationMap { display: none; position: absolute; inset: 5% 4%; width: 92%; height: 90%; z-index: -1; overflow: visible; }
+  #constellationMap polyline { fill: none; stroke: rgba(var(--glow),.48); stroke-width: 1.5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 8px rgba(var(--glow),.75)); stroke-dasharray: 3 7; animation: constellationDrift 9s linear infinite; }
+  #constellationMap circle { fill: rgb(var(--glow)); opacity: .58; filter: drop-shadow(0 0 5px rgba(var(--glow),.9)); }
+  #constellationMap circle.current { fill: #fff7cf; opacity: 1; animation: constellationPulse 1.15s ease-in-out infinite; }
+  body[data-layout="constellation"] #constellationMap { display: block; }
+  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 28%; font-size: calc(var(--lyric-size) * .58); font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.4); opacity: .48; transform: translate(-50%,-50%) scale(.82); transition: left .5s cubic-bezier(.2,.75,.2,1), top .5s cubic-bezier(.2,.75,.2,1), transform .32s, opacity .32s; }
+  body[data-layout="constellation"] .line[data-slot="0"] { z-index: 2; opacity: 1; color: #fff; transform: translate(-50%,-50%) scale(1.65); letter-spacing: .035em; text-shadow: 0 0 22px rgba(var(--glow),.88); }
+  body[data-layout="constellation"] .line[data-slot="0"] .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
+  @keyframes constellationDrift { to { stroke-dashoffset: -100; } }
+  @keyframes constellationPulse { 50% { r: 15; opacity: .62; } }
+
+  /* 03 — stacked subtitles with a live highlight card. */
+  body[data-layout="captioncards"] .line { left: 50%; top: 50%; width: min(84%, 1050px); font-family: ui-serif, "New York", Georgia, serif; font-size: calc(var(--lyric-size) * 1.18); line-height: 1.38; opacity: 0; transform: translate(-50%,-50%) scale(.92); }
+  body[data-layout="captioncards"] .line[data-slot="-1"] { top: 24%; opacity: .18; transform: translate(-50%,-50%) scale(.72); }
+  body[data-layout="captioncards"] .line[data-slot="0"] { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  body[data-layout="captioncards"] .line[data-slot="1"] { top: 76%; opacity: .14; transform: translate(-50%,-50%) scale(.68); }
+  body[data-layout="captioncards"] .line .w { padding: .04em .08em .09em; margin: 0 -.01em; border-radius: .05em; }
+  body[data-layout="captioncards"] .line.active .w { color: rgba(255,255,255,.42); -webkit-text-fill-color: rgba(255,255,255,.42); background: none; }
+  body[data-layout="captioncards"] .line.active .w.cur { color: #151116; -webkit-text-fill-color: #151116; background: #fff4ce; box-shadow: 0 0 28px rgba(var(--glow),.5); transform: translateY(-.04em) scale(1.04); }
+
+  /* Afterglow original 01 — timed words orbit the phrase currently being sung. */
+  #orbitDecor { display: none; position: absolute; left: 50%; top: 50%; width: min(63vw,66vh); aspect-ratio: 1; transform: translate(-50%,-50%); border: 1px solid rgba(var(--glow),.18); border-radius: 50%; box-shadow: 0 0 70px rgba(var(--glow),.07), inset 0 0 70px rgba(var(--glow),.06); z-index: -1; }
+  #orbitDecor::before, #orbitDecor::after { content:""; position:absolute; inset:15%; border:1px dashed rgba(255,255,255,.11); border-radius:50%; animation:orbitSpin 18s linear infinite; }
+  #orbitDecor::after { inset:35%; border-style:solid; border-color:rgba(var(--glow),.2); animation-direction:reverse; animation-duration:11s; }
+  #orbitDecor i { position:absolute; width:7px; height:7px; border-radius:50%; background:rgb(var(--glow)); box-shadow:0 0 16px rgba(var(--glow),.9); }
+  #orbitDecor i:nth-child(1){left:12%;top:31%} #orbitDecor i:nth-child(2){right:8%;top:53%} #orbitDecor i:nth-child(3){left:46%;bottom:-3px}
+  body[data-layout="orbit"] #orbitDecor { display:block; scale:calc(1 + var(--motion-vocal) * .035 + var(--motion-drop) * .08); }
+  body[data-layout="orbit"] .line { left:50%; top:50%; width:max-content; max-width:30%; opacity:.42; font-size:calc(var(--lyric-size) * .63); transform:translate(-50%,-50%) scale(.8); transition:left .38s cubic-bezier(.2,.75,.2,1),top .38s cubic-bezier(.2,.75,.2,1),opacity .25s,transform .28s; }
+  body[data-layout="orbit"] .line[data-slot="-4"]{left:22%;top:23%} body[data-layout="orbit"] .line[data-slot="-3"]{left:49%;top:13%}
+  body[data-layout="orbit"] .line[data-slot="-2"]{left:77%;top:24%} body[data-layout="orbit"] .line[data-slot="-1"]{left:87%;top:50%}
+  body[data-layout="orbit"] .line[data-slot="1"]{left:76%;top:78%} body[data-layout="orbit"] .line[data-slot="2"]{left:48%;top:87%}
+  body[data-layout="orbit"] .line[data-slot="3"]{left:21%;top:76%} body[data-layout="orbit"] .line[data-slot="4"]{left:12%;top:49%}
+  body[data-layout="orbit"] .line[data-slot="0"]{z-index:2;opacity:1;transform:translate(-50%,-50%) scale(2);text-shadow:0 0 20px rgba(var(--glow),.8)}
+  body[data-layout="orbit"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none}
+  @keyframes orbitSpin { to { transform:rotate(360deg); } }
+
+  /* Afterglow original 02 — an editorial cutout poster assembled per line. */
+  body[data-layout="poster"] .line { left:50%;top:50%;width:min(88%,1120px);opacity:0;transform:translate(-50%,-50%) scale(.92);font-size:calc(var(--lyric-size) * 1.25);line-height:1.34;text-transform:uppercase;letter-spacing:-.035em; }
+  body[data-layout="poster"] .line[data-slot="0"]{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  body[data-layout="poster"] .line.active .w { padding:.03em .14em .09em;margin:.06em .015em;background:rgba(255,255,255,.94);color:#101014;-webkit-text-fill-color:#101014;box-shadow:.09em .09em 0 rgba(var(--glow),.55);transform:rotate(var(--word-tilt)); }
+  body[data-layout="poster"] .line.active .w:nth-child(4n+1){background:rgb(var(--glow));color:#fff;-webkit-text-fill-color:#fff}
+  body[data-layout="poster"] .line.active .w.cur{transform:rotate(0) translateY(-.09em) scale(1.12);filter:brightness(1.12);box-shadow:0 0 .5em rgba(var(--glow),.85)}
+  body[data-layout="poster"] .lyric-emoji { display:inline-block; }
+
+  /* Broken neon frame from the video, usable with every lyric composition. */
+  #lyricEdgeFrame { display:none;position:absolute;inset:1.5%;width:97%;height:97%;z-index:4;pointer-events:none;overflow:visible; }
+  #lyricEdgeFrame path { fill:none;stroke:rgba(var(--glow),calc(.38 + var(--motion-energy) * .22 + var(--motion-vocal) * .3));stroke-width:2;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 calc(5px + var(--motion-vocal) * 18px + var(--motion-drop) * 20px) rgba(var(--glow),.9)); }
+  #lyricEdgeFrame .edgeSpark { stroke:#fff4cb;stroke-width:3;stroke-linecap:round;stroke-dasharray:55 945;stroke-dashoffset:calc(-1000 * var(--motion-phrase));opacity:calc(.5 + var(--motion-vocal) * .5); }
+  body[data-view="lyrics"][data-glow-style="frame"] #stage { -webkit-mask-image:none;mask-image:none; }
+  body[data-view="lyrics"][data-glow-style="frame"] #lyricEdgeFrame { display:block;animation:edgeFrameBreathe 3.8s ease-in-out infinite; }
+  @keyframes edgeFrameBreathe { 50% { opacity:.76;transform:scale(.996); } }
 
   #estimate { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 11px;
               letter-spacing: .06em; text-transform: uppercase; opacity: .45; pointer-events: none; z-index: 2; }

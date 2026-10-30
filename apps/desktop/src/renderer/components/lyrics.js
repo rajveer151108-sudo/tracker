@@ -119,16 +119,24 @@
     return window.LyricEffects.decorateRows(rows);
   }
 
+  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "constellation", "orbit"]);
+  const CREATIVE_LAYOUTS = new Set(["kinetic", "constellation", "captioncards", "orbit", "poster"]);
+  const LAYOUT_LABELS = {
+    wordstream: "Word stream", wordstack: "Word stack", stack: "Lyric stack",
+    kinetic: "Kinetic stack", constellation: "Constellation", captioncards: "Caption cards",
+    orbit: "Orbit", poster: "Poster cutout",
+  };
+  function isWordLayout(layout = settings.lyricsLayout) { return WORD_LAYOUTS.has(layout); }
+  function isCreativeLayout(layout = settings.lyricsLayout) { return CREATIVE_LAYOUTS.has(layout); }
+
   function updateTimingInfo() {
     $("estimate").textContent = timingInfo
-      ? timingInfo + (settings.lyricsLayout === "wordstream" ? " \u00b7 Word stream"
-        : settings.lyricsLayout === "wordstack" ? " \u00b7 Word stack"
-        : settings.lyricsLayout === "stack" ? " \u00b7 Lyric stack" : "")
+      ? timingInfo + (LAYOUT_LABELS[settings.lyricsLayout] ? " \u00b7 " + LAYOUT_LABELS[settings.lyricsLayout] : "")
       : "";
   }
 
   function rebuildLyricsLayout() {
-    lines = settings.lyricsLayout === "wordstream" || settings.lyricsLayout === "wordstack"
+    lines = isWordLayout()
       ? wordStreamRows(sourceLines)
       : window.LyricEffects.decorateLines(sourceLines);
     buildLines();
@@ -167,6 +175,7 @@
       const spans = words.map((w, i) => {
         const s = document.createElement("span");
         s.className = "w";
+        s.style.setProperty("--word-tilt", ((i % 2 ? 1 : -1) * (1 + (i % 3))).toFixed(1) + "deg");
         s.textContent = w;
         div.appendChild(s);
         if (l.lineEmoji && l.emoji && i === l.emojiWordIndex) {

@@ -53,13 +53,13 @@ const LIMITS = {
 
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
-  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream"],
+  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "constellation", "captioncards", "orbit", "poster"],
   lyricsMotion: ["punch", "slide", "glide", "cube"],
   lyricsAlign: ["center", "left"],
   lyricsFont: ["sans", "serif", "round"],
   backdropStyle: ["blur", "album", "canvas", "black"],
   backdropTourFocus: ["smart", "center", "corners"],
-  glowStyle: ["steady", "rotate", "comet"],
+  glowStyle: ["steady", "rotate", "comet", "frame"],
   glowScope: ["everywhere", "tracker"],
   glowDisplays: ["all", "main"],
   lyricsDanceStyle: ["auto", "float", "punch", "sway", "shake", "bounce", "snap", "subtle"],

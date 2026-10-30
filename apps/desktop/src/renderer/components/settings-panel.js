@@ -17,8 +17,9 @@
       hint: "Uses exact word timing when a source provides it, then falls back to a musical estimate.",
       options: [["word", "Word by word"], ["sweep", "Sweep"], ["whole", "Whole line"]] },
     { key: "lyricsLayout", label: "Layout", type: "choice",
-      hint: "Lyric stacks keep the current lyric at the bottom while completed lyrics drift upward. Word stack does this one timed word at a time.",
-      options: [["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"], ["wordstream", "Word stream"]] },
+      hint: "Five classic views plus kinetic, constellation and caption styles inspired by your reference, with Orbit and Poster as Afterglow originals.",
+      options: [["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"], ["wordstream", "Word stream"],
+        ["kinetic", "Kinetic stack"], ["constellation", "Constellation"], ["captioncards", "Caption cards"], ["orbit", "Orbit"], ["poster", "Poster cutout"]] },
     { key: "lyricsHistoryLines", label: "Lines in lyric stack", type: "range", min: 2, max: 6, step: 1, unit: "" },
     { key: "lyricsMotion", label: "Word transition", type: "choice",
       hint: "Cube rolls each word away like one face turning into the next—without drawing a literal cube.",
@@ -50,8 +51,8 @@
     { type: "heading", label: "Screen glow" },
     { key: "glow", label: "Screen glow", hint: "Lights the edges of your screen", type: "toggle" },
     { key: "glowStyle", label: "Animation", type: "choice",
-      hint: "Rotating: colour flows around the edge. Comet: one bright streak circles the screen.",
-      options: [["steady", "Steady"], ["rotate", "Rotating"], ["comet", "Comet"]] },
+      hint: "Broken frame recreates the album-colour neon edge from the lyric reference and reacts to both the voice and beat.",
+      options: [["steady", "Steady"], ["rotate", "Rotating"], ["comet", "Comet"], ["frame", "Broken frame"]] },
     { key: "glowStrength", label: "Glow level", type: "range", min: 10, max: 200, step: 10, unit: "%" },
     { key: "glowThickness", label: "Thickness", type: "range", min: 40, max: 200, step: 10, unit: "%" },
     { key: "glowOverride", label: "Use my own colours", hint: "Otherwise the glow takes two colours from the album cover.", type: "toggle" },
@@ -99,6 +100,7 @@
       }
       const row = document.createElement("div");
       row.className = "row";
+      if (def.key) row.dataset.setting = def.key;
       const left = document.createElement("div");
       const lbl = document.createElement("div"); lbl.className = "lbl"; lbl.textContent = def.label;
       left.appendChild(lbl);
@@ -177,6 +179,7 @@
     if(previousHomeMode&&typeof onHomeModeChange==="function")onHomeModeChange(previousHomeMode,nextHomeMode);
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     document.body.dataset.layout = settings.lyricsLayout;
+    document.body.dataset.glowStyle = settings.glowStyle || "steady";
     appliedLyricsLayout = settings.lyricsLayout;
     root.style.setProperty("--lyric-size", settings.lyricsSize + "px");
     applyFeel();

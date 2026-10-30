@@ -2,6 +2,47 @@
   // Per-frame loop
   // =====================================================================
   let lastFrameT = performance.now(), lastUiT = 0;
+  const CONSTELLATION_POINTS = [
+    [12, 23], [27, 72], [41, 34], [57, 78], [50, 50], [69, 27], [84, 61], [91, 18], [77, 84],
+  ];
+  function updateCreativeLayout(idx) {
+    const layout = settings.lyricsLayout;
+    const creative = isCreativeLayout(layout);
+    if (creative) $("lines").style.transform = "none";
+    lineEls.forEach((el, i) => {
+      const relative = idx < 0 ? 99 : i - idx;
+      el.dataset.slot = String(Math.max(-5, Math.min(5, relative)));
+      el.classList.toggle("creative-hidden", creative && Math.abs(relative) > (layout === "constellation" || layout === "orbit" ? 4 : 2));
+    });
+
+    const path = $("constellationPath");
+    const nodes = $("constellationNodes");
+    if (!path || !nodes) return;
+    if (layout !== "constellation" || idx < 0) {
+      path.setAttribute("points", "");
+      nodes.replaceChildren();
+      return;
+    }
+    const visible = [];
+    for (let slot = -4; slot <= 4; slot++) {
+      const line = lineEls[idx + slot];
+      if (!line) continue;
+      const point = CONSTELLATION_POINTS[slot + 4];
+      line.style.setProperty("--node-x", point[0] + "%");
+      line.style.setProperty("--node-y", point[1] + "%");
+      visible.push({ slot, point });
+    }
+    path.setAttribute("points", visible.map(({ point }) => point[0] * 10 + "," + point[1] * 6).join(" "));
+    nodes.replaceChildren(...visible.map(({ slot, point }) => {
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", String(point[0] * 10));
+      circle.setAttribute("cy", String(point[1] * 6));
+      circle.setAttribute("r", slot === 0 ? "9" : "4");
+      if (slot === 0) circle.classList.add("current");
+      return circle;
+    }));
+  }
+
   function frame(tNow) {
     requestAnimationFrame(frame);
     const fps = settings.performanceMode === "smooth" ? 60 : settings.performanceMode === "battery" ? 20 : 30;
@@ -51,9 +92,11 @@
           el.dataset.d = idx < 0 ? "4" : String(Math.min(Math.abs(i - idx), 4));
           el.dataset.side = idx < 0 ? "next" : i < idx ? "past" : i > idx ? "next" : "current";
         });
+        updateCreativeLayout(idx);
         clearFit();
-        const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
-        if ((settings.lyricsLayout === "wordstream" || settings.lyricsLayout === "wordstack") && idx >= 0) {
+        const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream" ||
+          settings.lyricsLayout === "captioncards" || settings.lyricsLayout === "poster";
+        if (isWordLayout() && idx >= 0) {
           const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
           const motion = settings.lyricsMotion || "slide";
           const factor = motion === "cube" ? 900 : motion === "glide" ? 850 : motion === "slide" ? 700 : 450;
@@ -76,8 +119,10 @@
           const focus = lineEls[idx];
           const stageH = $("stage").clientHeight;
           const focusY = stackLayout ? stageH * 0.7 : stageH / 2;
-          $("lines").style.transform =
-            "translateY(" + (focusY - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
+          if (!isCreativeLayout()) {
+            $("lines").style.transform =
+              "translateY(" + (focusY - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
+          }
         }
       }
 
