@@ -22,6 +22,9 @@
         ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["buildstack", "Phrase builder"],
         ["constellation", "Constellation"], ["captioncards", "Caption cards"],
         ["orbit", "Orbit"], ["poster", "Poster cutout"]] },
+    { key: "phraseAccents", label: "Phrase builder accents", type: "choice",
+      hint: "Optional editorial contrast for Phrase builder. Cards highlights selected words; Editorial also adds a restrained type tilt.",
+      options: [["off", "Clean"], ["cards", "Cards"], ["editorial", "Cards + tilt"]] },
     { key: "lyricsHistoryLines", label: "Lines in lyric stack", type: "range", min: 2, max: 6, step: 1, unit: "" },
     { key: "lyricsMotion", label: "Word transition", type: "choice",
       hint: "Cube rolls each word away like one face turning into the next—without drawing a literal cube.",
@@ -36,7 +39,7 @@
       hint: "If a song has no synced lyrics, spread the plain lyrics over the song. Use \u2190 \u2192 to nudge." },
     { key: "lyricsAlign", label: "Position", type: "choice", options: [["center", "Center"], ["left", "Left"]] },
     { key: "lyricsFont", label: "Font", type: "choice", options: [["sans", "Sans"], ["serif", "Serif"], ["round", "Rounded"]] },
-    { key: "lyricsSize", label: "Size", type: "range", min: 18, max: 72, step: 2, unit: "px" },
+    { key: "lyricsSize", label: "Size", type: "range", min: 18, max: 110, step: 2, unit: "px" },
     { key: "lyricsBlur", label: "Blur lines that aren't playing", type: "toggle" },
 
     { type: "heading", label: "Background" },
@@ -174,6 +177,7 @@
     document.body.classList.toggle("center", settings.lyricsAlign === "center");
     document.body.dataset.font = settings.lyricsFont;
     document.body.dataset.motion = settings.lyricsMotion || "slide";
+    document.body.dataset.phraseAccents = settings.phraseAccents || "editorial";
     document.body.classList.toggle("word-emoji", !!settings.lyricsEmoji);
     document.body.classList.toggle("word-keywords", !!settings.lyricsKeywords);
     const lyricsDance = settings.lyricsDance !== false;

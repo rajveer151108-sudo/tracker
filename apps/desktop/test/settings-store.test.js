@@ -58,6 +58,20 @@ test("the retired line phrase builder migrates to the word stack version", () =>
   }
 });
 
+test("phrase builder editorial accents and larger lyric sizes persist", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    store.update({ phraseAccents: "cards", lyricsSize: 104 });
+    const settings = createSettingsStore({ getPath: () => userData }).load();
+    assert.equal(settings.phraseAccents, "cards");
+    assert.equal(settings.lyricsSize, 104);
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
 test("the tempo-driven flow streak persists", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {

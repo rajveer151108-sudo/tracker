@@ -423,7 +423,9 @@
           syncAt = performance.now();
         }
         playing = np.state === "playing";
-        sendActive(playing);
+        // Keep the chosen edge treatment visible at a calm idle while a track
+        // is paused. Motion inputs naturally decay, then wake with playback.
+        sendActive(true);
         $("dur").textContent = fmt(durSec);
         if (nextTrackId !== trackId) {
           window.tracker.historyAdd({ uri: np.id, name: np.title, artist: np.artist, album: np.album, img: np.artwork });

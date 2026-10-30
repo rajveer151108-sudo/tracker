@@ -5,6 +5,7 @@ const DEFAULTS = {
   showLyrics: true,
   lyricsHighlight: "word",
   lyricsLayout: "scroll",
+  phraseAccents: "editorial",
   lyricsHistoryLines: 4,
   lyricsMotion: "slide",
   lyricsEmoji: true,
@@ -43,7 +44,7 @@ const DEFAULTS = {
 };
 
 const LIMITS = {
-  lyricsSize: [18, 72],
+  lyricsSize: [18, 110],
   lyricsHistoryLines: [2, 6],
   glowStrength: [0, 300],
   glowThickness: [20, 300],
@@ -56,6 +57,7 @@ const LIMITS = {
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
   lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"],
+  phraseAccents: ["off", "cards", "editorial"],
   lyricsMotion: ["punch", "slide", "glide", "cube"],
   lyricsAlign: ["center", "left"],
   lyricsFont: ["sans", "serif", "round"],

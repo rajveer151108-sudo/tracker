@@ -279,26 +279,27 @@
   body[data-layout="kinetic"] .line[data-slot="0"] .w { color: #fff8db; -webkit-text-fill-color: #fff8db; background: none; }
   body.lyrics-motion[data-layout="kinetic"] .line[data-slot="0"] { scale: calc(1 + var(--motion-vocal) * .055 + var(--motion-drop) * .08); }
 
-  /* Reference style 01 — three words occupy one tight stack and physically
-     squash into each other as the sung word changes. */
+  /* Reference style 01 — a compact depth column. Words translate through the
+     stack at a stable size; blur and opacity create depth without visual jumps. */
   body[data-layout="morphstack"] #stage{perspective:900px;perspective-origin:50% 50%}
-  body[data-layout="morphstack"] .line { left:50%;top:50%;width:max-content;max-width:70%;font-size:calc(var(--lyric-size) * .96);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:1.02;letter-spacing:-.035em;color:rgba(255,255,255,.38);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .2s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .2s; }
-  body[data-layout="morphstack"] .line[data-slot="-1"]{top:27%;opacity:.42;transform:translate(-50%,-50%) scale(1.46);filter:blur(2.4px)}
-  body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%) scale(1.46);color:#fff;text-shadow:0 -.18em .28em rgba(255,255,255,.18),0 .2em .32em rgba(var(--glow),.28),0 0 .3em rgba(var(--glow),.65)}
-  body[data-layout="morphstack"] .line[data-slot="1"]{top:73%;opacity:.34;transform:translate(-50%,-50%) scale(1.46);filter:blur(3px)}
-  body[data-layout="morphstack"] .line[data-slot="0"]::before,body[data-layout="morphstack"] .line[data-slot="0"]::after{content:attr(data-lyric);position:absolute;inset:0;z-index:-1;color:rgba(255,255,255,.28);pointer-events:none;filter:blur(4px)}
-  body[data-layout="morphstack"] .line[data-slot="0"]::before{transform:translateY(-.6em) scaleY(.78);opacity:.38}
-  body[data-layout="morphstack"] .line[data-slot="0"]::after{transform:translateY(.64em) scaleY(.72);opacity:.3;filter:blur(5px)}
+  body[data-layout="morphstack"] .line { left:50%;top:50%;width:max-content;max-width:78%;font-size:calc(var(--lyric-size) * 1.02);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:1;letter-spacing:-.04em;color:rgba(255,255,255,.38);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .24s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .24s; }
+  body[data-layout="morphstack"] .line[data-slot="-2"]{top:25%;opacity:.1;transform:translate(-50%,-50%);filter:blur(8px)}
+  body[data-layout="morphstack"] .line[data-slot="-1"]{top:37%;opacity:.38;transform:translate(-50%,-50%);filter:blur(3.4px)}
+  body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .22em rgba(var(--glow),.42)}
+  body[data-layout="morphstack"] .line[data-slot="1"]{top:63%;opacity:.3;transform:translate(-50%,-50%);filter:blur(4px)}
+  body[data-layout="morphstack"] .line[data-slot="2"]{top:75%;opacity:.08;transform:translate(-50%,-50%);filter:blur(9px)}
   body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .07em}
   body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-step-ms,210ms) cubic-bezier(.14,.88,.2,1) both}
-  @keyframes morphStackSwap{0%{opacity:.08;transform:translate(-50%,48%) scale(1.46);filter:blur(10px) brightness(1.45)}72%{opacity:1;transform:translate(-50%,-56%) scale(1.46);filter:blur(.8px) brightness(1.12)}100%{opacity:1;transform:translate(-50%,-50%) scale(1.46);filter:none}}
+  @keyframes morphStackSwap{0%{opacity:.1;transform:translate(-50%,calc(-50% + 54px));filter:blur(9px) brightness(1.25)}76%{opacity:1;transform:translate(-50%,calc(-50% - 3px));filter:blur(.5px)}100%{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
-  /* Reference style 02 — each word arrives from close by and stays put until
-     the complete lyric line has assembled, then the next line starts clean. */
-  body[data-layout="buildstack"] .line{left:50%;top:58%;width:min(68%,960px);font-size:calc(var(--lyric-size) * 1.14);line-height:1.08;font-weight:820;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top .42s cubic-bezier(.18,.78,.22,1),opacity .32s,transform .42s cubic-bezier(.18,.78,.22,1),filter .32s}
-  body[data-layout="buildstack"] .line[data-slot="0"]{top:58%;z-index:3;opacity:1;transform:translate(-50%,-50%);filter:none}
-  body[data-layout="buildstack"] .line[data-slot="-1"]{top:36%;z-index:2;opacity:.28;transform:translate(-50%,-50%);filter:none}
-  body[data-layout="buildstack"] .line[data-slot="-2"]{top:17%;z-index:1;opacity:.1;transform:translate(-50%,-50%);filter:none}
+  /* Reference style 02 — a word-by-word editorial stack. Each word keeps its
+     own typeface while the whole column rises one clean slot at a time. */
+  body[data-layout="buildstack"] .line{left:50%;top:68%;width:min(64%,900px);font-size:calc(var(--lyric-size) * .78);line-height:1;font-weight:820;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),opacity .3s,transform var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),filter .3s}
+  body[data-layout="buildstack"] .line[data-slot="0"]{top:68%;z-index:5;opacity:1;transform:translate(-50%,-50%);filter:none}
+  body[data-layout="buildstack"] .line[data-slot="-1"]{top:56%;z-index:4;opacity:.72;transform:translate(-50%,-50%);filter:blur(.2px)}
+  body[data-layout="buildstack"] .line[data-slot="-2"]{top:44%;z-index:3;opacity:.44;transform:translate(-50%,-50%);filter:blur(.8px)}
+  body[data-layout="buildstack"] .line[data-slot="-3"]{top:32%;z-index:2;opacity:.24;transform:translate(-50%,-50%);filter:blur(1.8px)}
+  body[data-layout="buildstack"] .line[data-slot="-4"]{top:20%;z-index:1;opacity:.1;transform:translate(-50%,-50%);filter:blur(3px)}
   body[data-layout="buildstack"] .line .w{--build-x:0;--build-y:.48em;opacity:0;transform:translate(var(--build-x),var(--build-y));margin:.035em .025em;padding:.025em .055em .065em;border-radius:.08em;color:rgba(255,255,255,.94);-webkit-text-fill-color:rgba(255,255,255,.94);background:none;filter:blur(7px);transition:opacity .18s ease,filter .22s ease,transform .26s cubic-bezier(.15,.86,.2,1)}
   /* Each timed word is its own row, so the row index drives the editorial
      font rhythm without ever placing two words in the same physical slot. */
@@ -310,19 +311,25 @@
   body[data-layout="buildstack"] .line .w.revealed{opacity:1;transform:translate(0,0);filter:none}
   body[data-layout="buildstack"] .line .w.build-enter{animation:buildWordIn .34s cubic-bezier(.14,.88,.2,1) both}
   body[data-layout="buildstack"] .line.active,body.lyrics-motion[data-layout="buildstack"] .line.active{translate:0 0;scale:1;filter:none;text-shadow:none}
-  body[data-layout="buildstack"] .line.active .w,body[data-layout="buildstack"] .line.active .w.cur{color:#fff;-webkit-text-fill-color:#fff;background:none;box-shadow:none;text-shadow:none;filter:none;translate:0 0;scale:1;transform:none}
+  body[data-layout="buildstack"] .line.active .w,body[data-layout="buildstack"] .line.active .w.cur{color:#fff;-webkit-text-fill-color:#fff;background:none;box-shadow:none;text-shadow:0 0 .28em rgba(var(--glow),.48);filter:none;translate:0 0;scale:1;transform:none}
   body[data-layout="buildstack"] .line.creative-arrive{animation:buildStackRise .36s cubic-bezier(.14,.88,.2,1) both}
   @keyframes buildWordIn{0%{opacity:0;transform:translate(var(--build-x),var(--build-y));filter:blur(10px) brightness(1.5)}65%{opacity:1;transform:translate(0,-.05em);filter:blur(0) brightness(1.16)}100%{opacity:1;transform:translate(0,0);filter:none}}
-  @keyframes buildStackRise{from{opacity:0;transform:translate(-50%,22%);filter:blur(8px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
+  @keyframes buildStackRise{from{opacity:0;transform:translate(-50%,calc(-50% + 48px));filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
+  body[data-layout="buildstack"]:is([data-phrase-accents="cards"],[data-phrase-accents="editorial"]) :is(.line:nth-child(5n+2),.line:nth-child(7n+4)) .w.revealed{
+    color:#101014;-webkit-text-fill-color:#101014;background:#fff;padding:.03em .15em .1em;border-radius:.06em;
+    box-shadow:.075em .075em 0 rgba(var(--glow),.68),0 0 .36em rgba(var(--glow),.34);text-shadow:none;
+  }
+  body[data-layout="buildstack"][data-phrase-accents="editorial"] .line:nth-child(6n+1) .w.revealed{transform:rotate(-2.2deg)}
+  body[data-layout="buildstack"][data-phrase-accents="editorial"] .line:nth-child(6n+4) .w.revealed{transform:rotate(1.8deg)}
 
   /* 02 — words become points on a lyric constellation. */
   #constellationMap { display: none; position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: visible; }
-  #constellationMap polyline { fill: none; stroke: rgba(var(--glow),.5); stroke-width: 1.2; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px rgba(var(--glow),.46)); }
-  #constellationMap .constellation-star { fill: rgb(var(--glow)); opacity: .72; transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 4px rgba(var(--glow),.68)); }
-  #constellationMap .constellation-star.current { fill:#fff;opacity:1;animation:constellationPulse 1.15s ease-in-out infinite;filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 9px rgba(var(--glow),.78)); }
+  #constellationMap polyline { fill: none; stroke: rgba(var(--glow),.52); stroke-width: 1.05; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px rgba(var(--glow),.38)); }
+  #constellationMap .constellation-star { fill: rgb(var(--glow)); opacity: .74; transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 3px rgba(var(--glow),.62)); }
+  #constellationMap .constellation-star.current { fill:#fff;opacity:1;animation:constellationPulse 1.15s ease-in-out infinite;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px rgba(var(--glow),.7)); }
   body[data-layout="constellation"] #constellationMap { display: block; }
-  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 18%; white-space: normal; overflow-wrap: break-word; font-size: calc(var(--lyric-size) * var(--node-font-scale,.4)); line-height: 1.08; font-weight: 650; letter-spacing: .045em; text-transform: uppercase; color: rgba(255,255,255,.42); opacity: .54; transform: translate(-50%,-50%); transition: opacity .22s, color .22s, text-shadow .22s, filter .22s; }
-  body[data-layout="constellation"] .line.constellation-current { z-index: 2; opacity: 1; color: #fff; filter:brightness(1.22);transform: translate(-50%,-50%);font-weight:820; letter-spacing: .025em; text-shadow:0 0 4px #fff,0 0 10px rgba(var(--glow),.72); }
+  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 21%; white-space: normal; overflow-wrap: break-word; font-size: calc(var(--lyric-size) * var(--node-font-scale,.4)); line-height: 1.05; font-weight: 650; letter-spacing: .015em; color: rgba(255,255,255,.4); opacity: .56; transform: translate(-50%,-50%); transition: opacity .22s, color .22s, text-shadow .22s, filter .22s, transform .22s; }
+  body[data-layout="constellation"] .line.constellation-current { z-index: 2; opacity: 1; color: #fff; filter:brightness(1.18);transform: translate(-50%,-50%) scale(1.26);font-weight:840; letter-spacing: -.015em; text-shadow:0 0 3px #fff,0 0 8px rgba(var(--glow),.68); }
   body[data-layout="constellation"] .line.constellation-current .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
   @keyframes constellationPulse { 50% { transform:scale(1.28);opacity:.86; } }
 

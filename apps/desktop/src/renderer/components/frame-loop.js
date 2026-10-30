@@ -3,7 +3,7 @@
   // =====================================================================
   let lastFrameT = performance.now(), lastUiT = 0;
   let edgeFramePhase = 0;
-  const CONSTELLATION_SIZE = 8;
+  const CONSTELLATION_SIZE = 16;
   const constellationLayouts = new Map();
   function constellationRandom(seed) {
     let state = (seed ^ 0x9e3779b9) >>> 0;
@@ -14,36 +14,45 @@
       return (state >>> 0) / 4294967296;
     };
   }
-  function constellationLayout(groupStart) {
-    if (constellationLayouts.has(groupStart)) return constellationLayouts.get(groupStart);
+  function constellationLayout(groupStart, wordLengths = []) {
+    const cacheKey = groupStart + ":" + wordLengths.join(",");
+    if (constellationLayouts.has(cacheKey)) return constellationLayouts.get(cacheKey);
     const random = constellationRandom(groupStart + 31);
-    // Four broad columns and three rows leave a full word-width between nodes.
-    // The route is shuffled, but the collision-safe cells never move closer.
-    const cells = [];
-    [20, 50, 80].forEach((y) => [14, 38, 62, 86].forEach((x) => cells.push([x, y])));
-    const shuffled = (input) => input.map((cell) => ({ cell, key: random() })).sort((a, b) => a.key - b.key).map(({ cell }) => cell);
-    function findNearbyPath(path, remaining) {
-      if (path.length === CONSTELLATION_SIZE) return path;
-      const current = path[path.length - 1];
-      const candidates = shuffled(remaining.filter((cell) => Math.hypot(cell[0] - current[0], cell[1] - current[1]) <= 42));
-      for (const next of candidates) {
-        const result = findNearbyPath([...path, next], remaining.filter((cell) => cell !== next));
-        if (result) return result;
+    const points = [];
+    const boxes = [];
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const halfWidth = (index) => clamp(3.8 + (wordLengths[index] || 4) * .48, 5.2, 11.5);
+    const fits = (x, y, index) => {
+      const hw = halfWidth(index);
+      return !boxes.some((box) => Math.abs(x - box.x) < hw + box.hw + 2.2 && Math.abs(y - box.y) < 9.2);
+    };
+    for (let index = 0; index < CONSTELLATION_SIZE; index++) {
+      const previous = points[index - 1] || [48 + (random() - .5) * 8, 48 + (random() - .5) * 8];
+      let chosen = null;
+      // The reference grows from the last star. Try nearby positions first so
+      // consecutive words stay readable without making the viewer hunt.
+      for (let attempt = 0; attempt < 100 && !chosen; attempt++) {
+        const angle = random() * Math.PI * 2;
+        const radiusX = 10 + random() * 15;
+        const radiusY = 8 + random() * 12;
+        const x = clamp(previous[0] + Math.cos(angle) * radiusX, 18, 82);
+        const y = clamp(previous[1] + Math.sin(angle) * radiusY, 19, 81);
+        if (fits(x, y, index)) chosen = [x, y];
       }
-      return null;
+      // Dense final words use a compact fallback grid, selected by distance
+      // from the last word. Lines may cross; lyric boxes never do.
+      if (!chosen) {
+        const candidates = [];
+        for (let y = 20; y <= 80; y += 10) for (let x = 19; x <= 81; x += 9) {
+          if (fits(x, y, index)) candidates.push([x, y]);
+        }
+        candidates.sort((a, b) => Math.hypot(a[0] - previous[0], a[1] - previous[1]) - Math.hypot(b[0] - previous[0], b[1] - previous[1]));
+        chosen = candidates[Math.min(candidates.length - 1, Math.floor(random() * Math.min(4, candidates.length)))] || [50, 50];
+      }
+      points.push(chosen);
+      boxes.push({ x: chosen[0], y: chosen[1], hw: halfWidth(index) });
     }
-    const starts = shuffled(cells);
-    let ordered = null;
-    for (const start of starts) {
-      ordered = findNearbyPath([start], cells.filter((cell) => cell !== start));
-      if (ordered) break;
-    }
-    ordered ||= cells.slice(0, CONSTELLATION_SIZE);
-    const points = ordered.map(([x, y]) => [
-      x + (random() - .5) * 1.8,
-      y + (random() - .5) * 3,
-    ]);
-    constellationLayouts.set(groupStart, points);
+    constellationLayouts.set(cacheKey, points);
     return points;
   }
   function paceFromGap(gap) {
@@ -65,7 +74,10 @@
     if (creative) $("lines").style.transform = "none";
     const constellation = layout === "constellation" && idx >= 0;
     const groupStart = constellation ? Math.floor(idx / CONSTELLATION_SIZE) * CONSTELLATION_SIZE : -1;
-    const template = constellation ? constellationLayout(groupStart) : null;
+    const constellationLengths = constellation
+      ? lineEls.slice(groupStart, groupStart + CONSTELLATION_SIZE).map((el) => (el?.textContent || "").trim().length)
+      : [];
+    const template = constellation ? constellationLayout(groupStart, constellationLengths) : null;
     lineEls.forEach((el, i) => {
       const relative = idx < 0 ? 99 : i - idx;
       el.dataset.slot = String(Math.max(-5, Math.min(5, relative)));
@@ -84,8 +96,8 @@
       } else {
         el.classList.remove("constellation-current");
         const visible = layout === "buildstack"
-          ? relative <= 0 && relative >= -2
-          : Math.abs(relative) <= (layout === "kinetic" || layout === "morphstack" ? 1 : 0);
+          ? relative <= 0 && relative >= -4
+          : Math.abs(relative) <= (layout === "morphstack" ? 2 : layout === "kinetic" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }
     });

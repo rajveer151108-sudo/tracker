@@ -20,5 +20,5 @@
                   stroke-dasharray: var(--frame-dash, 55) calc(1000 - var(--frame-dash, 55)); stroke-dashoffset: var(--frame-offset, 0); }
   #frame .flow { display: none; }
   #frame[data-mode="flowline"] path { opacity: 0; }
-  #frame[data-mode="flowline"] .flow { display: block; opacity: 1; stroke: rgba(var(--frame-bc), var(--streak-o, .98)); stroke-width: var(--frame-w, 7px); stroke-linecap: butt; stroke-dasharray: 500 500; stroke-dashoffset: var(--frame-offset, 0); filter: none; }
+  #frame[data-mode="flowline"] .flow { display: block; opacity: 1; stroke: rgba(var(--frame-bc), var(--streak-o, .98)); stroke-width: var(--frame-w, 10px); stroke-linecap: square; stroke-linejoin: round; stroke-dasharray: 500 500; stroke-dashoffset: var(--frame-offset, 0); filter: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
