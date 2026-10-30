@@ -48,6 +48,20 @@ test("creative lyric layouts and broken frame glow persist", () => {
   }
 });
 
+test("tempo-driven edge glow styles persist", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    for (const glowStyle of ["orbitline", "twinline"]) {
+      const store = createSettingsStore({ getPath: () => userData });
+      store.load();
+      store.update({ glowStyle });
+      assert.equal(createSettingsStore({ getPath: () => userData }).load().glowStyle, glowStyle);
+    }
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
 test("lyrics and glow dance settings persist independently", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {

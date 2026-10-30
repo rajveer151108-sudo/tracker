@@ -18,4 +18,10 @@
                 filter: drop-shadow(0 0 var(--frame-b, 18px) rgba(var(--frame-a), .95)); }
   #frame .spark { stroke: rgba(var(--frame-bc), .98); stroke-width: calc(var(--frame-w, 3px) * 1.25); stroke-linecap: round;
                   stroke-dasharray: var(--frame-dash, 55) calc(1000 - var(--frame-dash, 55)); stroke-dashoffset: var(--frame-offset, 0); }
+  #frame .spark2 { display: none; stroke: rgba(var(--frame-a), .98); stroke-dashoffset: var(--frame-offset-twin, -500); }
+  #frame[data-mode="orbitline"] path:not(.spark), #frame[data-mode="twinline"] path:not(.spark) { opacity: 0; }
+  #frame[data-mode="orbitline"] .spark, #frame[data-mode="twinline"] .spark {
+    filter: drop-shadow(0 0 var(--frame-b, 18px) rgba(var(--frame-a), .98)) drop-shadow(0 0 var(--frame-b, 18px) rgba(var(--frame-bc), .55));
+  }
+  #frame[data-mode="twinline"] .spark2 { display: block; }
   @keyframes spin { to { transform: rotate(360deg); } }
