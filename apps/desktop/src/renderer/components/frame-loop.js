@@ -83,8 +83,10 @@
         }
       } else {
         el.classList.remove("constellation-current");
-        const visibleRange = layout === "kinetic" || layout === "morphstack" ? 1 : 0;
-        el.classList.toggle("creative-hidden", creative && Math.abs(relative) > visibleRange);
+        const visible = layout === "buildstack"
+          ? relative <= 0 && relative >= -2
+          : Math.abs(relative) <= (layout === "kinetic" || layout === "morphstack" ? 1 : 0);
+        el.classList.toggle("creative-hidden", creative && !visible);
       }
     });
 
@@ -165,9 +167,12 @@
           if (buildStack) {
             el._w.spans.forEach((span, wordIndex) => {
               span.classList.remove("revealed", "build-enter");
-              el._w.revealed[wordIndex] = false;
+              const revealed = idx >= 0 && i < idx;
+              span.classList.toggle("revealed", revealed);
+              el._w.revealed[wordIndex] = revealed;
             });
           }
+          if (el._w.emojiSpan) el._w.emojiSpan.classList.toggle("word-revealed", idx >= 0 && i < idx);
         });
         updateCreativeLayout(idx);
         clearFit();
@@ -219,9 +224,9 @@
 
         let curIdx = -1;
         for (let i = 0; i < W.spans.length; i++) {
-          const pw = mode === "whole" ? 1
-            : W.timed ? clamp01((t - W.wt[i]) / Math.max(0.06, W.we[i] - W.wt[i]))
+          const rawPw = W.timed ? clamp01((t - W.wt[i]) / Math.max(0.06, W.we[i] - W.wt[i]))
             : clamp01((p - W.starts[i]) / (W.ends[i] - W.starts[i]));
+          const pw = mode === "whole" ? 1 : rawPw;
           if (pw > 0 && pw < 1) wordLife = Math.max(wordLife, Math.sin(Math.PI * pw));
           if (pw > 0 && pw < 1) curIdx = i;
           const key = Math.round(pw * 200);
@@ -236,6 +241,7 @@
             W.spans[i].classList.toggle("revealed", revealed);
             W.revealed[i] = revealed;
           }
+          if (W.emojiSpan && i === W.emojiWordIndex) W.emojiSpan.classList.toggle("word-revealed", rawPw > 0);
         }
         const popIdx = mode === "word" ? curIdx : -1;
         if (W.cur !== popIdx) setPop(W, popIdx);

@@ -144,13 +144,10 @@
     text-shadow: 0 .08em .45em rgba(var(--glow), .3);
   }
 
-  body:is([data-layout="wordstream"], [data-layout="wordstack"]) .lyric-emoji { display: none; vertical-align: .05em; font-size: .72em;
-                                                filter: drop-shadow(0 0 18px rgba(255,255,255,.35)); }
-  body.word-emoji:is([data-layout="wordstream"], [data-layout="wordstack"]) .line[data-d="0"] .lyric-emoji { display: inline-block; animation: emojiIn 260ms cubic-bezier(.2,.8,.2,1); }
-  .lyric-emoji.line-emoji { display: none; margin-left: .22em; vertical-align: .06em; font-size: .7em;
-                            filter: drop-shadow(0 0 16px rgba(255,255,255,.28)); }
-  body.word-emoji .lyric-emoji.line-emoji { display: inline-block; }
-  body.word-emoji .line[data-d="0"] .lyric-emoji.line-emoji { animation: emojiIn 300ms cubic-bezier(.2,.8,.2,1); }
+  .lyric-emoji { display:none;opacity:0;margin-left:.18em;vertical-align:.06em;font-size:.72em;transform:translateY(.3em) scale(.55) rotate(-8deg);filter:drop-shadow(0 0 16px rgba(255,255,255,.3)); }
+  body.word-emoji .lyric-emoji { display:inline-block; }
+  body.word-emoji .lyric-emoji.word-revealed { opacity:1;transform:none;animation:emojiIn 300ms cubic-bezier(.2,.8,.2,1); }
+  .lyric-emoji.line-emoji { margin-left:.22em;font-size:.7em; }
   @keyframes emojiIn { from { opacity: 0; transform: translateY(.3em) scale(.6) rotate(-8deg); } to { opacity: 1; transform: none; } }
 
   body.word-keywords:is([data-layout="wordstream"], [data-layout="wordstack"]) .line.keyword[data-d="0"] .w {
@@ -284,19 +281,25 @@
 
   /* Reference style 01 — three words occupy one tight stack and physically
      squash into each other as the sung word changes. */
-  body[data-layout="morphstack"] .line { left:50%;top:50%;width:max-content;max-width:74%;font-size:calc(var(--lyric-size) * .9);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:.92;letter-spacing:-.045em;color:rgba(255,255,255,.3);transition:top var(--word-step-ms,170ms) cubic-bezier(.16,.84,.22,1),opacity .18s,transform var(--word-step-ms,170ms) cubic-bezier(.16,.84,.22,1),filter .18s; }
-  body[data-layout="morphstack"] .line[data-slot="-1"]{top:32%;opacity:.34;transform:translate(-50%,-50%) scale(.7,.62) rotate(-1.5deg);filter:blur(.4px)}
-  body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%) scale(1.72,1.18);color:#fff;text-shadow:0 0 .24em rgba(var(--glow),.72),0 .08em .7em rgba(0,0,0,.4)}
-  body[data-layout="morphstack"] .line[data-slot="1"]{top:68%;opacity:.3;transform:translate(-50%,-50%) scale(.68,.6) rotate(1.2deg);filter:blur(.45px)}
-  body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;border-bottom:.09em solid rgba(var(--glow),.82);padding:0 .08em .07em}
-  body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-step-ms,190ms) cubic-bezier(.16,.9,.24,1) both}
+  body[data-layout="morphstack"] #stage{perspective:720px;perspective-origin:50% 50%}
+  body[data-layout="morphstack"] .line { left:50%;top:50%;width:max-content;max-width:74%;font-size:calc(var(--lyric-size) * .9);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:.92;letter-spacing:-.045em;color:rgba(255,255,255,.25);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .18s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .18s; }
+  body[data-layout="morphstack"] .line[data-slot="-1"]{top:37%;opacity:.24;transform:translate(-50%,-50%) rotateX(66deg) translateZ(-75px) scale(.78,.48);filter:blur(3px)}
+  body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%) rotateX(0) translateZ(24px) scale(1.7,1.2);color:#fff;text-shadow:0 -.18em .28em rgba(255,255,255,.18),0 .2em .32em rgba(var(--glow),.28),0 0 .3em rgba(var(--glow),.65)}
+  body[data-layout="morphstack"] .line[data-slot="1"]{top:63%;opacity:.2;transform:translate(-50%,-50%) rotateX(-68deg) translateZ(-85px) scale(.76,.44);filter:blur(3.6px)}
+  body[data-layout="morphstack"] .line[data-slot="0"]::before,body[data-layout="morphstack"] .line[data-slot="0"]::after{content:attr(data-lyric);position:absolute;inset:0;z-index:-1;color:rgba(255,255,255,.22);pointer-events:none;filter:blur(4px)}
+  body[data-layout="morphstack"] .line[data-slot="0"]::before{transform:translateY(-.42em) scaleY(.42);opacity:.3}
+  body[data-layout="morphstack"] .line[data-slot="0"]::after{transform:translateY(.48em) scaleY(.32);opacity:.22;filter:blur(6px)}
+  body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .07em}
+  body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-step-ms,210ms) cubic-bezier(.14,.88,.2,1) both}
   body.lyrics-motion[data-layout="morphstack"] .line[data-slot="0"]{scale:calc(1 + var(--motion-vocal) * .035 + var(--motion-syllable) * .045 + var(--motion-drop) * .055)}
-  @keyframes morphStackSwap{0%{opacity:.18;scale:.72 1.55;filter:blur(8px) brightness(1.7)}58%{opacity:1;scale:1.08 .88;filter:blur(0) brightness(1.2)}100%{opacity:1;scale:1 1;filter:none}}
+  @keyframes morphStackSwap{0%{opacity:.12;transform:translate(-50%,25%) rotateX(-84deg) translateZ(-110px) scale(1.15,.24);filter:blur(10px) brightness(1.7)}58%{opacity:1;transform:translate(-50%,-56%) rotateX(14deg) translateZ(34px) scale(1.82,1.34);filter:blur(1px) brightness(1.2)}100%{opacity:1;transform:translate(-50%,-50%) rotateX(0) translateZ(24px) scale(1.7,1.2);filter:none}}
 
   /* Reference style 02 — each word arrives from close by and stays put until
      the complete lyric line has assembled, then the next line starts clean. */
-  body[data-layout="buildstack"] .line{left:50%;top:50%;width:min(72%,980px);font-size:calc(var(--lyric-size) * 1.22);line-height:1.08;font-weight:780;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff}
-  body[data-layout="buildstack"] .line[data-slot="0"]{opacity:1}
+  body[data-layout="buildstack"] .line{left:50%;top:68%;width:min(72%,980px);font-size:calc(var(--lyric-size) * 1.22);line-height:1.08;font-weight:780;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%) scale(.9);text-align:center;color:#fff;transition:top .55s cubic-bezier(.18,.78,.22,1),opacity .45s,transform .55s cubic-bezier(.18,.78,.22,1),filter .45s}
+  body[data-layout="buildstack"] .line[data-slot="0"]{top:68%;opacity:1;transform:translate(-50%,-50%) scale(1)}
+  body[data-layout="buildstack"] .line[data-slot="-1"]{top:35%;opacity:.38;transform:translate(-50%,-50%) scale(.68);filter:blur(.7px)}
+  body[data-layout="buildstack"] .line[data-slot="-2"]{top:14%;opacity:.14;transform:translate(-50%,-50%) scale(.5);filter:blur(1.5px)}
   body[data-layout="buildstack"] .line .w{--build-x:0;--build-y:.55em;opacity:0;transform:translate(var(--build-x),var(--build-y)) scale(.7);margin:.05em .035em;padding:.04em .08em .09em;border-radius:.08em;color:rgba(255,255,255,.92);-webkit-text-fill-color:rgba(255,255,255,.92);background:none;filter:blur(8px);transition:opacity .18s ease,filter .24s ease,transform .28s cubic-bezier(.15,.86,.2,1)}
   body[data-layout="buildstack"] .line .w:nth-child(4n+1){--build-x:-.55em;--build-y:.18em;font-size:1.14em;font-weight:900}
   body[data-layout="buildstack"] .line .w:nth-child(4n+2){--build-x:.36em;--build-y:-.35em;font-size:.82em;letter-spacing:.015em}
@@ -344,7 +347,7 @@
   body[data-layout="poster"] .line.active .w { padding:.03em .14em .09em;margin:.06em .015em;background:rgba(255,255,255,.94);color:#101014;-webkit-text-fill-color:#101014;box-shadow:.09em .09em 0 rgba(var(--glow),.55);transform:rotate(var(--word-tilt)); }
   body[data-layout="poster"] .line.active .w:nth-child(4n+1){background:rgb(var(--glow));color:#fff;-webkit-text-fill-color:#fff}
   body[data-layout="poster"] .line.active .w.cur{transform:rotate(0) translateY(-.09em) scale(1.12);filter:brightness(1.12);box-shadow:0 0 .5em rgba(var(--glow),.85)}
-  body[data-layout="poster"] .lyric-emoji { display:inline-block; }
+  body.word-emoji[data-layout="poster"] .lyric-emoji.word-revealed { display:inline-block; }
 
   /* Broken neon frame from the video, usable with every lyric composition. */
   #lyricEdgeFrame { display:none;position:absolute;inset:1.5%;width:97%;height:97%;z-index:4;pointer-events:none;overflow:visible; }

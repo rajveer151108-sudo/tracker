@@ -164,6 +164,7 @@
     lineEls = lines.map((l) => {
       const div = document.createElement("div");
       div.className = "line";
+      div.dataset.lyric = l.text || "";
       const expression = window.LyricEffects.expressionForText(l.text);
       div.style.setProperty("--line-emotion", expression.toFixed(3));
       div.dataset.expression = expression.toFixed(3);
@@ -173,6 +174,8 @@
       }
       const timed = Array.isArray(l.words) && l.words.length > 0;
       const words = timed ? l.words.map((w) => w.text) : (l.text || "\u266A").split(/\s+/).filter(Boolean);
+      let emojiSpan = null;
+      const emojiWordIndex = l.lineEmoji ? l.emojiWordIndex : (l.emoji ? 0 : -1);
       const spans = words.map((w, i) => {
         const s = document.createElement("span");
         s.className = "w";
@@ -181,23 +184,25 @@
         div.appendChild(s);
         if (l.lineEmoji && l.emoji && i === l.emojiWordIndex) {
           const emoji = document.createElement("span");
-          emoji.className = "lyric-emoji line-emoji";
+          emoji.className = "lyric-emoji line-emoji word-synced";
           emoji.textContent = l.emoji;
           emoji.setAttribute("aria-hidden", "true");
           div.appendChild(emoji);
+          emojiSpan = emoji;
         }
         if (i < words.length - 1) div.appendChild(document.createTextNode(" "));
         return s;
       });
-      const W = { spans, cache: spans.map(() => -1), cur: -1, timed, revealed: spans.map(() => false) };
       if (l.emoji && !l.lineEmoji) {
         const emoji = document.createElement("span");
-        emoji.className = "lyric-emoji";
+        emoji.className = "lyric-emoji word-synced";
         emoji.textContent = l.emoji;
         emoji.setAttribute("aria-hidden", "true");
         div.appendChild(document.createTextNode(" "));
         div.appendChild(emoji);
+        emojiSpan = emoji;
       }
+      const W = { spans, cache: spans.map(() => -1), cur: -1, timed, revealed: spans.map(() => false), emojiSpan, emojiWordIndex };
       if (timed) {
         W.wt = l.words.map((w) => w.t);
         W.we = l.words.map((w) => w.end);
