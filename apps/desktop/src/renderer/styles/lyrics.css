@@ -192,9 +192,9 @@
     opacity: calc(1 - var(--motion-duck) * .24);
   }
   body.lyrics-motion .line.active .w.cur {
-    translate: 0 calc(var(--motion-syllable) * -5px);
-    scale: calc(1.08 + var(--motion-syllable) * .075 + var(--motion-vocal) * .025);
-    filter: brightness(calc(1 + var(--motion-syllable) * .22)) drop-shadow(0 0 calc(7px + var(--motion-syllable) * 17px) rgba(var(--glow),.62));
+    translate: 0 calc((var(--motion-syllable) * 4px + var(--motion-word) * 3px) * -1);
+    scale: calc(1.08 + var(--motion-syllable) * .055 + var(--motion-word) * .06 + var(--motion-vocal) * .02);
+    filter: brightness(calc(1 + var(--motion-syllable) * .16 + var(--motion-word) * .14)) drop-shadow(0 0 calc(7px + var(--motion-syllable) * 12px + var(--motion-word) * 13px) rgba(var(--glow),.62));
   }
   /* "whole line" highlight (used for R&B): the line fades up as one piece, no per-word tracking */
   body[data-hl="whole"] .line.active .w { background: none; -webkit-background-clip: border-box; background-clip: border-box;

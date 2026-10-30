@@ -421,7 +421,7 @@ function setAppView(view){
   const wanted=view==="lyrics"?"lyrics":"home",previous=document.body.dataset.view||"home";
   if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();
   if(previous===wanted){if(wanted==="home")refreshArcadeHome();else activeIdx=-2;return;}
-  if(wanted==="home")closeQueuePanel();
+  if(wanted==="lyrics")closeQueuePanel();
   clearTimeout(viewTransitionTimer);document.body.classList.remove("view-enter-home","view-enter-lyrics");void document.body.offsetWidth;
   document.body.dataset.view=wanted;document.body.classList.add(`view-enter-${wanted}`);
   $("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");

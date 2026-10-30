@@ -12,6 +12,7 @@
   let style = "steady", thick = 1, strength = 1, trackSpeed = 9;
   let beatTarget = 0, beat = 0, energyTarget = 0, energy = 0, vocalTarget = 0, vocal = 0, liftTarget = 0, lift = 0, wordTarget = 0, word = 0, paceTarget = 0, pace = 0;
   let buildTarget = 0, build = 0, duckTarget = 0, duck = 0, dropTarget = 0, drop = 0, emotionTarget = 0, emotion = 0;
+  let syllableTarget = 0, syllable = 0, phraseTarget = 0, phrase = 0, sibilanceTarget = 0, sibilance = 0;
   let lastShadow = "", lastRing = "";
   let enabled = false, frameMs = 33, lastFrameT = 0, framePhase = 0;
 
@@ -53,6 +54,9 @@
     duckTarget = Math.max(0, Math.min(1.5, motion?.duck || 0));
     dropTarget = Math.max(0, Math.min(1.5, motion?.drop || 0));
     emotionTarget = Math.max(0, Math.min(1.5, motion?.emotion || 0));
+    syllableTarget = Math.max(0, Math.min(1.5, motion?.syllable || 0));
+    phraseTarget = Math.max(0, Math.min(1.5, motion?.phrase || 0));
+    sibilanceTarget = Math.max(0, Math.min(1.5, motion?.sibilance || 0));
   });
 
   function render(tNow) {
@@ -77,12 +81,15 @@
     duck += (duckTarget - duck) * step(duckTarget > duck ? 0.45 : 0.16);
     drop += (dropTarget - drop) * step(dropTarget > drop ? 0.65 : 0.18);
     emotion += (emotionTarget - emotion) * step(emotionTarget > emotion ? 0.18 : 0.08);
+    syllable += (syllableTarget - syllable) * step(syllableTarget > syllable ? 0.52 : 0.16);
+    phrase += (phraseTarget - phrase) * step(phraseTarget > phrase ? 0.18 : 0.07);
+    sibilance += (sibilanceTarget - sibilance) * step(sibilanceTarget > sibilance ? 0.38 : 0.13);
     const A = curA.map(Math.round).join(", "), B = curB.map(Math.round).join(", ");
 
     // soft inner glow (weaker when the moving light is on, so it stands out)
     const edgeLine = style === "flowline";
     const soft = style === "steady" ? 1 : style === "frame" ? 0.18 : edgeLine ? 0 : 0.38;
-    const phraseGlow = word * vocal;
+    const phraseGlow = Math.max(word * vocal, phrase * .48 + syllable * .34 + sibilance * .14);
     const a1 = Math.max(0, Math.min(1, (0.28 + 0.2 * energy + 0.16 * vocal + 0.18 * beat + 0.1 * lift +
       0.16 * build + 0.52 * drop + 0.2 * emotion + 0.12 * phraseGlow - 0.32 * duck) * strength * soft)).toFixed(2);
     const a2 = Math.max(0, Math.min(1, (0.12 + 0.14 * energy + 0.09 * vocal + 0.12 * beat + 0.08 * lift +
@@ -111,17 +118,17 @@
       frame.style.setProperty("--frame-a", A);
       frame.style.setProperty("--frame-bc", B);
       frame.style.setProperty("--frame-o", Math.max(edgeLine ? 0 : .2, Math.min(1, (.34 + energy * .18 + vocal * .27 + beat * .13 + drop * .35 - duck * .24) * strength)).toFixed(2));
-      const streakOpacity = Math.max(.2, Math.min(1, (.64 + energy * .08 + beat * .08 - duck * .08) * Math.min(1.2, strength)));
+      const streakOpacity = Math.max(.2, Math.min(1, (.57 + energy * .06 + beat * .06 + vocal * .07 + phrase * .1 + syllable * .1 + sibilance * .04 - duck * .08) * Math.min(1.2, strength)));
       frame.style.setProperty("--streak-o", streakOpacity.toFixed(2));
       frame.style.setProperty("--flow-aura-o", (streakOpacity * .22).toFixed(3));
       frame.style.setProperty("--flow-halo-o", (streakOpacity * .58).toFixed(3));
-      frame.style.setProperty("--frame-w", Math.max(1, ((edgeLine ? 9.5 : 2.2) + (edgeLine ? beat * .45 : vocal * 1.2 + beat * .7)) * thick).toFixed(1) + "px");
+      frame.style.setProperty("--frame-w", Math.max(1, ((edgeLine ? 9.5 : 2.2) + (edgeLine ? beat * .28 + syllable * .7 + phrase * .42 : vocal * 1.2 + beat * .7)) * thick).toFixed(1) + "px");
       frame.style.setProperty("--frame-b", Math.round((10 + vocal * 22 + energy * 10 + drop * 28) * thick) + "px");
       const frameDash = Math.round(edgeLine ? 500 : 42 + vocal * 65 + word * 28);
       frameSpark.style.strokeDasharray = frameDash + " " + (1000 - frameDash);
       frameFlow.style.strokeDasharray = "500 500";
-      const rapFlow = Math.min(1.5, pace * .9 + word * .25 + beat * .12);
-      const sustained = Math.max(0, Math.min(1.25, vocal * (1 - Math.min(1, pace * .8)) + lift * .25));
+      const rapFlow = Math.min(1.5, pace * .88 + word * .28 + syllable * .18 + beat * .08);
+      const sustained = Math.max(0, Math.min(1.25, phrase * .48 + vocal * (1 - Math.min(1, pace * .8)) + lift * .2));
       const frameRate = edgeLine
         ? Math.max(.025, .55 / trackSpeed + rapFlow * .18 + energy * .02 + drop * .08 - sustained * .035)
         : .025 + pace * .16 + energy * .045 + beat * .09 + drop * .28;

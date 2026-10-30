@@ -157,7 +157,7 @@
       }
     }
 
-    let wordLife = 0, lineEmotion = 0, wordPaceTarget = 0;
+    let wordLife = 0, wordAttack = 0, wordSustain = 0, timingConfidence = 0, lineEmotion = 0, wordPaceTarget = 0;
     if (lines.length) {
       const idx = window.LyricTiming.activeLyricIndex(lines, t);
 
@@ -225,6 +225,7 @@
         const el = lineEls[idx];
         lineEmotion = Number(el.dataset.expression) || 0;
         const W = el._w;
+        timingConfidence = W.timed && !(lines[idx].words || []).some((word) => word.estimated) ? 1 : .58;
         const start = lines[idx].t;
         const end = idx + 1 < lines.length ? lines[idx + 1].t : start + 4;
         if (isWordLayout()) wordPaceTarget = paceFromGap(Math.max(.06, end - start));
@@ -240,6 +241,10 @@
             : clamp01((p - W.starts[i]) / (W.ends[i] - W.starts[i]));
           const pw = mode === "whole" ? 1 : rawPw;
           if (pw > 0 && pw < 1) wordLife = Math.max(wordLife, Math.sin(Math.PI * pw));
+          if (rawPw > 0 && rawPw < 1) {
+            wordAttack = Math.max(wordAttack, Math.exp(-rawPw * 8));
+            wordSustain = Math.max(wordSustain, Math.sin(Math.PI * rawPw));
+          }
           if (pw > 0 && pw < 1) curIdx = i;
           const key = Math.round(pw * 200);
           if (W.cache[i] !== key) { W.cache[i] = key; W.spans[i].style.setProperty("--p", (pw * 100).toFixed(1) + "%"); }
@@ -269,6 +274,9 @@
     lyricWordPace += (wantedPace - lyricWordPace) * (wantedPace > lyricWordPace ? .34 : .1);
     lyricMotionLife = wordLife;
     lyricMotionEmotion = lineEmotion;
+    lyricWordAttack += (wordAttack - lyricWordAttack) * (wordAttack > lyricWordAttack ? .62 : .2);
+    lyricWordSustain += (wordSustain - lyricWordSustain) * (wordSustain > lyricWordSustain ? .38 : .14);
+    lyricTimingConfidence = timingConfidence;
     root.style.setProperty("--word-life", wordLife.toFixed(3));
     root.style.setProperty("--line-emotion", lineEmotion.toFixed(3));
   }

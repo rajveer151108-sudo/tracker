@@ -101,7 +101,7 @@
     if (e.key === "f" || e.key === "F") { window.tracker.toggleFullscreen(); return; }
     if (e.key === "h" || e.key === "H") { setAppView("home"); return; }
     if (e.key === "y" || e.key === "Y") { setAppView("lyrics"); return; }
-    if (e.key === "q" || e.key === "Q") { $("queuePanel").classList.contains("open") ? closeQueuePanel() : openQueuePanel(); return; }
+    if ((e.key === "q" || e.key === "Q") && document.body.dataset.view === "home") { $("queuePanel").classList.contains("open") ? closeQueuePanel() : openQueuePanel(); return; }
     if (e.key === "l" || e.key === "L") { $("library").classList.contains("open") ? closeLibrary() : openLibrary(); return; }
     if (e.key === "t" || e.key === "T") { $("trackerPanel").classList.contains("open") ? closeTracker() : openTracker(); return; }
     if (e.key === "s" || e.key === "S") { $("settings").classList.contains("open") ? closeSettings() : openSettings(); return; }

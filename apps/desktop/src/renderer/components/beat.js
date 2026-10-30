@@ -8,6 +8,7 @@
   let energyPeak = 0.08, vocalPeak = 0.08, vocalFloor = 0.015, fluxPeak = 0.025;
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
+  let lyricWordAttack = 0, lyricWordSustain = 0, lyricTimingConfidence = 0;
 
   const MOTION_PROFILES = {
     rap:        { impact: 1.25, energy: .85, vocal: 1.0,  lift: .6,  build: .75, drop: 1.25, sway: .08, shake: .12, rate: 1.2 },
@@ -90,7 +91,8 @@
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
     beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null;
     motionEnergy = motionVocal = motionLift = motionSyllable = motionPhrase = motionSibilance = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
-    applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0 });
+    window.tracker.sendBeat(applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0, word: 0, pace: 0,
+      build: 0, duck: 0, drop: 0, emotion: 0, syllable: 0, phrase: 0, sibilance: 0 }));
     setBeatStatus(msg || "");
   }
 
@@ -176,6 +178,7 @@
     root.style.setProperty("--motion-syllable", syllable.toFixed(3));
     root.style.setProperty("--motion-phrase", phrase.toFixed(3));
     root.style.setProperty("--motion-sibilance", sibilance.toFixed(3));
+    root.style.setProperty("--motion-word", clampMotion(motion.word * strength).toFixed(3));
     root.style.setProperty("--motion-sway", sway.toFixed(3));
     root.style.setProperty("--motion-shake", shake.toFixed(3));
     root.style.setProperty("--motion-pace", clampMotion(motion.pace * strength).toFixed(3));
@@ -232,7 +235,11 @@
     const vocalRange = Math.max(.018, vocalPeak - vocalFloor * .55);
     const timingGate = .72 + Math.max(lyricMotionLife, lyricMotionEmotion) * .28;
     const vocalTarget = clamp01((voice.raw - vocalFloor * .55) / vocalRange) * timingGate;
-    const syllableTarget = fluxPeak > .002 ? clamp01(voice.flux / fluxPeak * 1.18 - .16) * (.36 + vocalTarget * .64) : 0;
+    const audioSyllable = fluxPeak > .002 ? clamp01(voice.flux / fluxPeak * 1.18 - .16) * (.36 + vocalTarget * .64) : 0;
+    // Exact lyric timing gives us a clean word attack even when a soft vocal is
+    // hidden under drums. Audio still leads; timing only reinforces it.
+    const timedAttack = lyricWordAttack * lyricTimingConfidence * (.42 + vocalTarget * .58);
+    const syllableTarget = Math.max(audioSyllable, timedAttack * .78);
     const sibilanceRaw = voice.presence * .68 + voice.air * .32;
     const sibilanceTarget = clamp01(sibilanceRaw / Math.max(.035, vocalPeak * 1.22)) * vocalTarget;
 
@@ -252,7 +259,7 @@
     motionVocal = follow(motionVocal, vocalTarget, 0.07, 0.28, dt);
     motionLift = follow(motionLift, liftTarget, 0.09, 0.3, dt);
     motionSyllable = follow(motionSyllable, syllableTarget, .024, .13, dt);
-    motionPhrase = follow(motionPhrase, vocalTarget, .24, .58, dt);
+    motionPhrase = follow(motionPhrase, Math.max(vocalTarget, lyricWordSustain * lyricTimingConfidence * .34), .18, .5, dt);
     motionSibilance = follow(motionSibilance, sibilanceTarget, .035, .18, dt);
 
     motionShort = follow(motionShort, energyTarget, 0.08, 0.22, dt);
@@ -275,6 +282,7 @@
     const sway = Math.sin(tNow * 0.003 * profile.rate) * profile.sway * motionEnergy;
     const shake = Math.sin(tNow * 0.052) * profile.shake * outLevel;
     const expressiveVocal = lyricMotionEmotion * lyricMotionLife * motionVocal;
+    const syncedWordAttack = Math.max(lyricWordAttack * (.58 + motionVocal * .42), motionSyllable * .58);
     const motion = applyMusicMotion({
       impact: outLevel * profile.impact,
       energy: motionEnergy * profile.energy,
@@ -287,7 +295,7 @@
       syllable: motionSyllable,
       phrase: motionPhrase,
       sibilance: motionSibilance,
-      word: lyricMotionLife,
+      word: syncedWordAttack,
       pace: lyricWordPace,
       sway,
       shake,

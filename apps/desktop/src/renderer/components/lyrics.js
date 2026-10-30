@@ -418,9 +418,19 @@
         }
         if (settings.backdrop && np.artwork && (trackChanged || !$("backdrop").children.length)) setBackdrop(np.artwork, np.uri || np.id);
         durSec = np.durationMs / 1000;
+        const observedAt = performance.now();
         if (!seeking) {
-          posSec = np.positionSec;
-          syncAt = performance.now();
+          const clock = window.PlaybackClock.reconcilePlaybackClock({
+            localPosition: posSec,
+            localAtMs: syncAt,
+            localPlaying: playing,
+            observedPosition: np.positionSec,
+            observedAtMs: observedAt,
+            nextPlaying: np.state === "playing",
+            force: trackChanged,
+          });
+          posSec = clock.position;
+          syncAt = clock.atMs;
         }
         playing = np.state === "playing";
         // Keep the chosen edge treatment visible at a calm idle while a track

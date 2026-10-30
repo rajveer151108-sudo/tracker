@@ -6,7 +6,6 @@
   box-shadow: 0 14px 38px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.09);
   backdrop-filter: blur(18px) saturate(1.25); transition: transform .25s ease, background .25s, border-color .25s, opacity .3s;
 }
-body[data-view="lyrics"] #queueBtn { display: flex; animation: queueButtonIn .55s .38s cubic-bezier(.2,.82,.24,1) both; }
 #queueBtn:hover, #queueBtn[aria-expanded="true"] { transform: translateX(4px); border-color: rgba(var(--glow),.72); background: rgba(var(--glow),.16); }
 #queueBtn > span:last-child { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
 #queueBtn b { font: 800 10px/1.1 ui-monospace, monospace; letter-spacing: .13em; }
