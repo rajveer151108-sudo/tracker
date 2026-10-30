@@ -21,11 +21,25 @@
     // the zones keeps each constellation organic while lyric labels never stack.
     const cells = [];
     [17, 50, 83].forEach((y) => [10, 30, 50, 70, 90].forEach((x) => cells.push([x, y])));
-    for (let i = cells.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [cells[i], cells[j]] = [cells[j], cells[i]];
+    const shuffled = (input) => input.map((cell) => ({ cell, key: random() })).sort((a, b) => a.key - b.key).map(({ cell }) => cell);
+    function findNearbyPath(path, remaining) {
+      if (path.length === CONSTELLATION_SIZE) return path;
+      const current = path[path.length - 1];
+      const candidates = shuffled(remaining.filter((cell) => Math.hypot(cell[0] - current[0], cell[1] - current[1]) <= 42));
+      for (const next of candidates) {
+        const result = findNearbyPath([...path, next], remaining.filter((cell) => cell !== next));
+        if (result) return result;
+      }
+      return null;
     }
-    const points = cells.slice(0, CONSTELLATION_SIZE).map(([x, y]) => [
+    const starts = shuffled(cells);
+    let ordered = null;
+    for (const start of starts) {
+      ordered = findNearbyPath([start], cells.filter((cell) => cell !== start));
+      if (ordered) break;
+    }
+    ordered ||= cells.slice(0, CONSTELLATION_SIZE);
+    const points = ordered.map(([x, y]) => [
       x + (random() - .5) * 3.2,
       y + (random() - .5) * 5,
     ]);
@@ -60,7 +74,8 @@
         }
       } else {
         el.classList.remove("constellation-current");
-        el.classList.toggle("creative-hidden", creative && Math.abs(relative) > (layout === "orbit" ? 4 : 2));
+        const visibleRange = layout === "kinetic" ? 1 : 0;
+        el.classList.toggle("creative-hidden", creative && Math.abs(relative) > visibleRange);
       }
     });
 
@@ -142,7 +157,8 @@
         updateCreativeLayout(idx);
         clearFit();
         const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
-        const fitLayout = impactLayout || settings.lyricsLayout === "captioncards" || settings.lyricsLayout === "poster";
+        const fitLayout = impactLayout || settings.lyricsLayout === "captioncards" ||
+          settings.lyricsLayout === "monitorframe" || settings.lyricsLayout === "poster";
         if (isWordLayout() && idx >= 0) {
           const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
           wordPaceTarget = paceFromGap(gap);

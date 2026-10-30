@@ -120,11 +120,11 @@
   }
 
   const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "constellation", "orbit"]);
-  const CREATIVE_LAYOUTS = new Set(["kinetic", "constellation", "captioncards", "orbit", "poster"]);
+  const CREATIVE_LAYOUTS = new Set(["kinetic", "constellation", "captioncards", "monitorframe", "orbit", "poster"]);
   const LAYOUT_LABELS = {
     wordstream: "Word stream", wordstack: "Word stack", stack: "Lyric stack",
     kinetic: "Kinetic stack", constellation: "Constellation", captioncards: "Caption cards",
-    orbit: "Orbit", poster: "Poster cutout",
+    monitorframe: "Monitor frame", orbit: "Orbit", poster: "Poster cutout",
   };
   function isWordLayout(layout = settings.lyricsLayout) { return WORD_LAYOUTS.has(layout); }
   function isCreativeLayout(layout = settings.lyricsLayout) { return CREATIVE_LAYOUTS.has(layout); }
