@@ -171,7 +171,7 @@
     body[data-layout="wordstream"] .line.word-hit { animation: none !important; }
     body.view-enter-lyrics #stage, body.view-enter-lyrics footer, body.view-enter-lyrics header,
     .line.line-arrive, .line.creative-arrive, .w.build-enter, #viewTransitionGlow { animation: none !important; }
-    #constellationMap polyline, #constellationMap .constellation-star, #orbitDecor::before, #orbitDecor::after, #lyricEdgeFrame { animation: none !important; }
+    #constellationMap polyline, #constellationMap .constellation-star, #lyricEdgeFrame { animation: none !important; }
   }
 
   .w { display: inline-block; transition: transform .22s ease; }
@@ -254,14 +254,14 @@
   }
 
   /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) #lines {
     inset: 0; padding: 0; transform: none; transition: opacity .25s ease; z-index: 1;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line {
     position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-arrive {
     animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
@@ -340,19 +340,7 @@
   body[data-layout="captioncards"] .line.active .w { color: rgba(255,255,255,.42); -webkit-text-fill-color: rgba(255,255,255,.42); background: none; }
   body[data-layout="captioncards"] .line.active .w.cur { color: #151116; -webkit-text-fill-color: #151116; background: #fff4ce; box-shadow: 0 0 28px rgba(var(--glow),.5); transform: translateY(-.04em) scale(1.04); }
 
-  /* Afterglow original 01 — timed words orbit the phrase currently being sung. */
-  #orbitDecor { display: none; position: absolute; left: 50%; top: 50%; width: min(63vw,66vh); aspect-ratio: 1; transform: translate(-50%,-50%); border: 1px solid rgba(var(--glow),.18); border-radius: 50%; box-shadow: 0 0 70px rgba(var(--glow),.07), inset 0 0 70px rgba(var(--glow),.06); z-index: -1; }
-  #orbitDecor::before, #orbitDecor::after { content:""; position:absolute; inset:15%; border:1px dashed rgba(255,255,255,.11); border-radius:50%; animation:orbitSpin 18s linear infinite; }
-  #orbitDecor::after { inset:35%; border-style:solid; border-color:rgba(var(--glow),.2); animation-direction:reverse; animation-duration:11s; }
-  #orbitDecor i { position:absolute; width:7px; height:7px; border-radius:50%; background:rgb(var(--glow)); box-shadow:0 0 16px rgba(var(--glow),.9); }
-  #orbitDecor i:nth-child(1){left:12%;top:31%} #orbitDecor i:nth-child(2){right:8%;top:53%} #orbitDecor i:nth-child(3){left:46%;bottom:-3px}
-  body[data-layout="orbit"] #orbitDecor { display:block; scale:calc(1 + var(--motion-vocal) * .035 + var(--motion-drop) * .08); }
-  body[data-layout="orbit"] .line { left:50%; top:50%; width:max-content; max-width:34%; opacity:0; font-size:calc(var(--lyric-size) * .68); transform:translate(-50%,-50%) scale(.86); transition:opacity .22s,transform .25s; }
-  body[data-layout="orbit"] .line[data-slot="0"]{z-index:2;opacity:1;transform:translate(-50%,-50%) scale(1.75);text-shadow:0 0 20px rgba(var(--glow),.8)}
-  body[data-layout="orbit"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none}
-  @keyframes orbitSpin { to { transform:rotate(360deg); } }
-
-  /* Afterglow original 02 — an editorial cutout poster assembled per line. */
+  /* An editorial cutout poster assembled per line. */
   body[data-layout="poster"] .line { left:50%;top:50%;width:min(88%,1120px);opacity:0;transform:translate(-50%,-50%) scale(.92);font-size:calc(var(--lyric-size) * 1.25);line-height:1.34;text-transform:uppercase;letter-spacing:-.035em; }
   body[data-layout="poster"] .line[data-slot="0"]{opacity:1;transform:translate(-50%,-50%) scale(1)}
   body[data-layout="poster"] .line.active .w { padding:.03em .14em .09em;margin:.06em .015em;background:rgba(255,255,255,.94);color:#101014;-webkit-text-fill-color:#101014;box-shadow:.09em .09em 0 rgba(var(--glow),.55);transform:rotate(var(--word-tilt)); }

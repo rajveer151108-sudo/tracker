@@ -1,0 +1,45 @@
+/* Spotify connection lives on Home; browsing is handled by the Home library. */
+#accountPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 31;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(4, 5, 9, .66);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  backdrop-filter: blur(22px) saturate(1.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .24s ease, visibility .24s;
+  -webkit-app-region: no-drag;
+}
+#accountPanel.open { opacity: 1; visibility: visible; }
+.accountPanelCard {
+  width: min(520px, 100%);
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(27, 29, 42, .97), rgba(8, 9, 15, .97));
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .58), inset 0 1px rgba(255, 255, 255, .08);
+  transform: translateY(14px) scale(.98);
+  transition: transform .34s cubic-bezier(.18, .82, .22, 1);
+}
+#accountPanel.open .accountPanelCard { transform: none; }
+.accountPanelTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.accountPanelTop span { color: rgb(var(--glow)); font: 800 8px/1 ui-monospace, monospace; letter-spacing: .18em; }
+.accountPanelTop h2 { margin: 7px 0 0; font-size: 27px; letter-spacing: -.04em; }
+.accountPanelLoading { padding: 44px 0 28px; color: rgba(255, 255, 255, .48); font: 800 9px ui-monospace, monospace; letter-spacing: .15em; }
+.accountConnectionState { display: flex; align-items: center; gap: 13px; margin-top: 24px; padding: 16px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 16px; background: rgba(255, 255, 255, .04); }
+.accountConnectionState.connected { border-color: rgba(104, 245, 188, .3); background: rgba(45, 185, 130, .08); }
+.accountStateDot { width: 12px; height: 12px; flex: none; border-radius: 50%; background: #777; box-shadow: 0 0 18px #7778; }
+.accountConnectionState.connected .accountStateDot { background: #68f5bc; box-shadow: 0 0 18px #68f5bcaa; }
+.accountStateCopy { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.accountStateCopy small { color: rgba(255, 255, 255, .46); font: 800 8px ui-monospace, monospace; letter-spacing: .14em; }
+.accountStateCopy strong { font-size: 14px; line-height: 1.35; }
+.accountPanelText { margin: 18px 2px; color: rgba(255, 255, 255, .55); font-size: 12px; line-height: 1.6; }
+.accountPanelActions { display: flex; flex-wrap: wrap; gap: 9px; }
+.accountPanelActions .btn { min-width: 132px; }
+#toast { position: absolute; left: 50%; bottom: 22px; z-index: 40; max-width: 80%; padding: 9px 16px; border-radius: 20px; background: #fff; color: #000; font-size: 13px; opacity: 0; pointer-events: none; transform: translateX(-50%); transition: opacity .25s; }
+#toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { #accountPanel, .accountPanelCard { transition-duration: 0ms; } }

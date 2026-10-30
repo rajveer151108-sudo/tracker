@@ -1,10 +1,10 @@
-// Home: one music library, four genuinely different listening spaces.
+// Home: one music library, three genuinely different listening spaces.
 const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,queueRequest:0,queueSchedule:0,nowKey:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,pendingCommandAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
 const HOME_PENDING_ANIMATION_TIMEOUT=5000,HOME_PENDING_PLAYBACK_TIMEOUT=9000;
 const homeImage=images=>images?.length?(images[0]?.url||images.at(-1)?.url||""):"";
 const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", ");
 function homeElement(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!=null)el.textContent=text;return el;}
-const HOME_COPY={arcade:["GAME LIBRARY","Choose a stage","PRESS START"],vinyl:["VINYL LIBRARY","Choose a record","NOW SPINNING"],cd:["COMPACT DISC LIBRARY","Choose a CD","DISC LOADED"],midnight:["YOUR MUSIC","Recently played","NOW PLAYING"]};
+const HOME_COPY={arcade:["GAME LIBRARY","Choose a stage","PRESS START"],vinyl:["VINYL LIBRARY","Choose a record","NOW SPINNING"],cd:["COMPACT DISC LIBRARY","Choose a CD","DISC LOADED"]};
 const ARCADE_VOCAL_OVERRIDES={"spotify:track:6oLHyWvmk6bKrA91EIYZBp":"PARTYNEXTDOOR"};
 const currentHomeMode=()=>document.body.dataset.homeMode||"arcade";
 let arcadeCanvasRequest=0;
@@ -39,7 +39,7 @@ function paintArcadeWorld(canvas,url){
     const state={source,strength:0,lastTime:0};canvas._arcadeWorld=state;
     const colorAt=(x,y,lift)=>{const sx=Math.max(0,Math.min(width-1,Math.round(x))),sy=Math.max(0,Math.min(height-1,Math.round(y))),index=(sy*width+sx)*4,data=source.data;return `rgb(${Math.min(255,data[index]+lift)} ${Math.min(255,data[index+1]+lift)} ${Math.min(255,data[index+2]+lift)})`;};
     const paintField=(centerX,centerY,radius,power,phase)=>{if(!Number.isFinite(centerX)||!Number.isFinite(centerY)||power<.02)return;const left=Math.max(0,Math.floor(centerX-radius)),right=Math.min(width-1,Math.ceil(centerX+radius)),top=Math.max(0,Math.floor(centerY-radius)),bottom=Math.min(height-1,Math.ceil(centerY+radius));for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){const dx=x-centerX,dy=y-centerY,distance=Math.hypot(dx,dy);if(distance>=radius)continue;const falloff=(1-distance/radius)*power,wave=Math.sin(distance*1.7-phase)*.65,push=(falloff*3.2+wave*falloff),length=Math.max(.25,distance),destX=Math.round(x+dx/length*push),destY=Math.round(y+dy/length*push);context.fillStyle=`rgba(3,4,10,${Math.min(.5,falloff*.42)})`;context.fillRect(x,y,1,1);context.fillStyle=colorAt(x,y,Math.round(falloff*95));context.fillRect(destX,destY,falloff>.72?2:1,falloff>.72?2:1);}};
-    const animate=time=>{if(!canvas.isConnected)return;const cursor=canvas._arcadeCursor||{},cat=canvas._arcadeCat||{},target=cursor.active?1:0;state.strength+=(target-state.strength)*.12;if(time-state.lastTime>28){state.lastTime=time;context.putImageData(source,0,0);const phase=time*.008;paintField(cursor.x,cursor.y,9,state.strength,phase);paintField(cat.x,cat.y,5,cat.active?.58:0,phase+1.7);}requestAnimationFrame(animate);};
+    const animate=time=>{if(!canvas.isConnected)return;const active=document.body.dataset.view==="home"&&currentHomeMode()==="arcade"&&!document.hidden;if(!active){setTimeout(()=>requestAnimationFrame(animate),240);return;}const cursor=canvas._arcadeCursor||{},cat=canvas._arcadeCat||{},target=cursor.active?1:0;state.strength+=(target-state.strength)*.12;if(time-state.lastTime>28){state.lastTime=time;context.putImageData(source,0,0);const phase=time*.008;paintField(cursor.x,cursor.y,9,state.strength,phase);paintField(cat.x,cat.y,5,cat.active?.58:0,phase+1.7);}requestAnimationFrame(animate);};
     requestAnimationFrame(animate);
   };
   image.crossOrigin="anonymous";image.src=url;
@@ -97,7 +97,7 @@ function paintPixelKitten(canvas){
 function mountArcadeKitten(screen,worldCanvas){
   const kitten=homeElement("canvas","arcadePixelKitten");kitten.width=32;kitten.height=20;kitten.setAttribute("aria-hidden","true");paintPixelKitten(kitten);screen.appendChild(kitten);
   let currentX=64,currentY=80,targetX=64,targetY=80,visible=false,facing=1;
-  const tick=()=>{if(!screen.isConnected)return;currentX+=(targetX-currentX)*.09;currentY+=(targetY-currentY)*.09;kitten.style.setProperty("--kitten-x",`${currentX}px`);kitten.style.setProperty("--kitten-y",`${currentY}px`);kitten.style.setProperty("--kitten-face",String(facing));if(worldCanvas){const rect=screen.getBoundingClientRect();worldCanvas._arcadeCat={x:currentX/Math.max(1,rect.width)*worldCanvas.width,y:currentY/Math.max(1,rect.height)*worldCanvas.height,active:visible};}requestAnimationFrame(tick);};
+  const tick=()=>{if(!screen.isConnected)return;const active=document.body.dataset.view==="home"&&currentHomeMode()==="arcade"&&!document.hidden;if(!active){setTimeout(()=>requestAnimationFrame(tick),240);return;}currentX+=(targetX-currentX)*.09;currentY+=(targetY-currentY)*.09;kitten.style.setProperty("--kitten-x",`${currentX}px`);kitten.style.setProperty("--kitten-y",`${currentY}px`);kitten.style.setProperty("--kitten-face",String(facing));if(worldCanvas){const rect=screen.getBoundingClientRect();worldCanvas._arcadeCat={x:currentX/Math.max(1,rect.width)*worldCanvas.width,y:currentY/Math.max(1,rect.height)*worldCanvas.height,active:visible};}requestAnimationFrame(tick);};
   screen.addEventListener("pointerenter",()=>{visible=true;kitten.classList.add("awake");screen.style.setProperty("--arcade-mouse-on","1");});
   screen.addEventListener("pointermove",event=>{const rect=screen.getBoundingClientRect(),mouseX=event.clientX-rect.left,mouseY=event.clientY-rect.top,nextX=Math.max(32,Math.min(rect.width-32,mouseX-22)),nextY=Math.max(42,Math.min(rect.height-82,mouseY+22));facing=nextX>=targetX?1:-1;targetX=nextX;targetY=nextY;screen.style.setProperty("--arcade-mouse-x",`${mouseX}px`);screen.style.setProperty("--arcade-mouse-y",`${mouseY}px`);if(worldCanvas)worldCanvas._arcadeCursor={x:mouseX/Math.max(1,rect.width)*worldCanvas.width,y:mouseY/Math.max(1,rect.height)*worldCanvas.height,active:true};if(!visible){visible=true;kitten.classList.add("awake");}screen.style.setProperty("--arcade-mouse-on","1");});
   screen.addEventListener("pointerleave",()=>{visible=false;kitten.classList.remove("awake");screen.style.setProperty("--arcade-mouse-on","0");if(worldCanvas)worldCanvas._arcadeCursor={...(worldCanvas._arcadeCursor||{}),active:false};});
@@ -122,7 +122,7 @@ async function playHomeCollection(shuffle=false){
 }
 
 function closeHomeTrackMenu(){const menu=$("homeTrackMenu");if(!menu)return;menu.classList.remove("open");menu.setAttribute("aria-hidden","true");menu.innerHTML="";}
-function requireHomeWriteAccess(){if(homeState.writeAccess)return true;showToast("RECONNECT SPOTIFY IN LIBRARY → ACCOUNT TO ENABLE THIS");openLibrary();setTab("account");return false;}
+function requireHomeWriteAccess(){if(homeState.writeAccess)return true;showToast("RECONNECT SPOTIFY TO ENABLE THIS");openAccountPanel();return false;}
 async function runHomeTrackAction(item,action,playlist){
   if(action==="play"){closeHomeTrackMenu();return homePlay(item);}
   if(!requireHomeWriteAccess())return;
@@ -280,7 +280,7 @@ function renderHomeCollections(){
 async function searchHomeLibrary(query){
   const clean=String(query||"").trim(),request=++homeState.librarySearchRequest;homeState.librarySearch=clean;homeState.librarySearchError="";clearTimeout(homeState.librarySearchTimer);
   if(!clean){homeState.librarySearching=false;homeState.libraryResults=[];renderHomeCollections();return;}
-  if(!homeState.connected){homeState.librarySearching=false;homeState.libraryResults=[];homeState.librarySearchError="Connect Spotify in Library → Account to search songs and playlists.";renderHomeCollections();return;}
+  if(!homeState.connected){homeState.librarySearching=false;homeState.libraryResults=[];homeState.librarySearchError="Connect Spotify from the Home account button to search songs and playlists.";renderHomeCollections();return;}
   homeState.librarySearching=true;renderHomeCollections();
   const response=await window.tracker.spApi(`/search?q=${encodeURIComponent(clean)}&type=track,playlist&limit=10`);
   if(request!==homeState.librarySearchRequest)return;
@@ -341,7 +341,7 @@ function renderHomeHero(){
   if(mode==="arcade"){renderArcadeCabinet(hero,item);return;}
   if(mode==="vinyl"&&item){renderVinylPlayer(hero,item,copy);return;}
   if(mode==="cd"&&item){renderCdStereo(hero,item);return;}
-  if(!item){const empty=homeElement("div","homeHeroEmpty");empty.append(homeElement("span","homeHeroKicker",copy[2]),homeElement("h2","","Your next favourite song lives here"),homeElement("p","","Open the library or start Spotify to fill this space."));hero.appendChild(empty);return;}
+  if(!item){const empty=homeElement("div","homeHeroEmpty");empty.append(homeElement("span","homeHeroKicker",copy[2]),homeElement("h2","","Your next favourite song lives here"),homeElement("p","","Connect Spotify or start playback to fill this space."));hero.appendChild(empty);return;}
   const visual=homeElement("div","homeHeroVisual"),art=homeElement("img","homeHeroArt");art.alt=`${item.title} artwork`;if(item.img)art.src=item.img;visual.append(art,homeElement("div","homeVinyl",""),homeElement("div","homeTapeSpine",item.title));
   const details=homeElement("div","homeHeroDetails");details.append(homeElement("span","homeHeroKicker",`LIVE // ${copy[2]}`),homeElement("h2","",item.title),homeElement("p","homeHeroArtist",item.sub||"Unknown artist"));
   const albumName=(item.album||item.sub||"").split(" · ").at(-1);details.appendChild(homeElement("p","homeHeroAlbum",albumName));
@@ -419,13 +419,14 @@ function onHomeModeChange(previous,next){if(previous!==next&&next==="vinyl")sche
 let viewTransitionTimer=0;
 function setAppView(view){
   const wanted=view==="lyrics"?"lyrics":"home",previous=document.body.dataset.view||"home";
-  if($("library").classList.contains("open"))closeLibrary();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();
+  if($("accountPanel").classList.contains("open"))closeAccountPanel();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();
   if(previous===wanted){if(wanted==="home")refreshArcadeHome();else activeIdx=-2;return;}
   if(wanted==="lyrics")closeQueuePanel();
   clearTimeout(viewTransitionTimer);document.body.classList.remove("view-enter-home","view-enter-lyrics");void document.body.offsetWidth;
   document.body.dataset.view=wanted;document.body.classList.add(`view-enter-${wanted}`);
+  document.querySelectorAll("#homeScreen video").forEach(video=>{if(wanted==="home")video.play().catch(()=>{});else video.pause();});
   $("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");
   if(wanted==="home")refreshArcadeHome();else activeIdx=-2;
   viewTransitionTimer=setTimeout(()=>document.body.classList.remove(`view-enter-${wanted}`),900);
 }
-function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("arcadeLibraryBtn").addEventListener("click",()=>{setTab("recent");openLibrary();});$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openLibrary();setTab("account");}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeQueueShortcut").addEventListener("click",openQueuePanel);$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);window.tracker.onAuthRestored?.(()=>{homeState.loadedAt=0;refreshArcadeHome(true);});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}
+function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openAccountPanel();}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeQueueShortcut").addEventListener("click",openQueuePanel);$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);window.tracker.onAuthRestored?.(()=>{homeState.loadedAt=0;refreshArcadeHome(true);});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}

@@ -5,7 +5,6 @@ import type { Session } from "@supabase/supabase-js";
 import App from "./App";
 import Stats from "./Stats";
 import OwnFiles from "./OwnFiles";
-import Playlists from "./Playlists";
 import Host from "./Host";
 import ImportLastfm from "./ImportLastfm";
 import ImportHistory from "./ImportHistory";
@@ -14,7 +13,7 @@ import Account from "./Account";
 import { supabase } from "./supabase";
 import "./styles.css";
 
-type Route = "home" | "stats" | "host" | "files" | "playlists" | "imports" | "lastfm" | "spotify-import" | "account";
+type Route = "home" | "stats" | "host" | "files" | "imports" | "lastfm" | "spotify-import" | "account";
 
 declare global {
   interface Window {
@@ -126,7 +125,7 @@ function routeFor(hash: string): Route {
   if (hash === "#stats") return "stats";
   if (hash === "#host") return "host";
   if (hash === "#files") return "files";
-  if (hash === "#playlists") return "playlists";
+  if (hash === "#playlists") return "files";
   if (hash === "#import") return "imports";
   if (hash === "#lastfm") return "lastfm";
   if (hash === "#spotify-import") return "spotify-import";
@@ -231,7 +230,6 @@ function Root() {
           <a href="#stats" aria-current={route === "stats" ? "page" : undefined}><i>⌁</i><span>Insights</span></a>
           {!embeddedInAfterglow && <a href="#host" aria-current={route === "host" ? "page" : undefined}><i>◉</i><span>Host</span></a>}
           <a href="#files" aria-current={route === "files" ? "page" : undefined}><i>◇</i><span>Files</span></a>
-          <a href="#playlists" aria-current={route === "playlists" ? "page" : undefined}><i>≋</i><span>Playlists</span></a>
           <a href="#import" aria-current={["imports", "lastfm", "spotify-import"].includes(route) ? "page" : undefined}><i>↓</i><span>Import</span></a>
           <a href="#account" aria-current={route === "account" ? "page" : undefined}><i>◌</i><span>Account</span></a>
         </div>
@@ -241,7 +239,6 @@ function Root() {
       {route === "stats" ? <Stats key={tick} />
         : route === "host" ? <Host />
         : route === "files" ? <OwnFiles key={tick} />
-        : route === "playlists" ? <Playlists key={tick} />
         : route === "imports" ? <Imports />
         : route === "lastfm" ? <ImportLastfm key={tick} />
         : route === "spotify-import" ? <ImportHistory key={tick} />

@@ -13,19 +13,27 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
 
   function send(channel, payload) {
     for (const overlay of overlays) {
-      if (!overlay.isDestroyed()) overlay.webContents.send(channel, payload);
+      if (!overlay.isDestroyed() && !overlay.webContents.isLoadingMainFrame()) {
+        overlay.webContents.send(channel, payload);
+      }
     }
   }
 
   function push() {
     const settings = getSettings();
     const scopeOk = settings.glowScope === "everywhere" || state.focused;
+    const on = settings.glow && state.active && scopeOk;
     const color = settings.glowOverride ? hexToRgb(settings.glowColorA) : state.color;
     const color2 = settings.glowOverride ? hexToRgb(settings.glowColorB) : state.color2 || state.color;
+    for (const overlay of overlays) {
+      if (overlay.isDestroyed()) continue;
+      if (on && !overlay.isVisible()) overlay.showInactive();
+      else if (!on && overlay.isVisible()) overlay.hide();
+    }
     send("glow", {
       color,
       color2,
-      on: settings.glow && state.active && scopeOk,
+      on,
       strength: settings.glowStrength,
       thickness: settings.glowThickness,
       style: settings.glowStyle,
@@ -50,7 +58,7 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
         preload: path.join(rootDir, "overlay-preload.js"),
         contextIsolation: true,
         nodeIntegration: false,
-        backgroundThrottling: false,
+        backgroundThrottling: true,
       },
     });
     overlay.setBounds(bounds);
@@ -59,7 +67,6 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
     overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     overlay.loadFile(path.join(rootDir, "overlay.html"));
     overlay.webContents.once("did-finish-load", () => {
-      overlay.showInactive();
       push();
     });
     return overlay;
@@ -112,7 +119,13 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
     screen.on("display-metrics-changed", onDisplaysChanged);
   }
 
-  return { setMainWindow, createOverlays, watchDisplays, refresh: push, update, beat: (value) => send("beat", value), destroy };
+  function beat(value) {
+    const settings = getSettings();
+    const scopeOk = settings.glowScope === "everywhere" || state.focused;
+    if (settings.glow && state.active && scopeOk) send("beat", value);
+  }
+
+  return { setMainWindow, createOverlays, watchDisplays, refresh: push, update, beat, destroy };
 }
 
 module.exports = { createGlowManager };

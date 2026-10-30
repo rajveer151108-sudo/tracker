@@ -71,7 +71,9 @@ function createWindow(loadContent = true) {
       preload: path.join(rootDir, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      backgroundThrottling: false,
+      // Let Chromium sleep when Afterglow is minimized or fully covered. The
+      // visible player and glow overlays still render at their configured rate.
+      backgroundThrottling: true,
       webviewTag: true,
     },
   });

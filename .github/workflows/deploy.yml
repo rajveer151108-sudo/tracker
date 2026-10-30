@@ -33,7 +33,7 @@ jobs:
           VITE_LASTFM_API_KEY: ${{ vars.VITE_LASTFM_API_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apps/tracker/dist
 
   deploy:
     needs: build

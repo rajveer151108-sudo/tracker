@@ -4,8 +4,8 @@
   const SETTINGS_UI = [
     { type: "heading", label: "Home" },
     { key: "homeMode", label: "Home style", type: "choice",
-      hint: "The same music library, rebuilt as four different listening spaces.",
-      options: [["arcade", "Arcade"], ["vinyl", "Vinyl player"], ["cd", "CD player"], ["midnight", "Midnight"]] },
+      hint: "The same music library, rebuilt as three different listening spaces.",
+      options: [["arcade", "Arcade"], ["vinyl", "Vinyl player"], ["cd", "CD player"]] },
 
     { type: "heading", label: "Lyrics" },
     { key: "showLyrics", label: "Show lyrics", type: "toggle" },
@@ -20,8 +20,7 @@
       hint: "Classic views, both lyric transitions from your newest reference, and Afterglow's creative layouts.",
       options: [["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"], ["wordstream", "Word stream"],
         ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["buildstack", "Phrase builder"],
-        ["constellation", "Constellation"], ["captioncards", "Caption cards"],
-        ["orbit", "Orbit"], ["poster", "Poster cutout"]] },
+        ["constellation", "Constellation"], ["captioncards", "Caption cards"], ["poster", "Poster cutout"]] },
     { key: "phraseAccents", label: "Phrase builder accents", type: "choice",
       hint: "Optional editorial contrast for Phrase builder. Cards highlights selected words; Editorial also adds a restrained type tilt.",
       options: [["off", "Clean"], ["cards", "Cards"], ["editorial", "Cards + tilt"]] },
@@ -231,7 +230,7 @@
     if (!settings.beat && !beatOn) setBeatStatus("");
   }
 
-  const openSettings = () => { $("library").classList.remove("open"); $("settings").classList.add("open"); };
+  const openSettings = () => { closeAccountPanel(); $("settings").classList.add("open"); };
   const closeSettings = () => $("settings").classList.remove("open");
   $("gear").addEventListener("click", () => $("settings").classList.contains("open") ? closeSettings() : openSettings());
   $("closeSettings").addEventListener("click", closeSettings);

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "./supabase";
+import Playlists from "./Playlists";
 
 const BUCKET = "own-files";
 const LASTFM_KEY = import.meta.env.VITE_LASTFM_API_KEY as string | undefined;
@@ -285,6 +286,7 @@ export default function OwnFiles() {
           ))}
         </ol>
       )}
+      <Playlists embedded key={items.length} />
     </main>
   );
 }

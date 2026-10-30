@@ -84,7 +84,7 @@
     if (e.key === "Escape") {
       if ($("queuePanel").classList.contains("open")) closeQueuePanel();
       else if ($("trackerPanel").classList.contains("open")) closeTracker();
-      else if ($("library").classList.contains("open")) closeLibrary();
+      else if ($("accountPanel").classList.contains("open")) closeAccountPanel();
       else if ($("settings").classList.contains("open")) closeSettings();
       else if (document.body.classList.contains("immersive")) window.tracker.toggleFullscreen();
       return;
@@ -102,7 +102,7 @@
     if (e.key === "h" || e.key === "H") { setAppView("home"); return; }
     if (e.key === "y" || e.key === "Y") { setAppView("lyrics"); return; }
     if ((e.key === "q" || e.key === "Q") && document.body.dataset.view === "home") { $("queuePanel").classList.contains("open") ? closeQueuePanel() : openQueuePanel(); return; }
-    if (e.key === "l" || e.key === "L") { $("library").classList.contains("open") ? closeLibrary() : openLibrary(); return; }
+    if ((e.key === "a" || e.key === "A") && document.body.dataset.view === "home") { $("accountPanel").classList.contains("open") ? closeAccountPanel() : openAccountPanel(); return; }
     if (e.key === "t" || e.key === "T") { $("trackerPanel").classList.contains("open") ? closeTracker() : openTracker(); return; }
     if (e.key === "s" || e.key === "S") { $("settings").classList.contains("open") ? closeSettings() : openSettings(); return; }
     if (e.key === "g" || e.key === "G") { window.tracker.setSettings({ glow: !settings.glow }); return; }

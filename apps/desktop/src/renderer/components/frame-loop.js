@@ -127,13 +127,19 @@
 
   function frame(tNow) {
     requestAnimationFrame(frame);
-    const fps = settings.performanceMode === "smooth" ? 60 : settings.performanceMode === "battery" ? 20 : 30;
+    const requestedFps = settings.performanceMode === "smooth" ? 60 : settings.performanceMode === "battery" ? 20 : 30;
+    // Keep full fidelity while music and the visible experience need it. A
+    // paused or hidden window has no new audio/lyric information, so waking
+    // the renderer 60 times a second only creates heat.
+    const fps = document.hidden ? 10 : playing ? requestedFps : Math.min(15, requestedFps);
     if (tNow - lastFrameT < 1000 / fps - 1) return;
     const dt = Math.max(0.001, Math.min(0.1, (tNow - lastFrameT) / 1000));
     lastFrameT = tNow;
     beatStep(tNow, dt);
-    edgeFramePhase = (edgeFramePhase + dt * (.025 + lyricWordPace * .16 + motionEnergy * .045 + outLevel * .09 + dropFlash * .28)) % 1;
-    root.style.setProperty("--edge-offset", (-1000 * edgeFramePhase).toFixed(1));
+    if (document.body.dataset.view === "lyrics") {
+      edgeFramePhase = (edgeFramePhase + dt * (.025 + lyricWordPace * .16 + motionEnergy * .045 + outLevel * .09 + dropFlash * .28)) % 1;
+      root.style.setProperty("--edge-offset", (-1000 * edgeFramePhase).toFixed(1));
+    }
 
     const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0);
     const t = now + offset;
@@ -146,19 +152,19 @@
       $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
       $("pos").textContent = fmt(now);
       $("homeScreen")?.style.setProperty("--home-progress", seekPercent.toFixed(2) + "%");
-      document.querySelectorAll(".arcadeStageProgress,.homeCdProgress,.homeCdDisc,.homeStereoSeek").forEach((homeProgress) => {
-        homeProgress.setAttribute("aria-valuemax", String(Math.round(durSec)));
-        homeProgress.setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
-        homeProgress.setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
-      });
-      if (typeof updateArcadeDialogue === "function") {
+      if (document.body.dataset.view === "home") document.querySelectorAll(".arcadeStageProgress,.homeCdProgress,.homeCdDisc,.homeStereoSeek").forEach((homeProgress) => {
+          homeProgress.setAttribute("aria-valuemax", String(Math.round(durSec)));
+          homeProgress.setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
+          homeProgress.setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
+        });
+      if (document.body.dataset.view === "home" && typeof updateArcadeDialogue === "function") {
         const dialogueIndex = sourceLines.length ? window.LyricTiming.activeLyricIndex(sourceLines, t) : -1;
         updateArcadeDialogue(sourceLines[dialogueIndex], sourceLines[dialogueIndex + 1], dialogueIndex, sourceLines);
       }
     }
 
     let wordLife = 0, wordAttack = 0, wordSustain = 0, timingConfidence = 0, lineEmotion = 0, wordPaceTarget = 0;
-    if (lines.length) {
+    if (document.body.dataset.view === "lyrics" && lines.length) {
       const idx = window.LyricTiming.activeLyricIndex(lines, t);
 
       if (idx !== activeIdx) {

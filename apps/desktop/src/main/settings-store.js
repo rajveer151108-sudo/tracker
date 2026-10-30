@@ -56,7 +56,7 @@ const LIMITS = {
 
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
-  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"],
+  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "buildstack", "constellation", "captioncards", "poster"],
   phraseAccents: ["off", "cards", "editorial"],
   lyricsMotion: ["punch", "slide", "glide", "cube"],
   lyricsAlign: ["center", "left"],
@@ -68,7 +68,7 @@ const ENUMS = {
   glowDisplays: ["all", "main"],
   lyricsDanceStyle: ["auto", "float", "punch", "sway", "shake", "bounce", "snap", "subtle"],
   performanceMode: ["battery", "balanced", "smooth"],
-  homeMode: ["arcade", "vinyl", "cd", "midnight"],
+  homeMode: ["arcade", "vinyl", "cd"],
 };
 
 function clean(key, value) {
@@ -92,8 +92,10 @@ function createSettingsStore(app) {
       // Tape archive occupied the third home slot in older builds. That slot is
       // now the dedicated CD stereo, so existing installs move across cleanly.
       if (saved.homeMode === "tape") saved.homeMode = "cd";
+      if (saved.homeMode === "midnight") saved.homeMode = "arcade";
       if (saved.lyricsLayout === "dualframes" || saved.lyricsLayout === "monitorframe") saved.lyricsLayout = "scroll";
       if (saved.lyricsLayout === "linebuilder") saved.lyricsLayout = "buildstack";
+      if (saved.lyricsLayout === "orbit") saved.lyricsLayout = "wordstack";
       if (saved.glowStyle === "orbitline" || saved.glowStyle === "twinline") saved.glowStyle = "flowline";
       // Older builds used one switch for both kinds of motion. Preserve that
       // choice, while allowing lyrics and the screen glow to diverge now.

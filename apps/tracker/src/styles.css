@@ -83,6 +83,10 @@ h3 { font-size: 1.3rem; margin-bottom: 16px; }
 .plhead h3 { margin: 0; }
 .picker { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0 16px; }
 .picker .field { margin: 0; }
+.file-playlists { margin-top: 64px; padding-top: 40px; border-top: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); }
+.file-playlists-heading { margin-bottom: 20px; }
+.file-playlists-heading h2 { margin: 8px 0 6px; }
+.file-playlists > .upload { margin-top: 20px; }
 .list li.active { background: var(--surface); }
 .rowbtn { all: unset; display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; cursor: pointer; }
 .rowbtn:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; border-radius: 10px; }

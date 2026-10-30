@@ -22,7 +22,7 @@ function setTrackerSyncState(text, state = "live") {
 }
 
 function openTracker() {
-  closeLibrary();
+  closeAccountPanel();
   closeSettings();
   const panel = $("trackerPanel");
   const view = $("trackerView");

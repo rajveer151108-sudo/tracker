@@ -3,7 +3,6 @@
   // =====================================================================
   (async function init() {
     buildSettingsPanel();
-    buildTabs();
     settings = await window.tracker.getSettings();
     window.tracker.onSettings((s) => { settings = s; applySettings(); });
     applySettings();

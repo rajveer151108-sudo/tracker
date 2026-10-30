@@ -23,7 +23,6 @@
     <button id="lyricsBtn" class="wbtn navbtn" title="Lyrics (Y)" aria-label="Open Lyrics">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/></svg>
     </button>
-    <button id="libBtn" class="wbtn navbtn" title="Library (L)" aria-label="Open Library">&#9835;&#xFE0E;</button>
     <button id="trackerBtn" class="wbtn" title="Tracker (T)" aria-label="Open Tracker">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
         <path d="M4 19V10M10 19V5M16 19v-7M22 19V2" />
@@ -41,7 +40,8 @@
       <nav class="homeThemeBar" aria-label="Home style">
         <span>HOME MODE</span>
         <button data-home-theme="arcade">Arcade</button><button data-home-theme="vinyl">Vinyl player</button>
-        <button data-home-theme="cd">CD player</button><button data-home-theme="midnight">Midnight</button>
+        <button data-home-theme="cd">CD player</button>
+        <button id="homeAccountShortcut" class="homeAccountShortcut" type="button" title="Connect or manage Spotify">◉ SPOTIFY</button>
       </nav>
       <div class="homeLayout">
         <aside class="homeRoster">
@@ -54,11 +54,10 @@
           </div>
           <label class="homeSongSearch"><span aria-hidden="true">⌕</span><input id="homeSongSearch" type="search" placeholder="Filter this collection" autocomplete="off" spellcheck="false" aria-label="Filter songs in this collection" /><kbd>FILTER</kbd></label>
           <div id="arcadeRecent" class="homeSongList"><div class="homeLoading">INSERTING COIN…</div></div>
-          <button class="homeTextButton" id="arcadeLibraryBtn">OPEN FULL LIBRARY</button>
         </aside>
         <section id="arcadeNow" class="homeHero" aria-live="polite"></section>
         <aside class="homeCollections">
-          <div class="homeSectionTitle"><span id="homeCollectionsKicker">LIBRARY CONTROL</span><h2 id="homeCollectionsTitle">Browse your library</h2><small id="homeCollectionsMeta">Search songs and playlists, or choose a collection.</small></div>
+          <div class="homeSectionTitle"><span id="homeCollectionsKicker">MUSIC BROWSER</span><h2 id="homeCollectionsTitle">Your music</h2><small id="homeCollectionsMeta">Search songs and playlists, or choose a collection.</small></div>
           <label class="homeSongSearch homeLibrarySearch"><span aria-hidden="true">⌕</span><input id="homeLibrarySearch" type="search" placeholder="Search songs & playlists" autocomplete="off" spellcheck="false" aria-label="Search Spotify songs and playlists" /><kbd>/</kbd></label>
           <div id="arcadeCollections" class="homeCollectionList"><div class="homeLoading">LOADING COLLECTIONS…</div></div>
         </aside>
@@ -74,7 +73,6 @@
       <polyline id="constellationPath" points="" />
       <g id="constellationNodes"></g>
     </svg>
-    <div id="orbitDecor" aria-hidden="true"><i></i><i></i><i></i></div>
     <div id="lines"></div>
     <div id="estimate"></div>
     <div id="notice"></div>
@@ -104,13 +102,14 @@
         <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/></svg>
       </button>
     </div>
-    <div id="hint">Space play/pause &middot; H home &middot; Y lyrics <span id="offs"></span> &middot; F fullscreen &middot; S settings &middot; L library &middot; T tracker</div>
+    <div id="hint">Space play/pause &middot; H home &middot; Y lyrics <span id="offs"></span> &middot; F fullscreen &middot; S settings &middot; A account &middot; T tracker</div>
   </footer>
 
-  <div id="library">
-    <div class="libTop"><h2>Library</h2><button class="btn" id="closeLibrary">Close</button></div>
-    <div id="tabs"></div>
-    <div id="libBody"></div>
+  <div id="accountPanel" aria-hidden="true">
+    <div class="accountPanelCard">
+      <div class="accountPanelTop"><div><span>PLAYBACK CONNECTION</span><h2>Spotify account</h2></div><button class="btn" id="closeAccountPanel">Close</button></div>
+      <div id="accountPanelBody"></div>
+    </div>
   </div>
 
   <div id="trackerPanel" aria-hidden="true">
@@ -156,7 +155,7 @@
 <script src="src/renderer/components/frame-loop.js"></script>
 <script src="src/renderer/components/queue-panel.js"></script>
 <script src="src/renderer/components/controls.js"></script>
-<script src="src/renderer/components/library.js"></script>
+<script src="src/renderer/components/account-panel.js"></script>
 <script src="src/renderer/components/home.js"></script>
 <script src="src/renderer/components/tracker-panel.js"></script>
 <script src="src/renderer/components/init.js"></script>

@@ -9,6 +9,12 @@
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
   let lyricWordAttack = 0, lyricWordSustain = 0, lyricTimingConfidence = 0;
+  const motionStyleCache = new Map();
+  function setMotionStyle(name, value) {
+    if (motionStyleCache.get(name) === value) return;
+    motionStyleCache.set(name, value);
+    root.style.setProperty(name, value);
+  }
 
   const MOTION_PROFILES = {
     rap:        { impact: 1.25, energy: .85, vocal: 1.0,  lift: .6,  build: .75, drop: 1.25, sway: .08, shake: .12, rate: 1.2 },
@@ -168,28 +174,28 @@
     const sibilance = clampMotion(motion.sibilance * strength);
     const sway = Math.max(-1, Math.min(1, Number(motion.sway) || 0)) * Math.min(1.5, strength);
     const shake = Math.max(-1.5, Math.min(1.5, Number(motion.shake) || 0)) * Math.min(1.5, strength);
-    root.style.setProperty("--motion-energy", energy.toFixed(3));
-    root.style.setProperty("--motion-vocal", vocal.toFixed(3));
-    root.style.setProperty("--motion-lift", lift.toFixed(3));
-    root.style.setProperty("--motion-build", build.toFixed(3));
-    root.style.setProperty("--motion-duck", duck.toFixed(3));
-    root.style.setProperty("--motion-drop", drop.toFixed(3));
-    root.style.setProperty("--motion-emotion", emotion.toFixed(3));
-    root.style.setProperty("--motion-syllable", syllable.toFixed(3));
-    root.style.setProperty("--motion-phrase", phrase.toFixed(3));
-    root.style.setProperty("--motion-sibilance", sibilance.toFixed(3));
-    root.style.setProperty("--motion-word", clampMotion(motion.word * strength).toFixed(3));
-    root.style.setProperty("--motion-sway", sway.toFixed(3));
-    root.style.setProperty("--motion-shake", shake.toFixed(3));
-    root.style.setProperty("--motion-pace", clampMotion(motion.pace * strength).toFixed(3));
-    root.style.setProperty("--lyrics-pulse", (lyricsEnabled ? clampMotion(motion.impact * strength) : 0).toFixed(3));
+    setMotionStyle("--motion-energy", energy.toFixed(3));
+    setMotionStyle("--motion-vocal", vocal.toFixed(3));
+    setMotionStyle("--motion-lift", lift.toFixed(3));
+    setMotionStyle("--motion-build", build.toFixed(3));
+    setMotionStyle("--motion-duck", duck.toFixed(3));
+    setMotionStyle("--motion-drop", drop.toFixed(3));
+    setMotionStyle("--motion-emotion", emotion.toFixed(3));
+    setMotionStyle("--motion-syllable", syllable.toFixed(3));
+    setMotionStyle("--motion-phrase", phrase.toFixed(3));
+    setMotionStyle("--motion-sibilance", sibilance.toFixed(3));
+    setMotionStyle("--motion-word", clampMotion(motion.word * strength).toFixed(3));
+    setMotionStyle("--motion-sway", sway.toFixed(3));
+    setMotionStyle("--motion-shake", shake.toFixed(3));
+    setMotionStyle("--motion-pace", clampMotion(motion.pace * strength).toFixed(3));
+    setMotionStyle("--lyrics-pulse", (lyricsEnabled ? clampMotion(motion.impact * strength) : 0).toFixed(3));
     const forGlow = (value) => clampMotion(value * glowStrength);
     const glowEnergy = forGlow(motion.energy);
     const glowVocal = forGlow(motion.vocal);
     const glowDrop = forGlow(motion.drop);
-    root.style.setProperty("--glow-motion-energy", glowEnergy.toFixed(3));
-    root.style.setProperty("--glow-motion-vocal", glowVocal.toFixed(3));
-    root.style.setProperty("--glow-motion-drop", glowDrop.toFixed(3));
+    setMotionStyle("--glow-motion-energy", glowEnergy.toFixed(3));
+    setMotionStyle("--glow-motion-vocal", glowVocal.toFixed(3));
+    setMotionStyle("--glow-motion-drop", glowDrop.toFixed(3));
     return { impact: forGlow(motion.impact), energy: glowEnergy, vocal: glowVocal, lift: forGlow(motion.lift),
       build: forGlow(motion.build), duck: forGlow(motion.duck), drop: glowDrop, emotion: forGlow(motion.emotion),
       syllable: forGlow(motion.syllable), phrase: forGlow(motion.phrase), sibilance: forGlow(motion.sibilance),

@@ -1,18 +1,15 @@
-# Tracker
+# Afterglow
 
-A Last.fm-style listening tracker on top of Spotify. This is build step 1:
-site scaffold, GitHub Pages deploy, Spotify login, and a "last 15 songs" preview.
-
-The repository now also contains **Afterglow**, the macOS Spotify companion player that will become the desktop side of Tracker.
+Afterglow is a macOS Spotify companion built around expressive lyrics, physical-player Home themes, screen-edge lighting, playback control, and private listening intelligence. The desktop application is the primary product; its hosted Tracker is a companion surface used inside the app.
 
 ## Repository layout
 
-- `src/` - Tracker web application.
+- `apps/desktop/` - Afterglow Electron application and macOS build tooling.
+- `apps/tracker/` - hosted Tracker companion embedded by Afterglow.
 - `scripts/` - scheduled Spotify history collector.
-- `supabase/` - versioned database migration and Spotify Edge Function.
-- `apps/desktop/` - Afterglow Electron application.
+- `supabase/` - versioned schema migrations and the Spotify Edge Function.
 
-The website remains at the repository root so the existing GitHub Pages workflow continues to deploy without changes.
+Supabase migrations and functions remain versioned here. Credentials stay in local environment files, Supabase secrets, or GitHub secrets—not source control.
 
 ## Set up (about 15 minutes)
 
@@ -58,9 +55,9 @@ In a minute your site is live at `https://YOUR-USERNAME.github.io/YOUR-REPO/`.
 
 ## Run locally (optional)
 ```
-cp .env.example .env.local     # add your Supabase project URL and publishable key
+cp apps/tracker/.env.example .env.local     # add your Supabase project URL and publishable key
 npm install
-npm run dev                    # open http://127.0.0.1:5173/
+npm run dev                    # Tracker companion at http://127.0.0.1:5173/
 ```
 
 Run `npm run backend:check` to verify that all backend objects required by the app remain versioned.

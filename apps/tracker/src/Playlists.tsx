@@ -10,7 +10,7 @@ interface Entry { id: string; position: number; file: FileRow }
 
 const extOf = (name: string) => (name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-export default function Playlists() {
+export default function Playlists({ embedded = false }: { embedded?: boolean }) {
   const [ready, setReady] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -211,12 +211,14 @@ export default function Playlists() {
     }
   }
 
-  if (!ready) return <main className="shell"><p className="muted">Loading…</p></main>;
+  if (!ready) return embedded
+    ? <section className="file-playlists"><p className="muted">Loading playlists…</p></section>
+    : <main className="shell"><p className="muted">Loading…</p></main>;
 
   if (!userId) {
     return (
-      <main className="shell">
-        <h2>Playlists</h2>
+      <main className={embedded ? "file-playlists" : "shell"}>
+        <h2>Your playlists</h2>
         <p className="muted">Log in on the Dashboard first, then come back here.</p>
       </main>
     );
@@ -225,10 +227,14 @@ export default function Playlists() {
   const open = lists.find((l) => l.id === openId) ?? null;
   const available = files.filter((f) => !entries.some((en) => en.file.id === f.id));
 
+  const Wrapper = embedded ? "section" : "main";
   return (
-    <main className="shell">
-      <h2>Playlists</h2>
-      <p className="muted">Playlists are made from the files you uploaded in My files.</p>
+    <Wrapper className={embedded ? "file-playlists" : "shell"}>
+      <div className="file-playlists-heading">
+        <span className="eyebrow">PRIVATE COLLECTIONS</span>
+        <h2>Your playlists</h2>
+        <p className="muted">Build playlists using only the audio you uploaded above.</p>
+      </div>
 
       <form className="upload" key={formKey} onSubmit={create}>
         <label htmlFor="pl-name">New playlist name</label>
@@ -305,6 +311,6 @@ export default function Playlists() {
           )}
         </section>
       )}
-    </main>
+    </Wrapper>
   );
 }

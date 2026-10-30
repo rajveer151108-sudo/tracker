@@ -17,6 +17,18 @@ test("the retired tape slot migrates to the dedicated CD player", () => {
   }
 });
 
+test("retired Midnight and Orbit modes migrate to supported experiences", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    fs.writeFileSync(path.join(userData, "settings.json"), JSON.stringify({ homeMode: "midnight", lyricsLayout: "orbit" }));
+    const settings = createSettingsStore({ getPath: () => userData }).load();
+    assert.equal(settings.homeMode, "arcade");
+    assert.equal(settings.lyricsLayout, "wordstack");
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
 test("the lyrics backdrop can persist a full blackout style", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
@@ -35,7 +47,7 @@ test("the lyrics backdrop can persist a full blackout style", () => {
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"]) {
+    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "poster"]) {
       const store = createSettingsStore({ getPath: () => userData });
       store.load();
       store.update({ lyricsLayout, glowStyle: "frame" });
