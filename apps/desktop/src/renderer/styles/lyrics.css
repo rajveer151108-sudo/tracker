@@ -254,14 +254,14 @@
   }
 
   /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
     inset: 0; padding: 0; transform: none; transition: opacity .25s ease; z-index: 1;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
     position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
     animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
@@ -295,14 +295,12 @@
 
   /* Reference style 02 — each word arrives from close by and stays put until
      the complete lyric line has assembled, then the next line starts clean. */
-  body[data-layout="buildstack"] .line{left:50%;top:68%;width:min(72%,980px);font-size:calc(var(--lyric-size) * 1.06);line-height:1.08;font-weight:780;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top .55s cubic-bezier(.18,.78,.22,1),opacity .45s,transform .55s cubic-bezier(.18,.78,.22,1),filter .45s}
-  body[data-layout="buildstack"] .line[data-slot="0"]{top:68%;opacity:1;transform:translate(-50%,-50%)}
-  body[data-layout="buildstack"] .line[data-slot="-1"]{top:35%;opacity:.46;transform:translate(-50%,-50%);filter:blur(.7px)}
-  body[data-layout="buildstack"] .line[data-slot="-2"]{top:14%;opacity:.2;transform:translate(-50%,-50%);filter:blur(1.5px)}
-  body[data-layout="buildstack"] .line .w{--build-x:0;--build-y:.55em;opacity:0;transform:translate(var(--build-x),var(--build-y));margin:.05em .035em;padding:.04em .08em .09em;border-radius:.08em;color:rgba(255,255,255,.92);-webkit-text-fill-color:rgba(255,255,255,.92);background:none;filter:blur(8px);transition:opacity .18s ease,filter .24s ease,transform .28s cubic-bezier(.15,.86,.2,1)}
-  body[data-layout="buildstack"] .line .w:nth-child(4n+1){--build-x:-.55em;--build-y:.18em;font-size:1.14em;font-weight:900}
-  body[data-layout="buildstack"] .line .w:nth-child(4n+2){--build-x:.36em;--build-y:-.35em;font-size:.82em;letter-spacing:.015em}
-  body[data-layout="buildstack"] .line .w:nth-child(4n+3){--build-x:.48em;--build-y:.34em;font-family:ui-serif,"New York",Georgia,serif;font-style:italic}
+  body[data-layout="buildstack"] .line{left:50%;top:66%;width:min(64%,900px);font-size:calc(var(--lyric-size) * .94);line-height:1.16;font-weight:760;letter-spacing:-.025em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top .5s cubic-bezier(.18,.78,.22,1),opacity .38s,transform .5s cubic-bezier(.18,.78,.22,1),filter .38s}
+  body[data-layout="buildstack"] .line[data-slot="0"]{top:66%;opacity:1;transform:translate(-50%,-50%)}
+  body[data-layout="buildstack"] .line[data-slot="-1"]{top:27%;opacity:.17;transform:translate(-50%,-50%);filter:blur(1.2px)}
+  body[data-layout="buildstack"] .line .w{--build-x:0;--build-y:.48em;opacity:0;transform:translate(var(--build-x),var(--build-y));margin:.035em .025em;padding:.025em .055em .065em;border-radius:.08em;color:rgba(255,255,255,.94);-webkit-text-fill-color:rgba(255,255,255,.94);background:none;filter:blur(7px);transition:opacity .18s ease,filter .22s ease,transform .26s cubic-bezier(.15,.86,.2,1)}
+  body[data-layout="buildstack"] .line .w:nth-child(4n+1){font-weight:900}
+  body[data-layout="buildstack"] .line .w:nth-child(4n+3){font-family:ui-serif,"New York",Georgia,serif;font-style:italic}
   body[data-layout="buildstack"] .line .w.revealed{opacity:1;transform:translate(0,0);filter:none}
   body[data-layout="buildstack"] .line .w.build-enter{animation:buildWordIn .34s cubic-bezier(.14,.88,.2,1) both}
   body[data-layout="buildstack"] .line .w.cur{color:#11131a;-webkit-text-fill-color:#11131a;background:#fff;box-shadow:.08em .1em 0 rgba(var(--glow),.72),0 0 .5em rgba(var(--glow),.42);transform:translateY(-.04em)}
@@ -310,17 +308,25 @@
   @keyframes buildWordIn{0%{opacity:0;transform:translate(var(--build-x),var(--build-y));filter:blur(10px) brightness(1.5)}65%{opacity:1;transform:translate(0,-.05em);filter:blur(0) brightness(1.16)}100%{opacity:1;transform:translate(0,0);filter:none}}
   @keyframes buildStackRise{from{opacity:0;transform:translate(-50%,22%);filter:blur(8px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
+  /* The calmer sibling: complete timed lines rise as one clean phrase. */
+  body[data-layout="linebuilder"] .line{left:50%;top:68%;width:min(68%,980px);font-size:calc(var(--lyric-size) * .98);line-height:1.16;font-weight:760;letter-spacing:-.025em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top .54s cubic-bezier(.18,.78,.22,1),opacity .42s,transform .54s cubic-bezier(.18,.78,.22,1),filter .42s}
+  body[data-layout="linebuilder"] .line[data-slot="0"]{top:68%;opacity:1;transform:translate(-50%,-50%);text-shadow:0 0 .38em rgba(var(--glow),.3)}
+  body[data-layout="linebuilder"] .line[data-slot="-1"]{top:36%;opacity:.28;transform:translate(-50%,-50%);filter:blur(.55px)}
+  body[data-layout="linebuilder"] .line[data-slot="-2"]{top:14%;opacity:.1;transform:translate(-50%,-50%);filter:blur(1.2px)}
+  body[data-layout="linebuilder"] .line .w{color:inherit;-webkit-text-fill-color:currentColor;background:none;padding:.02em .035em}
+  body[data-layout="linebuilder"] .line.creative-arrive{animation:lineBuilderRise .4s cubic-bezier(.14,.88,.2,1) both}
+  @keyframes lineBuilderRise{from{opacity:0;transform:translate(-50%,20%);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
+
   /* 02 — words become points on a lyric constellation. */
   #constellationMap { display: none; position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: visible; }
-  #constellationMap polyline { fill: none; stroke: rgba(var(--glow),.56); stroke-width: 1.35; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 7px rgba(var(--glow),.62)); }
-  #constellationMap .constellation-star { fill: rgb(var(--glow)); opacity: .78; transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 7px rgba(var(--glow),.9)); }
-  #constellationMap .constellation-star.current { fill:#fff;opacity:1;animation:constellationPulse 1.15s ease-in-out infinite;filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px rgba(var(--glow),1)); }
+  #constellationMap polyline { fill: none; stroke: rgba(var(--glow),.5); stroke-width: 1.2; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px rgba(var(--glow),.46)); }
+  #constellationMap .constellation-star { fill: rgb(var(--glow)); opacity: .72; transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 4px rgba(var(--glow),.68)); }
+  #constellationMap .constellation-star.current { fill:#fff;opacity:1;animation:constellationPulse 1.15s ease-in-out infinite;filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 9px rgba(var(--glow),.78)); }
   body[data-layout="constellation"] #constellationMap { display: block; }
-  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 15.5%; white-space: normal; overflow-wrap: break-word; font-size: calc(var(--lyric-size) * var(--node-font-scale,.44)); line-height: 1.08; font-weight: 650; letter-spacing: .055em; text-transform: uppercase; color: rgba(255,255,255,.46); opacity: .6; transform: translate(-50%,-50%) scale(1); transition: opacity .22s, color .22s, text-shadow .22s, filter .22s; }
-  body[data-layout="constellation"] .line.constellation-current { z-index: 2; opacity: 1; color: #fff; filter:brightness(1.55);transform: translate(-50%,-50%) scale(1.18);font-weight:820; letter-spacing: .025em; text-shadow:0 0 5px #fff,0 0 18px rgba(var(--glow),1),0 0 42px rgba(var(--glow),.7); }
+  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 18%; white-space: normal; overflow-wrap: break-word; font-size: calc(var(--lyric-size) * var(--node-font-scale,.4)); line-height: 1.08; font-weight: 650; letter-spacing: .045em; text-transform: uppercase; color: rgba(255,255,255,.42); opacity: .54; transform: translate(-50%,-50%); transition: opacity .22s, color .22s, text-shadow .22s, filter .22s; }
+  body[data-layout="constellation"] .line.constellation-current { z-index: 2; opacity: 1; color: #fff; filter:brightness(1.22);transform: translate(-50%,-50%);font-weight:820; letter-spacing: .025em; text-shadow:0 0 4px #fff,0 0 10px rgba(var(--glow),.72); }
   body[data-layout="constellation"] .line.constellation-current .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
-  body.lyrics-motion[data-layout="constellation"] .line.active { translate: 0 0; scale: calc(1 + var(--motion-vocal) * .035 + var(--motion-syllable) * .025 + var(--motion-drop) * .045); }
-  @keyframes constellationPulse { 50% { transform:scale(1.5);opacity:.82; } }
+  @keyframes constellationPulse { 50% { transform:scale(1.28);opacity:.86; } }
 
   /* 03 — stacked subtitles with a live highlight card. */
   body[data-layout="captioncards"] .line { left: 50%; top: 50%; width: min(78%, 980px); padding: .55em .7em .64em; font-family: ui-serif, "New York", Georgia, serif; font-size: calc(var(--lyric-size) * 1.08); line-height: 1.3; opacity: 0; transform: translate(-50%,-50%) scale(.96); border: 1px solid rgba(255,255,255,.13); border-radius: .28em; background: linear-gradient(125deg,rgba(10,10,15,.78),rgba(var(--glow),.13)); box-shadow: 0 22px 70px rgba(0,0,0,.28), inset 0 0 35px rgba(var(--glow),.06); }
@@ -356,7 +362,8 @@
   body:not(.glow-motion) #lyricEdgeFrame path { stroke:rgba(var(--glow),.55);filter:drop-shadow(0 0 9px rgba(var(--glow),.82)); }
   body:not(.glow-motion) #lyricEdgeFrame .edgeSpark { opacity:.55;stroke-dashoffset:0; }
   body[data-view="lyrics"][data-glow-style="frame"] #stage { -webkit-mask-image:none;mask-image:none; }
-  body[data-view="lyrics"][data-glow-style="frame"] #lyricEdgeFrame { display:block;animation:edgeFrameBreathe 3.8s ease-in-out infinite; }
+  /* The system overlay owns the edge frame. Keeping this copy hidden avoids a
+     second nested frame and prevents glow from covering lyric compositions. */
   @keyframes edgeFrameBreathe { 50% { opacity:.76;transform:scale(.996); } }
 
   #estimate { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 11px;

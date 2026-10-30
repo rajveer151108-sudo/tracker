@@ -55,13 +55,13 @@ const LIMITS = {
 
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
-  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"],
+  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "buildstack", "linebuilder", "constellation", "captioncards", "orbit", "poster"],
   lyricsMotion: ["punch", "slide", "glide", "cube"],
   lyricsAlign: ["center", "left"],
   lyricsFont: ["sans", "serif", "round"],
   backdropStyle: ["blur", "album", "canvas", "black"],
   backdropTourFocus: ["smart", "center", "corners"],
-  glowStyle: ["steady", "rotate", "comet", "frame", "orbitline", "twinline"],
+  glowStyle: ["steady", "rotate", "comet", "frame", "flowline"],
   glowScope: ["everywhere", "tracker"],
   glowDisplays: ["all", "main"],
   lyricsDanceStyle: ["auto", "float", "punch", "sway", "shake", "bounce", "snap", "subtle"],
@@ -91,6 +91,7 @@ function createSettingsStore(app) {
       // now the dedicated CD stereo, so existing installs move across cleanly.
       if (saved.homeMode === "tape") saved.homeMode = "cd";
       if (saved.lyricsLayout === "dualframes" || saved.lyricsLayout === "monitorframe") saved.lyricsLayout = "scroll";
+      if (saved.glowStyle === "orbitline" || saved.glowStyle === "twinline") saved.glowStyle = "flowline";
       // Older builds used one switch for both kinds of motion. Preserve that
       // choice, while allowing lyrics and the screen glow to diverge now.
       if (!("lyricsDance" in saved) && "musicMotion" in saved) saved.lyricsDance = saved.musicMotion;

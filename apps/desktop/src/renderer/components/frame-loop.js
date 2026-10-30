@@ -3,7 +3,7 @@
   // =====================================================================
   let lastFrameT = performance.now(), lastUiT = 0;
   let edgeFramePhase = 0;
-  const CONSTELLATION_SIZE = 11;
+  const CONSTELLATION_SIZE = 8;
   const constellationLayouts = new Map();
   function constellationRandom(seed) {
     let state = (seed ^ 0x9e3779b9) >>> 0;
@@ -17,10 +17,10 @@
   function constellationLayout(groupStart) {
     if (constellationLayouts.has(groupStart)) return constellationLayouts.get(groupStart);
     const random = constellationRandom(groupStart + 31);
-    // Five columns and three rows are invisible collision-safe zones. Shuffling
-    // the zones keeps each constellation organic while lyric labels never stack.
+    // Four broad columns and three rows leave a full word-width between nodes.
+    // The route is shuffled, but the collision-safe cells never move closer.
     const cells = [];
-    [17, 50, 83].forEach((y) => [10, 30, 50, 70, 90].forEach((x) => cells.push([x, y])));
+    [20, 50, 80].forEach((y) => [14, 38, 62, 86].forEach((x) => cells.push([x, y])));
     const shuffled = (input) => input.map((cell) => ({ cell, key: random() })).sort((a, b) => a.key - b.key).map(({ cell }) => cell);
     function findNearbyPath(path, remaining) {
       if (path.length === CONSTELLATION_SIZE) return path;
@@ -40,8 +40,8 @@
     }
     ordered ||= cells.slice(0, CONSTELLATION_SIZE);
     const points = ordered.map(([x, y]) => [
-      x + (random() - .5) * 3.2,
-      y + (random() - .5) * 5,
+      x + (random() - .5) * 1.8,
+      y + (random() - .5) * 3,
     ]);
     constellationLayouts.set(groupStart, points);
     return points;
@@ -79,12 +79,14 @@
           const lyricLength = (el.textContent || "").trim().length;
           el.style.setProperty("--node-x", point[0] + "%");
           el.style.setProperty("--node-y", point[1] + "%");
-          el.style.setProperty("--node-font-scale", lyricLength > 52 ? ".29" : lyricLength > 36 ? ".33" : lyricLength > 24 ? ".38" : ".44");
+          el.style.setProperty("--node-font-scale", lyricLength > 52 ? ".25" : lyricLength > 36 ? ".29" : lyricLength > 24 ? ".33" : ".38");
         }
       } else {
         el.classList.remove("constellation-current");
         const visible = layout === "buildstack"
-          ? relative <= 0 && relative >= -2
+          ? relative <= 0 && relative >= -1
+          : layout === "linebuilder"
+            ? relative <= 0 && relative >= -2
           : Math.abs(relative) <= (layout === "kinetic" || layout === "morphstack" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }

@@ -4,7 +4,6 @@
   const spin = document.getElementById("spin");
   const frame = document.getElementById("frame");
   const frameSpark = frame.querySelector(".spark");
-  const frameSparkTwin = frame.querySelector(".spark2");
 
   const parse = (s) => String(s).split(",").map((n) => Number(n.trim()) || 0);
   let targetA = [29, 185, 84], targetB = [29, 185, 84];
@@ -17,7 +16,7 @@
 
   function layout() {
     ringwrap.style.display = style === "rotate" || style === "comet" ? "block" : "none";
-    const frameStyle = style === "frame" || style === "orbitline" || style === "twinline";
+    const frameStyle = style === "frame" || style === "flowline";
     frame.style.display = frameStyle ? "block" : "none";
     frame.dataset.mode = style;
     spin.className = style === "rotate" || style === "comet" ? style : "";
@@ -80,17 +79,19 @@
     const A = curA.map(Math.round).join(", "), B = curB.map(Math.round).join(", ");
 
     // soft inner glow (weaker when the moving light is on, so it stands out)
-    const edgeLine = style === "orbitline" || style === "twinline";
-    const soft = style === "steady" ? 1 : style === "frame" ? 0.22 : edgeLine ? 0.1 : 0.45;
+    const edgeLine = style === "flowline";
+    const soft = style === "steady" ? 1 : style === "frame" ? 0.18 : edgeLine ? 0 : 0.38;
     const phraseGlow = word * vocal;
     const a1 = Math.max(0, Math.min(1, (0.28 + 0.2 * energy + 0.16 * vocal + 0.18 * beat + 0.1 * lift +
       0.16 * build + 0.52 * drop + 0.2 * emotion + 0.12 * phraseGlow - 0.32 * duck) * strength * soft)).toFixed(2);
     const a2 = Math.max(0, Math.min(1, (0.12 + 0.14 * energy + 0.09 * vocal + 0.12 * beat + 0.08 * lift +
       0.1 * build + 0.34 * drop + 0.12 * emotion + 0.06 * phraseGlow - 0.2 * duck) * strength * soft)).toFixed(2);
-    const b1 = Math.round((58 + 28 * energy + 32 * beat + 18 * lift + 28 * build + 72 * drop + 24 * emotion) * thick);
-    const s1 = Math.round((4 + 14 * energy + 18 * beat + 10 * vocal + 18 * build + 46 * drop + 18 * emotion) * thick);
-    const b2 = Math.round((150 + 58 * energy + 58 * beat + 36 * lift + 42 * build + 120 * drop + 42 * emotion) * thick);
-    const s2 = Math.round((20 + 28 * energy + 34 * beat + 20 * vocal + 28 * build + 72 * drop + 28 * emotion) * thick);
+    // Even at maximum strength the light stays at the edge instead of washing
+    // across the lyric stage. Thickness still changes density, within this cap.
+    const b1 = Math.min(96, Math.round((52 + 22 * energy + 24 * beat + 14 * lift + 22 * build + 46 * drop + 18 * emotion) * thick));
+    const s1 = Math.min(20, Math.round((3 + 8 * energy + 9 * beat + 6 * vocal + 9 * build + 20 * drop + 8 * emotion) * thick));
+    const b2 = Math.min(170, Math.round((120 + 35 * energy + 35 * beat + 22 * lift + 28 * build + 62 * drop + 26 * emotion) * thick));
+    const s2 = Math.min(30, Math.round((12 + 15 * energy + 17 * beat + 10 * vocal + 14 * build + 30 * drop + 14 * emotion) * thick));
     const shadow = "inset 0 0 " + b1 + "px " + s1 + "px rgba(" + A + ", " + a1 + "), " +
                    "inset 0 0 " + b2 + "px " + s2 + "px rgba(" + B + ", " + a2 + ")";
     if (shadow !== lastShadow) { lastShadow = shadow; glowbox.style.boxShadow = shadow; }
@@ -108,18 +109,19 @@
     if (style === "frame" || edgeLine) {
       frame.style.setProperty("--frame-a", A);
       frame.style.setProperty("--frame-bc", B);
-      frame.style.setProperty("--frame-o", Math.max(edgeLine ? .05 : .2, Math.min(1, (.34 + energy * .18 + vocal * .27 + beat * .13 + drop * .35 - duck * .24) * strength)).toFixed(2));
-      frame.style.setProperty("--frame-w", Math.max(1.5, ((edgeLine ? 3.2 : 2.2) + vocal * 1.2 + beat * .7) * thick).toFixed(1) + "px");
+      frame.style.setProperty("--frame-o", Math.max(edgeLine ? 0 : .2, Math.min(1, (.34 + energy * .18 + vocal * .27 + beat * .13 + drop * .35 - duck * .24) * strength)).toFixed(2));
+      frame.style.setProperty("--streak-o", Math.max(.2, Math.min(1, (.64 + energy * .08 + beat * .08 - duck * .08) * Math.min(1.2, strength))).toFixed(2));
+      frame.style.setProperty("--frame-w", Math.max(1, ((edgeLine ? 1.8 : 2.2) + (edgeLine ? beat * .18 : vocal * 1.2 + beat * .7)) * thick).toFixed(1) + "px");
       frame.style.setProperty("--frame-b", Math.round((10 + vocal * 22 + energy * 10 + drop * 28) * thick) + "px");
-      const frameDash = Math.round(edgeLine ? 72 + pace * 24 + vocal * 18 : 42 + vocal * 65 + word * 28);
+      const frameDash = Math.round(edgeLine ? 500 : 42 + vocal * 65 + word * 28);
       frameSpark.style.strokeDasharray = frameDash + " " + (1000 - frameDash);
-      frameSparkTwin.style.strokeDasharray = frameDash + " " + (1000 - frameDash);
+      const rapFlow = Math.min(1.5, pace * .9 + word * .25 + beat * .12);
+      const sustained = Math.max(0, Math.min(1.25, vocal * (1 - Math.min(1, pace * .8)) + lift * .25));
       const frameRate = edgeLine
-        ? 1 / trackSpeed + pace * .08 + energy * .035 + beat * .06 + drop * .15
+        ? Math.max(.025, .55 / trackSpeed + rapFlow * .18 + energy * .02 + drop * .08 - sustained * .035)
         : .025 + pace * .16 + energy * .045 + beat * .09 + drop * .28;
       framePhase = (framePhase + elapsed / 1000 * frameRate) % 1;
       frame.style.setProperty("--frame-offset", String(Math.round(-1000 * framePhase)));
-      frame.style.setProperty("--frame-offset-twin", String(Math.round(-1000 * ((framePhase + .5) % 1))));
     }
   }
   requestAnimationFrame(render);

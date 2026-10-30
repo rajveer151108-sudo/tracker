@@ -29,12 +29,12 @@
     to   { transform: scale(1.65) rotate(9deg)  translate(8%, 6%); }
   }
   #glow { position: absolute; inset: 0; pointer-events: none;
-          opacity: calc(.62 + var(--pulse) * .2 + var(--motion-energy) * .22 + var(--motion-build) * .18 + var(--motion-drop) * .55 - var(--motion-duck) * .34 + var(--motion-lift) * .1);
+          opacity: calc(.42 + var(--pulse) * .12 + var(--motion-energy) * .14 + var(--motion-build) * .1 + var(--motion-drop) * .24 - var(--motion-duck) * .24 + var(--motion-lift) * .06);
           background:
-            radial-gradient(ellipse 42% 68% at calc(18% + var(--motion-sway) * 3%) 52%, rgba(var(--glow), calc(.05 + var(--motion-vocal) * .2 + var(--motion-phrase) * .1)), transparent 74%),
-            radial-gradient(ellipse 38% 64% at calc(82% - var(--motion-sway) * 3%) 46%, rgba(255,255,255, calc(.015 + var(--motion-sibilance) * .09)), transparent 76%),
-            radial-gradient(ellipse 90% 55% at 50% 0%, rgba(var(--glow), .40), transparent 70%),
-            radial-gradient(ellipse 90% 45% at 50% 100%, rgba(var(--glow), .28), transparent 70%);
+            radial-gradient(ellipse 26% 62% at calc(4% + var(--motion-sway) * 2%) 52%, rgba(var(--glow), calc(.04 + var(--motion-vocal) * .13 + var(--motion-phrase) * .06)), transparent 72%),
+            radial-gradient(ellipse 24% 58% at calc(96% - var(--motion-sway) * 2%) 46%, rgba(255,255,255, calc(.01 + var(--motion-sibilance) * .055)), transparent 74%),
+            radial-gradient(ellipse 88% 30% at 50% -4%, rgba(var(--glow), .30), transparent 72%),
+            radial-gradient(ellipse 88% 26% at 50% 104%, rgba(var(--glow), .22), transparent 72%);
           filter: saturate(calc(1 + var(--motion-vocal) * .3)) brightness(calc(1 + var(--motion-syllable) * .07)); }
 
   #viewTransitionGlow { position: absolute; z-index: 12; inset: -18%; pointer-events: none; opacity: 0;

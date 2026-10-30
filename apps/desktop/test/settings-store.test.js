@@ -35,7 +35,7 @@ test("the lyrics backdrop can persist a full blackout style", () => {
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"]) {
+    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "linebuilder", "constellation", "captioncards", "orbit", "poster"]) {
       const store = createSettingsStore({ getPath: () => userData });
       store.load();
       store.update({ lyricsLayout, glowStyle: "frame" });
@@ -48,15 +48,23 @@ test("creative lyric layouts and broken frame glow persist", () => {
   }
 });
 
-test("tempo-driven edge glow styles persist", () => {
+test("the tempo-driven flow streak persists", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const glowStyle of ["orbitline", "twinline"]) {
-      const store = createSettingsStore({ getPath: () => userData });
-      store.load();
-      store.update({ glowStyle });
-      assert.equal(createSettingsStore({ getPath: () => userData }).load().glowStyle, glowStyle);
-    }
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    store.update({ glowStyle: "flowline" });
+    assert.equal(createSettingsStore({ getPath: () => userData }).load().glowStyle, "flowline");
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
+test("retired experimental edge lines migrate to the flow streak", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    fs.writeFileSync(path.join(userData, "settings.json"), JSON.stringify({ glowStyle: "twinline" }));
+    assert.equal(createSettingsStore({ getPath: () => userData }).load().glowStyle, "flowline");
   } finally {
     fs.rmSync(userData, { recursive: true, force: true });
   }

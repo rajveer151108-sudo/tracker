@@ -24,3 +24,13 @@ test("untimed final lines receive a four-second display window", () => {
   assert.equal(finalLineEnd(plain), 14);
   assert.equal(activeLyricIndex(plain, 15.26), -1);
 });
+
+test("an explicitly ended lyric clears during a real vocal gap", () => {
+  const gapped = [
+    { t: 10, end: 11, text: "done" },
+    { t: 14, end: 15, text: "back" },
+  ];
+  assert.equal(activeLyricIndex(gapped, 11.3), 0);
+  assert.equal(activeLyricIndex(gapped, 11.6), -1);
+  assert.equal(activeLyricIndex(gapped, 14), 1);
+});
