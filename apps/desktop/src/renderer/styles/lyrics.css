@@ -257,14 +257,14 @@
   }
 
   /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
-  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="monitorframe"], [data-layout="orbit"], [data-layout="poster"]) #lines {
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
     inset: 0; padding: 0; transform: none; transition: opacity .25s ease; z-index: 1;
   }
-  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="monitorframe"], [data-layout="orbit"], [data-layout="poster"]) .line {
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
     position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
   }
-  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="monitorframe"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
-  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="monitorframe"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+  body:is([data-layout="kinetic"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
     animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
@@ -300,13 +300,6 @@
   body[data-layout="captioncards"] .line .w { padding: .04em .08em .09em; margin: 0 -.01em; border-radius: .05em; }
   body[data-layout="captioncards"] .line.active .w { color: rgba(255,255,255,.42); -webkit-text-fill-color: rgba(255,255,255,.42); background: none; }
   body[data-layout="captioncards"] .line.active .w.cur { color: #151116; -webkit-text-fill-color: #151116; background: #fff4ce; box-shadow: 0 0 28px rgba(var(--glow),.5); transform: translateY(-.04em) scale(1.04); }
-
-  /* One monitor from the reference: a single open-corner frame and centered lyric. */
-  body[data-layout="monitorframe"] .line { left:50%; top:50%; width:76%; min-height:52%; padding:8% 7%; box-sizing:border-box; display:flex; align-items:center; justify-content:center; opacity:0; transform:translate(-50%,-50%) scale(.97); font-size:calc(var(--lyric-size) * 1.18); line-height:1.06; font-weight:800; text-align:center; text-shadow:0 0 18px rgba(var(--glow),.58); }
-  body[data-layout="monitorframe"] .line[data-slot="0"] { opacity:1; transform:translate(-50%,-50%) scale(1); }
-  body[data-layout="monitorframe"] .line.active::before { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,rgb(var(--glow)) 0 68%,transparent 68%) left top/100% 2px no-repeat,linear-gradient(rgb(var(--glow)) 0 62%,transparent 62%) left top/2px 100% no-repeat,linear-gradient(270deg,rgb(var(--glow)) 0 64%,transparent 64%) right bottom/100% 2px no-repeat,linear-gradient(0deg,rgb(var(--glow)) 0 68%,transparent 68%) right bottom/2px 100% no-repeat; filter:drop-shadow(0 0 9px rgba(var(--glow),.72)); opacity:calc(.7 + var(--motion-vocal) * .3); }
-  body[data-layout="monitorframe"] .line.active .w { color:rgba(255,255,255,.38); -webkit-text-fill-color:rgba(255,255,255,.38); background:none; }
-  body[data-layout="monitorframe"] .line.active .w.cur { color:#fff2a8; -webkit-text-fill-color:#fff2a8; transform:translateY(-.04em) scale(1.1); text-shadow:0 0 .5em rgba(var(--glow),.95); }
 
   /* Afterglow original 01 — timed words orbit the phrase currently being sung. */
   #orbitDecor { display: none; position: absolute; left: 50%; top: 50%; width: min(63vw,66vh); aspect-ratio: 1; transform: translate(-50%,-50%); border: 1px solid rgba(var(--glow),.18); border-radius: 50%; box-shadow: 0 0 70px rgba(var(--glow),.07), inset 0 0 70px rgba(var(--glow),.06); z-index: -1; }

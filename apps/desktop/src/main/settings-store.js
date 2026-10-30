@@ -53,7 +53,7 @@ const LIMITS = {
 
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
-  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "constellation", "captioncards", "monitorframe", "orbit", "poster"],
+  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "constellation", "captioncards", "orbit", "poster"],
   lyricsMotion: ["punch", "slide", "glide", "cube"],
   lyricsAlign: ["center", "left"],
   lyricsFont: ["sans", "serif", "round"],
@@ -88,7 +88,7 @@ function createSettingsStore(app) {
       // Tape archive occupied the third home slot in older builds. That slot is
       // now the dedicated CD stereo, so existing installs move across cleanly.
       if (saved.homeMode === "tape") saved.homeMode = "cd";
-      if (saved.lyricsLayout === "dualframes") saved.lyricsLayout = "monitorframe";
+      if (saved.lyricsLayout === "dualframes" || saved.lyricsLayout === "monitorframe") saved.lyricsLayout = "scroll";
       for (const key of Object.keys(DEFAULTS)) {
         const value = clean(key, saved[key]);
         if (value !== undefined) settings[key] = value;

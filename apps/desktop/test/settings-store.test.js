@@ -35,7 +35,7 @@ test("the lyrics backdrop can persist a full blackout style", () => {
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const lyricsLayout of ["kinetic", "constellation", "captioncards", "monitorframe", "orbit", "poster"]) {
+    for (const lyricsLayout of ["kinetic", "constellation", "captioncards", "orbit", "poster"]) {
       const store = createSettingsStore({ getPath: () => userData });
       store.load();
       store.update({ lyricsLayout, glowStyle: "frame" });
