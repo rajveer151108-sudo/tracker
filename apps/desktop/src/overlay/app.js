@@ -4,6 +4,7 @@
   const spin = document.getElementById("spin");
   const frame = document.getElementById("frame");
   const frameSpark = frame.querySelector(".spark");
+  const frameFlow = frame.querySelector(".flow");
 
   const parse = (s) => String(s).split(",").map((n) => Number(n.trim()) || 0);
   let targetA = [29, 185, 84], targetB = [29, 185, 84];
@@ -111,10 +112,11 @@
       frame.style.setProperty("--frame-bc", B);
       frame.style.setProperty("--frame-o", Math.max(edgeLine ? 0 : .2, Math.min(1, (.34 + energy * .18 + vocal * .27 + beat * .13 + drop * .35 - duck * .24) * strength)).toFixed(2));
       frame.style.setProperty("--streak-o", Math.max(.2, Math.min(1, (.64 + energy * .08 + beat * .08 - duck * .08) * Math.min(1.2, strength))).toFixed(2));
-      frame.style.setProperty("--frame-w", Math.max(1, ((edgeLine ? 1.8 : 2.2) + (edgeLine ? beat * .18 : vocal * 1.2 + beat * .7)) * thick).toFixed(1) + "px");
+      frame.style.setProperty("--frame-w", Math.max(1, ((edgeLine ? 6.5 : 2.2) + (edgeLine ? beat * .25 : vocal * 1.2 + beat * .7)) * thick).toFixed(1) + "px");
       frame.style.setProperty("--frame-b", Math.round((10 + vocal * 22 + energy * 10 + drop * 28) * thick) + "px");
       const frameDash = Math.round(edgeLine ? 500 : 42 + vocal * 65 + word * 28);
       frameSpark.style.strokeDasharray = frameDash + " " + (1000 - frameDash);
+      frameFlow.style.strokeDasharray = "500 500";
       const rapFlow = Math.min(1.5, pace * .9 + word * .25 + beat * .12);
       const sustained = Math.max(0, Math.min(1.25, vocal * (1 - Math.min(1, pace * .8)) + lift * .25));
       const frameRate = edgeLine

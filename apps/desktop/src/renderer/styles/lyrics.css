@@ -300,8 +300,13 @@
   body[data-layout="buildstack"] .line[data-slot="-1"]{top:36%;z-index:2;opacity:.28;transform:translate(-50%,-50%);filter:none}
   body[data-layout="buildstack"] .line[data-slot="-2"]{top:17%;z-index:1;opacity:.1;transform:translate(-50%,-50%);filter:none}
   body[data-layout="buildstack"] .line .w{--build-x:0;--build-y:.48em;opacity:0;transform:translate(var(--build-x),var(--build-y));margin:.035em .025em;padding:.025em .055em .065em;border-radius:.08em;color:rgba(255,255,255,.94);-webkit-text-fill-color:rgba(255,255,255,.94);background:none;filter:blur(7px);transition:opacity .18s ease,filter .22s ease,transform .26s cubic-bezier(.15,.86,.2,1)}
-  body[data-layout="buildstack"] .line .w:nth-child(4n+1){font-weight:900}
-  body[data-layout="buildstack"] .line .w:nth-child(4n+3){font-family:ui-serif,"New York",Georgia,serif;font-style:italic}
+  /* Each timed word is its own row, so the row index drives the editorial
+     font rhythm without ever placing two words in the same physical slot. */
+  body[data-layout="buildstack"] .line:nth-child(5n+1) .w{font-family:ui-sans-serif,"SF Pro Display",system-ui,sans-serif;font-weight:900;font-style:normal;letter-spacing:-.05em}
+  body[data-layout="buildstack"] .line:nth-child(5n+2) .w{font-family:ui-serif,"New York",Georgia,serif;font-weight:700;font-style:italic;letter-spacing:-.035em}
+  body[data-layout="buildstack"] .line:nth-child(5n+3) .w{font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:820;font-style:normal;letter-spacing:-.025em}
+  body[data-layout="buildstack"] .line:nth-child(5n+4) .w{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-weight:780;font-style:normal;letter-spacing:-.06em}
+  body[data-layout="buildstack"] .line:nth-child(5n) .w{font-family:ui-serif,"Iowan Old Style",Georgia,serif;font-weight:800;font-style:normal;letter-spacing:-.045em}
   body[data-layout="buildstack"] .line .w.revealed{opacity:1;transform:translate(0,0);filter:none}
   body[data-layout="buildstack"] .line .w.build-enter{animation:buildWordIn .34s cubic-bezier(.14,.88,.2,1) both}
   body[data-layout="buildstack"] .line.active,body.lyrics-motion[data-layout="buildstack"] .line.active{translate:0 0;scale:1;filter:none;text-shadow:none}
