@@ -35,7 +35,7 @@ test("the lyrics backdrop can persist a full blackout style", () => {
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "linebuilder", "constellation", "captioncards", "orbit", "poster"]) {
+    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"]) {
       const store = createSettingsStore({ getPath: () => userData });
       store.load();
       store.update({ lyricsLayout, glowStyle: "frame" });
@@ -43,6 +43,16 @@ test("creative lyric layouts and broken frame glow persist", () => {
       assert.equal(reloaded.load().lyricsLayout, lyricsLayout);
       assert.equal(reloaded.get().glowStyle, "frame");
     }
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
+test("the retired line phrase builder migrates to the word stack version", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    fs.writeFileSync(path.join(userData, "settings.json"), JSON.stringify({ lyricsLayout: "linebuilder" }));
+    assert.equal(createSettingsStore({ getPath: () => userData }).load().lyricsLayout, "buildstack");
   } finally {
     fs.rmSync(userData, { recursive: true, force: true });
   }

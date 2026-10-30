@@ -254,14 +254,14 @@
   }
 
   /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) #lines {
     inset: 0; padding: 0; transform: none; transition: opacity .25s ease; z-index: 1;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line {
     position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="linebuilder"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="orbit"], [data-layout="poster"]) .line.creative-arrive {
     animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
@@ -295,27 +295,20 @@
 
   /* Reference style 02 — each word arrives from close by and stays put until
      the complete lyric line has assembled, then the next line starts clean. */
-  body[data-layout="buildstack"] .line{left:50%;top:66%;width:min(64%,900px);font-size:calc(var(--lyric-size) * .94);line-height:1.16;font-weight:760;letter-spacing:-.025em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top .5s cubic-bezier(.18,.78,.22,1),opacity .38s,transform .5s cubic-bezier(.18,.78,.22,1),filter .38s}
-  body[data-layout="buildstack"] .line[data-slot="0"]{top:66%;opacity:1;transform:translate(-50%,-50%)}
-  body[data-layout="buildstack"] .line[data-slot="-1"]{top:27%;opacity:.17;transform:translate(-50%,-50%);filter:blur(1.2px)}
+  body[data-layout="buildstack"] .line{left:50%;top:58%;width:min(68%,960px);font-size:calc(var(--lyric-size) * 1.14);line-height:1.08;font-weight:820;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top .42s cubic-bezier(.18,.78,.22,1),opacity .32s,transform .42s cubic-bezier(.18,.78,.22,1),filter .32s}
+  body[data-layout="buildstack"] .line[data-slot="0"]{top:58%;z-index:3;opacity:1;transform:translate(-50%,-50%);filter:none}
+  body[data-layout="buildstack"] .line[data-slot="-1"]{top:36%;z-index:2;opacity:.28;transform:translate(-50%,-50%);filter:none}
+  body[data-layout="buildstack"] .line[data-slot="-2"]{top:17%;z-index:1;opacity:.1;transform:translate(-50%,-50%);filter:none}
   body[data-layout="buildstack"] .line .w{--build-x:0;--build-y:.48em;opacity:0;transform:translate(var(--build-x),var(--build-y));margin:.035em .025em;padding:.025em .055em .065em;border-radius:.08em;color:rgba(255,255,255,.94);-webkit-text-fill-color:rgba(255,255,255,.94);background:none;filter:blur(7px);transition:opacity .18s ease,filter .22s ease,transform .26s cubic-bezier(.15,.86,.2,1)}
   body[data-layout="buildstack"] .line .w:nth-child(4n+1){font-weight:900}
   body[data-layout="buildstack"] .line .w:nth-child(4n+3){font-family:ui-serif,"New York",Georgia,serif;font-style:italic}
   body[data-layout="buildstack"] .line .w.revealed{opacity:1;transform:translate(0,0);filter:none}
   body[data-layout="buildstack"] .line .w.build-enter{animation:buildWordIn .34s cubic-bezier(.14,.88,.2,1) both}
-  body[data-layout="buildstack"] .line .w.cur{color:#11131a;-webkit-text-fill-color:#11131a;background:#fff;box-shadow:.08em .1em 0 rgba(var(--glow),.72),0 0 .5em rgba(var(--glow),.42);transform:translateY(-.04em)}
+  body[data-layout="buildstack"] .line.active,body.lyrics-motion[data-layout="buildstack"] .line.active{translate:0 0;scale:1;filter:none;text-shadow:none}
+  body[data-layout="buildstack"] .line.active .w,body[data-layout="buildstack"] .line.active .w.cur{color:#fff;-webkit-text-fill-color:#fff;background:none;box-shadow:none;text-shadow:none;filter:none;translate:0 0;scale:1;transform:none}
   body[data-layout="buildstack"] .line.creative-arrive{animation:buildStackRise .36s cubic-bezier(.14,.88,.2,1) both}
   @keyframes buildWordIn{0%{opacity:0;transform:translate(var(--build-x),var(--build-y));filter:blur(10px) brightness(1.5)}65%{opacity:1;transform:translate(0,-.05em);filter:blur(0) brightness(1.16)}100%{opacity:1;transform:translate(0,0);filter:none}}
   @keyframes buildStackRise{from{opacity:0;transform:translate(-50%,22%);filter:blur(8px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
-
-  /* The calmer sibling: complete timed lines rise as one clean phrase. */
-  body[data-layout="linebuilder"] .line{left:50%;top:68%;width:min(68%,980px);font-size:calc(var(--lyric-size) * .98);line-height:1.16;font-weight:760;letter-spacing:-.025em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top .54s cubic-bezier(.18,.78,.22,1),opacity .42s,transform .54s cubic-bezier(.18,.78,.22,1),filter .42s}
-  body[data-layout="linebuilder"] .line[data-slot="0"]{top:68%;opacity:1;transform:translate(-50%,-50%);text-shadow:0 0 .38em rgba(var(--glow),.3)}
-  body[data-layout="linebuilder"] .line[data-slot="-1"]{top:36%;opacity:.28;transform:translate(-50%,-50%);filter:blur(.55px)}
-  body[data-layout="linebuilder"] .line[data-slot="-2"]{top:14%;opacity:.1;transform:translate(-50%,-50%);filter:blur(1.2px)}
-  body[data-layout="linebuilder"] .line .w{color:inherit;-webkit-text-fill-color:currentColor;background:none;padding:.02em .035em}
-  body[data-layout="linebuilder"] .line.creative-arrive{animation:lineBuilderRise .4s cubic-bezier(.14,.88,.2,1) both}
-  @keyframes lineBuilderRise{from{opacity:0;transform:translate(-50%,20%);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
   /* 02 — words become points on a lyric constellation. */
   #constellationMap { display: none; position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: visible; }

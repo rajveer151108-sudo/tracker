@@ -119,11 +119,11 @@
     return window.LyricEffects.decorateRows(rows);
   }
 
-  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "constellation", "orbit"]);
-  const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "buildstack", "linebuilder", "constellation", "captioncards", "orbit", "poster"]);
+  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "buildstack", "constellation", "orbit"]);
+  const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "orbit", "poster"]);
   const LAYOUT_LABELS = {
     wordstream: "Word stream", wordstack: "Word stack", stack: "Lyric stack",
-    kinetic: "Kinetic stack", morphstack: "Morph stack", buildstack: "Phrase builder · words", linebuilder: "Phrase builder · lines",
+    kinetic: "Kinetic stack", morphstack: "Morph stack", buildstack: "Phrase builder",
     constellation: "Constellation", captioncards: "Caption cards",
     orbit: "Orbit", poster: "Poster cutout",
   };
