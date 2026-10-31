@@ -9,9 +9,9 @@ const WORD_CACHE_HIT_MS = 6 * 60 * 60 * 1000;
 const WORD_CACHE_MISS_MS = 10 * 60 * 1000;
 
 async function getJson(url) {
-  const response = await fetch(url, { headers: HEADERS });
-  if (!response.ok) return null;
-  return response.json();
+  const response = await getText(url);
+  if (response.status !== 200) return null;
+  try { return JSON.parse(response.text); } catch { return null; }
 }
 
 async function getText(url, { timeoutMs = 7500, headers = HEADERS } = {}) {
@@ -75,6 +75,89 @@ async function fetchBetterLyrics(info) {
   return getText(`https://api.betterlyrics.org/getLyrics?${query}`);
 }
 
+async function fetchBetterLyricsQQ(info) {
+  const query = new URLSearchParams({
+    s: info.title,
+    a: info.artist,
+    al: info.album || "",
+    d: String(Math.round(info.durationSec || 0)),
+  });
+  return getText(`https://api.betterlyrics.org/qq/getLyrics?${query}`);
+}
+
+function bestLyricsFile(rows, durationSec) {
+  const duration = Number(durationSec) || 0;
+  return (Array.isArray(rows) ? rows : [rows]).filter(Boolean)
+    .map((row) => ({ row, stats: wordStats(parseAny(JSON.stringify(row))) }))
+    .filter(({ stats }) => stats.usable)
+    .sort((a, b) => {
+      const durationA = Math.abs((Number(a.row.duration) || duration) - duration);
+      const durationB = Math.abs((Number(b.row.duration) || duration) - duration);
+      return durationA - durationB || b.stats.wordCount - a.stats.wordCount;
+    })
+    .find(({ row }) => !duration || Math.abs((Number(row.duration) || duration) - duration) <= 8)?.row || null;
+}
+
+async function fetchLRCLIBWords(info) {
+  const exact = new URLSearchParams({
+    track_name: info.title,
+    artist_name: info.artist,
+    album_name: info.album || "",
+    duration: String(Math.round(info.durationSec || 0)),
+  });
+  const exactResponse = await getText(`https://lrclib.net/api/get?${exact}`);
+  if (exactResponse.status === 200) {
+    try {
+      const hit = bestLyricsFile(JSON.parse(exactResponse.text), info.durationSec);
+      if (hit) return { status: 200, text: JSON.stringify(hit) };
+    } catch { /* try search */ }
+  }
+
+  const search = new URLSearchParams({
+    track_name: info.title,
+    artist_name: (info.artist || "").split(",")[0].trim(),
+  });
+  const searchResponse = await getText(`https://lrclib.net/api/search?${search}`);
+  if (searchResponse.status !== 200) return searchResponse;
+  try {
+    const hit = bestLyricsFile(JSON.parse(searchResponse.text), info.durationSec);
+    return hit ? { status: 200, text: JSON.stringify(hit) } : { status: 404, text: "" };
+  } catch {
+    return { status: 404, text: "" };
+  }
+}
+
+function findSyncedLrc(value, depth = 0) {
+  if (depth > 5 || value == null) return null;
+  if (typeof value === "string") return /\[\d{1,3}:\d{2}(?:\.\d+)?]/.test(value) ? value : null;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findSyncedLrc(item, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (typeof value === "object") {
+    for (const key of ["lyrics", "syncedLyrics", "synced", "lrc", "content", "data"]) {
+      const found = findSyncedLrc(value[key], depth + 1);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+async function fetchBetterLyricsKugou(info) {
+  const query = new URLSearchParams({
+    s: info.title,
+    a: info.artist,
+    al: info.album || "",
+    d: String(Math.round(info.durationSec || 0)),
+  });
+  const response = await getText(`https://api.betterlyrics.org/kugou/getLyrics?${query}`);
+  if (response.status !== 200) return null;
+  try { return findSyncedLrc(JSON.parse(response.text)); } catch { return findSyncedLrc(response.text); }
+}
+
 async function fetchLyricsPlus(info) {
   const query = new URLSearchParams({
     ...providerParams(info),
@@ -136,6 +219,8 @@ async function fetchLrcRed(info) {
 
 const WORD_PROVIDERS = [
   { name: "BetterLyrics", fetch: fetchBetterLyrics },
+  { name: "LRCLIB Words", fetch: fetchLRCLIBWords },
+  { name: "BetterLyrics QQ", fetch: fetchBetterLyricsQQ },
   { name: "LyricsPlus", fetch: fetchLyricsPlus },
   { name: "BiniLyrics", fetch: fetchBiniLyrics },
   { name: "lrc.red", fetch: fetchLrcRed },
@@ -171,13 +256,21 @@ function createLyricsService(getSettings) {
   async function runProviderRound(info, diagnostics) {
     const batches = diagnostics
       ? [WORD_PROVIDERS]
-      : [WORD_PROVIDERS.slice(0, 2), WORD_PROVIDERS.slice(2)];
+      : [
+        [WORD_PROVIDERS[0], WORD_PROVIDERS[2]],
+        [WORD_PROVIDERS[1], WORD_PROVIDERS[3]],
+        WORD_PROVIDERS.slice(4),
+      ];
     const results = [];
     let winner = null;
     for (const providers of batches) {
       const batch = await Promise.all(providers.map((provider) => runProvider(provider, info)));
       results.push(...batch);
-      winner = batch.find((result) => result.stats.usable) || null;
+      winner = batch.filter((result) => result.stats.usable).sort((a, b) => {
+        const coverageA = a.stats.lines ? a.stats.timedLines / a.stats.lines : 0;
+        const coverageB = b.stats.lines ? b.stats.timedLines / b.stats.lines : 0;
+        return coverageB - coverageA || b.stats.wordCount - a.stats.wordCount;
+      })[0] || null;
       if (winner) break;
     }
     if (diagnostics) {
@@ -252,9 +345,18 @@ function createLyricsService(getSettings) {
           }
         }
       }
-      if (hit) result = { synced: hit.syncedLyrics || null, plain: hit.plainLyrics || null };
+      if (hit) result = { synced: hit.syncedLyrics || null, plain: hit.plainLyrics || null, source: "LRCLIB" };
     } catch (error) {
       result = { error: String(error?.message || error) };
+    }
+
+    if (!result?.synced) {
+      try {
+        const kugou = await fetchBetterLyricsKugou(info);
+        if (kugou) result = { synced: kugou, plain: result?.plain || null, source: "BetterLyrics Kugou" };
+      } catch (error) {
+        if (!result) result = { error: String(error?.message || error) };
+      }
     }
 
     if (!result?.error) lineCache.set(cacheKey, result);
@@ -286,4 +388,7 @@ function createLyricsService(getSettings) {
   return { fetchLyrics, diagnose };
 }
 
-module.exports = { createLyricsService, getJson, lyricsCacheKey, normalizeInfo, spotifyTrackId, wordStats };
+module.exports = {
+  createLyricsService, getJson, lyricsCacheKey, normalizeInfo, spotifyTrackId, wordStats,
+  bestLyricsFile, findSyncedLrc,
+};

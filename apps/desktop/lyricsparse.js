@@ -200,17 +200,182 @@ function parseKpoe(o) {
   return { lines };
 }
 
+function parseQRC(xml) {
+  if (typeof xml !== "string" || !/<QrcInfos\b|LyricContent=/i.test(xml)) return null;
+  const contentMatch = xml.match(/LyricContent="([\s\S]*?)"\s*\/?>(?:\s*<\/Lyric_\d+>)?/i);
+  if (!contentMatch) return null;
+  const content = decode(contentMatch[1]);
+  const lines = [];
+  for (const raw of content.split(/\r?\n/)) {
+    const lineMatch = raw.match(/^\[(\d+),(\d+)]([\s\S]*)$/);
+    if (!lineMatch) continue;
+    const lineStartMs = Number(lineMatch[1]);
+    const lineDurationMs = Number(lineMatch[2]);
+    const body = lineMatch[3];
+    const words = [];
+    const wordPattern = /(.*?)\((\d+),(\d+)\)/g;
+    let wordMatch;
+    while ((wordMatch = wordPattern.exec(body))) {
+      const rawText = decode(wordMatch[1]);
+      const text = rawText.trim();
+      if (!text) continue;
+      let startMs = Number(wordMatch[2]);
+      const durationMs = Number(wordMatch[3]);
+      // Some QRC writers store offsets from the line while others store the
+      // absolute song clock. The absolute form is by far the most common; a
+      // value before the line start can only be a relative offset.
+      if (startMs < lineStartMs) startMs += lineStartMs;
+      words.push({
+        t: startMs / 1000,
+        end: (startMs + Math.max(1, durationMs)) / 1000,
+        text,
+        rawText,
+      });
+    }
+    if (!words.length) continue;
+    const text = words.map((word) => word.rawText).join("").replace(/\s+/g, " ").trim()
+      || words.map((word) => word.text).join(" ");
+    const compactText = text.toLowerCase().replace(/[^a-z]/g, "");
+    const providerCredit = /^(?:writtenby|lyricsby|composer|producer|musicby|arrangedby)/.test(compactText);
+    const providerTitle = lineStartMs < 1000 && /\((?:explicit|clean|remaster(?:ed)?)\)/i.test(text);
+    if (!text || (lineStartMs < 15000 && providerCredit) || providerTitle) continue;
+    lines.push({
+      t: Math.min(lineStartMs / 1000, words[0].t),
+      end: Math.max((lineStartMs + lineDurationMs) / 1000, words.at(-1).end),
+      text,
+      words: words.map(({ rawText, ...word }) => word),
+    });
+  }
+  if (!lines.length) return null;
+  lines.sort((a, b) => a.t - b.t);
+  return { lines };
+}
+
+function yamlScalar(raw) {
+  const value = String(raw == null ? "" : raw).trim();
+  if (value.startsWith('"') && value.endsWith('"')) {
+    try { return JSON.parse(value); } catch { return value.slice(1, -1); }
+  }
+  if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1).replace(/''/g, "'");
+  if (/^-?\d+$/.test(value)) return Number(value);
+  if (value === "null" || value === "~") return null;
+  return value;
+}
+
+function parseLyricsFile(yaml) {
+  if (typeof yaml !== "string" || !/^version\s*:/m.test(yaml) || !/^lines\s*:/m.test(yaml)) return null;
+  const rows = [];
+  let inLines = false;
+  let inWords = false;
+  let line = null;
+  let word = null;
+  const assign = (target, key, value) => {
+    if (target && ["text", "start_ms", "end_ms"].includes(key)) target[key] = yamlScalar(value);
+  };
+  for (const raw of yaml.split(/\r?\n/)) {
+    if (!raw.trim() || /^\s*#/.test(raw)) continue;
+    const indent = raw.match(/^\s*/)[0].length;
+    const text = raw.trim();
+    if (indent === 0) {
+      inLines = text === "lines:";
+      inWords = false;
+      continue;
+    }
+    if (!inLines) continue;
+    let match;
+    if (indent === 2 && (match = text.match(/^-\s+([\w-]+)\s*:\s*(.*)$/))) {
+      line = { words: [] };
+      rows.push(line);
+      word = null;
+      inWords = false;
+      assign(line, match[1], match[2]);
+      continue;
+    }
+    if (!line) continue;
+    if (indent === 4 && text === "words:") {
+      inWords = true;
+      word = null;
+      continue;
+    }
+    if (indent === 4 && (match = text.match(/^([\w-]+)\s*:\s*(.*)$/))) {
+      inWords = false;
+      assign(line, match[1], match[2]);
+      continue;
+    }
+    if (inWords && indent === 6 && (match = text.match(/^-\s+([\w-]+)\s*:\s*(.*)$/))) {
+      word = {};
+      line.words.push(word);
+      assign(word, match[1], match[2]);
+      continue;
+    }
+    if (inWords && word && indent === 8 && (match = text.match(/^([\w-]+)\s*:\s*(.*)$/))) {
+      assign(word, match[1], match[2]);
+    }
+  }
+  const lines = rows.flatMap((row) => {
+    const startMs = Number(row.start_ms);
+    if (!Number.isFinite(startMs) || startMs < 0) return [];
+    const explicitEndMs = Number(row.end_ms);
+    const words = row.words.flatMap((item) => {
+      const text = String(item.text == null ? "" : item.text).trim();
+      const wordStartMs = Number(item.start_ms);
+      if (!text || !Number.isFinite(wordStartMs) || wordStartMs < 0) return [];
+      const wordEndMs = Number(item.end_ms);
+      return [{
+        text,
+        t: wordStartMs / 1000,
+        end: Number.isFinite(wordEndMs) && wordEndMs >= wordStartMs ? wordEndMs / 1000 : null,
+      }];
+    });
+    const lineText = String(row.text == null ? "" : row.text).trim() || words.map((item) => item.text).join(" ");
+    if (!lineText) return [];
+    return [{
+      t: startMs / 1000,
+      end: Number.isFinite(explicitEndMs) && explicitEndMs >= startMs ? explicitEndMs / 1000 : null,
+      text: lineText,
+      words,
+    }];
+  }).sort((a, b) => a.t - b.t);
+  if (!lines.length) return null;
+  lines.forEach((item, index) => {
+    const nextStart = lines[index + 1]?.t;
+    const fallbackEnd = Number.isFinite(nextStart) && nextStart > item.t ? nextStart : item.t + 4;
+    if (!Number.isFinite(item.end) || item.end <= item.t) item.end = fallbackEnd;
+    item.words.forEach((timed, wordIndex) => {
+      const nextWord = item.words[wordIndex + 1]?.t;
+      if (!Number.isFinite(timed.end) || timed.end <= timed.t) {
+        timed.end = Number.isFinite(nextWord) && nextWord > timed.t ? nextWord : item.end;
+      }
+    });
+  });
+  return { lines };
+}
+
 function parseAny(text) {
   if (typeof text !== "string" || !text.trim()) return null;
   let obj = null;
   try { obj = JSON.parse(text); } catch (e) { /* not JSON */ }
   if (obj && typeof obj === "object") {
     if (Array.isArray(obj.lyrics)) return parseKpoe(obj);
+    const lyricsfile = typeof obj.lyricsfile === "string" ? obj.lyricsfile
+      : Object.values(obj).find((v) => typeof v === "string" && /^version\s*:/m.test(v) && /^lines\s*:/m.test(v));
+    if (lyricsfile) {
+      const parsed = parseLyricsFile(lyricsfile);
+      if (parsed) return parsed;
+    }
+    const qrc = typeof obj.lyrics === "string" && /<QrcInfos\b|LyricContent=/i.test(obj.lyrics) ? obj.lyrics
+      : Object.values(obj).find((v) => typeof v === "string" && /<QrcInfos\b|LyricContent=/i.test(v));
+    if (qrc) {
+      const parsed = parseQRC(qrc);
+      if (parsed) return parsed;
+    }
     const ttml = typeof obj.ttml === "string" ? obj.ttml
       : Object.values(obj).find((v) => typeof v === "string" && /<tt[\s>]/.test(v));
     return ttml ? parseTTML(ttml) : null;
   }
+  if (/^version\s*:/m.test(text) && /^lines\s*:/m.test(text)) return parseLyricsFile(text);
+  if (/<QrcInfos\b|LyricContent=/i.test(text)) return parseQRC(text);
   return /<tt[\s>]|<p[\s>]/.test(text) ? parseTTML(text) : null;
 }
 
-module.exports = { parseTTML, parseKpoe, parseAny, parseTime };
+module.exports = { parseTTML, parseKpoe, parseQRC, parseLyricsFile, parseAny, parseTime };

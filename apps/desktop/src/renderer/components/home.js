@@ -440,6 +440,7 @@ function setAppView(view){
   if(wanted!=="home")closeQueuePanel();
   clearTimeout(viewTransitionTimer);document.body.classList.remove("view-enter-home","view-enter-lyrics","view-enter-vault");void document.body.offsetWidth;
   document.body.dataset.view=wanted;document.body.classList.add(`view-enter-${wanted}`);
+  if(wanted==="lyrics")document.body.classList.remove("awake");
   document.querySelectorAll("#homeScreen video").forEach(video=>{if(wanted==="home")video.play().catch(()=>{});else video.pause();});
   $("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("vaultBtn").classList.toggle("active",wanted==="vault");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");$("vaultScreen").setAttribute("aria-hidden",wanted!=="vault"?"true":"false");
   if(wanted==="home")refreshArcadeHome();else if(wanted==="lyrics")activeIdx=-2;else if(typeof refreshVault==="function")refreshVault();

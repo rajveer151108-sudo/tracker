@@ -95,6 +95,8 @@ test("cadence and long sections rotate through distinct layout and glow combinat
     section: "drop", genre: "rap", baseVisual: {}, sequence,
   }).visual);
   assert.equal(new Set(dropVariants.map((scene) => `${scene.lyricsLayout}:${scene.glowStyle}`)).size, 4);
+  assert.equal(directorSectionScene({ section: "rapid", baseVisual: {}, sequence: 3 }).visual.lyricsLayout, "constellation");
+  assert.equal(directorSectionScene({ section: "sustain", baseVisual: {}, sequence: 3 }).visual.lyricsLayout, "constellation");
   assert.ok(Math.max(...Array.from({ length: 8 }, (_, index) => directorCadenceDelay(index))) <= 19000);
 });
 

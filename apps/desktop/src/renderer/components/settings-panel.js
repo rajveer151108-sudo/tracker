@@ -239,7 +239,11 @@
     if (typeof renderHome === "function") renderHome();
     if(previousHomeMode&&typeof onHomeModeChange==="function")onHomeModeChange(previousHomeMode,nextHomeMode);
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
-    if (layoutChanged) document.body.classList.add("lyrics-layout-switching");
+    if (layoutChanged) {
+      if (typeof captureLyricTransitionFrame === "function") captureLyricTransitionFrame();
+      document.body.classList.remove("lyrics-layout-entering");
+      document.body.classList.add("lyrics-layout-switching");
+    }
     document.body.dataset.layout = settings.lyricsLayout;
     document.body.dataset.glowStyle = settings.glowStyle || "steady";
     appliedLyricsLayout = settings.lyricsLayout;
@@ -250,9 +254,15 @@
     if (layoutChanged) {
       rebuildLyricsLayout();
       const transition = ++lyricsLayoutTransition;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        if (transition === lyricsLayoutTransition) document.body.classList.remove("lyrics-layout-switching");
-      }));
+      requestAnimationFrame(() => {
+        if (transition !== lyricsLayoutTransition) return;
+        document.body.classList.remove("lyrics-layout-switching");
+        document.body.classList.add("lyrics-layout-entering");
+        if (typeof clearLyricTransitionFrame === "function") clearLyricTransitionFrame();
+        setTimeout(() => {
+          if (transition === lyricsLayoutTransition) document.body.classList.remove("lyrics-layout-entering");
+        }, 650);
+      });
     }
     activeIdx = -2;                   // re-measure and re-centre the current line after a layout change
 

@@ -1,7 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseTTML, parseKpoe, parseAny, parseTime } = require("../lyricsparse");
-const { lyricsCacheKey, normalizeInfo, spotifyTrackId, wordStats } = require("../src/main/lyrics-service");
+const { parseTTML, parseKpoe, parseQRC, parseLyricsFile, parseAny, parseTime } = require("../lyricsparse");
+const {
+  lyricsCacheKey, normalizeInfo, spotifyTrackId, wordStats, bestLyricsFile, findSyncedLrc,
+} = require("../src/main/lyrics-service");
 
 test("parseTime accepts TTML clock and unit formats", () => {
   assert.equal(parseTime("01:02.500"), 62.5);
@@ -61,6 +63,69 @@ test("parseAny finds TTML nested inside a provider JSON response", () => {
   const response = JSON.stringify({ payload: '<tt><body><p begin="2s" end="3s"><span begin="2s" end="3s">Go</span></p></body></tt>' });
   const result = parseAny(response);
   assert.equal(result.lines[0].words[0].text, "Go");
+});
+
+test("QRC keeps each word on its absolute song clock", () => {
+  const result = parseQRC(`<QrcInfos><LyricInfo><Lyric_1 LyricContent="[1100,1171]Sauce (1100,360)it (1460,210)up(1670,601)\n[2300,900]Now (2300,300)go(2600,600)"/></LyricInfo></QrcInfos>`);
+  assert.ok(result);
+  assert.deepEqual(result.lines[0].words.map((word) => word.text), ["Sauce", "it", "up"]);
+  assert.equal(result.lines[0].words[0].t, 1.1);
+  assert.equal(result.lines[0].words[2].end, 2.271);
+  assert.equal(result.lines[1].text, "Now go");
+});
+
+test("Lyricsfile YAML exposes LRCLIB word timing", () => {
+  const lyricsfile = `version: "0.1"
+lines:
+  - text: "I can see it"
+    start_ms: 1200
+    end_ms: 2600
+    words:
+      - text: "I"
+        start_ms: 1200
+        end_ms: 1400
+      - text: "can"
+        start_ms: 1400
+        end_ms: 1800
+      - text: "see"
+        start_ms: 1800
+        end_ms: 2200
+      - text: "it"
+        start_ms: 2200
+        end_ms: 2600`;
+  const result = parseLyricsFile(lyricsfile);
+  assert.ok(result);
+  assert.equal(result.lines[0].t, 1.2);
+  assert.equal(result.lines[0].end, 2.6);
+  assert.deepEqual(result.lines[0].words.map((word) => word.text), ["I", "can", "see", "it"]);
+  assert.equal(parseAny(JSON.stringify({ lyricsfile })).lines[0].words[2].t, 1.8);
+});
+
+test("provider helpers select duration-matched word timing and line-synced fallbacks", () => {
+  const lyricsfile = `version: "0.1"
+lines:
+  - text: "one two three four"
+    start_ms: 1000
+    end_ms: 2200
+    words:
+      - text: "one"
+        start_ms: 1000
+        end_ms: 1300
+      - text: "two"
+        start_ms: 1300
+        end_ms: 1600
+      - text: "three"
+        start_ms: 1600
+        end_ms: 1900
+      - text: "four"
+        start_ms: 1900
+        end_ms: 2200`;
+  const selected = bestLyricsFile([
+    { duration: 90, lyricsfile },
+    { duration: 120, lyricsfile },
+  ], 119);
+  assert.equal(selected.duration, 120);
+  assert.match(findSyncedLrc({ data: { lyrics: "[00:01.00]A line" } }), /A line/);
 });
 
 test("provider matching removes badges and version suffixes without changing the original object", () => {

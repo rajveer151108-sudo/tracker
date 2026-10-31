@@ -495,6 +495,10 @@
         name: "Kinetic verse", lyricsLayout: "kinetic", lyricsHighlight: "word", lyricsMotion: "punch",
         glowStyle: "nebula", glowStrength: 128, glowThickness: 166,
         lyricsDanceStyle: "punch", motionStrength: 140,
+      }, {
+        name: "Flow constellation", lyricsLayout: "constellation", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "comet", glowStrength: 118, glowThickness: 152,
+        backdropOpacity: 52, lyricsDanceStyle: "sway", motionStrength: 92,
       }],
       sustain: [{
         name: "Held note", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
@@ -508,6 +512,10 @@
         name: "Long exposure", lyricsLayout: "captioncards", lyricsHighlight: "whole", lyricsMotion: "glide",
         glowStyle: "halo", glowStrength: 96, glowThickness: 132,
         backdropOpacity: 48, lyricsDanceStyle: "float", motionStrength: 80,
+      }, {
+        name: "Starlight hold", lyricsLayout: "constellation", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "eclipse", glowStrength: 92, glowThickness: 126,
+        backdropOpacity: 46, lyricsDanceStyle: "sway", motionStrength: 76,
       }],
     };
     if (section === "steady" || !sectionPatches[section]) return { name: "Main scene", visual: base };

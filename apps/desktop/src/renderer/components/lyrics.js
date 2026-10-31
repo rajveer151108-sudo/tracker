@@ -145,6 +145,64 @@
       : "";
   }
 
+  let lyricTransitionFrameTimer = 0;
+  function captureLyricTransitionFrame() {
+    const layer = $("lyricTransitionLayer");
+    const stage = $("stage");
+    if (!layer || !stage || document.body.dataset.view !== "lyrics" || !lineEls.length) return false;
+    const stageRect = stage.getBoundingClientRect();
+    const fragment = document.createDocumentFragment();
+    let captured = 0;
+    for (const el of lineEls) {
+      const style = getComputedStyle(el);
+      const opacity = Number(style.opacity);
+      const rect = el.getBoundingClientRect();
+      if (!(opacity > .025) || rect.width < 1 || rect.height < 1
+        || rect.bottom <= stageRect.top || rect.top >= stageRect.bottom
+        || rect.right <= stageRect.left || rect.left >= stageRect.right) continue;
+      const snapshot = document.createElement("div");
+      snapshot.className = "lyric-transition-line";
+      snapshot.textContent = el.textContent;
+      const transparent = style.color === "rgba(0, 0, 0, 0)" || style.color === "transparent";
+      Object.assign(snapshot.style, {
+        left: `${rect.left - stageRect.left}px`,
+        top: `${rect.top - stageRect.top}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        opacity: String(Math.min(1, opacity)),
+        color: transparent ? "rgba(255,255,255,.96)" : style.color,
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontStyle: style.fontStyle,
+        fontWeight: style.fontWeight,
+        letterSpacing: style.letterSpacing,
+        lineHeight: style.lineHeight,
+        textAlign: style.textAlign,
+        textShadow: style.textShadow,
+        whiteSpace: style.whiteSpace,
+        overflowWrap: style.overflowWrap,
+      });
+      fragment.appendChild(snapshot);
+      captured++;
+    }
+    if (!captured) return false;
+    clearTimeout(lyricTransitionFrameTimer);
+    layer.replaceChildren(fragment);
+    layer.classList.remove("active");
+    void layer.offsetWidth;
+    layer.classList.add("active");
+    return true;
+  }
+
+  function clearLyricTransitionFrame(delay = 620) {
+    const layer = $("lyricTransitionLayer");
+    clearTimeout(lyricTransitionFrameTimer);
+    lyricTransitionFrameTimer = setTimeout(() => {
+      layer?.classList.remove("active");
+      layer?.replaceChildren();
+    }, delay);
+  }
+
   // A layout rebuild replaces every lyric node at once. Prime the new nodes
   // synchronously so creative layouts never paint all rows in the same slot
   // while waiting for the next animation frame.
@@ -173,6 +231,7 @@
   }
 
   function rebuildLyricsLayout() {
+    clearFit();
     lines = isWordLayout()
       ? wordStreamRows(sourceLines)
       : window.LyricEffects.decorateLines(sourceLines);
@@ -505,7 +564,7 @@
       setNotice("");
     } else if (res && res.synced) {
       const parsed = parseLrc(res.synced);
-      setLyrics(parsed, "Line timing");
+      setLyrics(parsed, "Line timing" + (res.source ? " \u00b7 " + res.source : ""));
       setNotice(parsed.length ? "" : "No synced lyrics for this song.");
     } else if (res && res.plain && settings.lyricsEstimate) {
       const estimated = plainToLines(res.plain, np.durationMs / 1000);

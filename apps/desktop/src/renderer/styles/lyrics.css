@@ -276,10 +276,10 @@
      neighbours are distant depth cues, not a second layer of readable text. */
   body[data-layout="kinetic"] .line { left: 50%; top: 50%; width: min(var(--lyric-box-width),90vw); max-width: 90vw; color: rgba(255,255,255,.16);
     font-family: ui-rounded,"SF Pro Rounded",system-ui,sans-serif; font-size: min(var(--lyric-box-font,min(calc(var(--lyric-size) * .76), 10vw, 13vh)),var(--lyric-composition-cap,170px)); font-weight: 900; line-height: .94; letter-spacing: -.045em;
-    transition: top var(--word-step-ms,180ms) cubic-bezier(.2,.8,.2,1), opacity .22s, transform .26s cubic-bezier(.16,.86,.22,1), filter .22s; }
-  body[data-layout="kinetic"] .line[data-slot="-1"] { top: 19%; opacity: .11; transform: translate(-50%,-50%) scale(.58); filter: blur(3.5px); }
-  body[data-layout="kinetic"] .line[data-slot="0"] { top: 50%; opacity: 1; transform: translate(-50%,-50%) scale(1.08); color: #fff; filter: none; text-shadow: 0 0 14px rgba(var(--glow),.52), 0 .08em .7em rgba(var(--glow),.35); }
-  body[data-layout="kinetic"] .line[data-slot="1"] { top: 81%; opacity: .11; transform: translate(-50%,-50%) scale(.58); filter: blur(3.5px); }
+    transition: opacity var(--word-step-ms,180ms) ease, transform var(--word-step-ms,180ms) cubic-bezier(.16,.86,.22,1), filter var(--word-step-ms,180ms) ease; }
+  body[data-layout="kinetic"] .line[data-slot="-1"],
+  body[data-layout="kinetic"] .line[data-slot="1"] { top: 50%; opacity: 0; transform: translate(-50%,-50%) scale(.82); filter: blur(7px); }
+  body[data-layout="kinetic"] .line[data-slot="0"] { top: 50%; opacity: 1; transform: translate(-50%,-50%) scale(1); color: #fff; filter: none; text-shadow: 0 0 14px rgba(var(--glow),.52), 0 .08em .7em rgba(var(--glow),.35); }
   body[data-layout="kinetic"] .line[data-slot="0"] .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
   body.lyrics-motion[data-layout="kinetic"] .line[data-slot="0"] { scale: calc(1 + var(--motion-vocal) * .055 + var(--motion-drop) * .08); }
 
@@ -401,6 +401,8 @@
             text-align: center; padding: 0 40px; opacity: .6; font-size: 15px; pointer-events: none; }
 
   footer { position: relative; padding: 6px 22px 14px; }
+  body[data-view="lyrics"] footer { position:absolute;z-index:6;left:0;right:0;bottom:0;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .28s ease,transform .34s cubic-bezier(.2,.78,.24,1); }
+  body[data-view="lyrics"].awake footer { opacity:1;transform:none;pointer-events:auto; }
   #bar { position: relative; height: 18px; cursor: pointer; outline: none; touch-action: none; }
   #bar::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 4px;
                  background: rgba(255,255,255,.16); border-radius: 999px; }

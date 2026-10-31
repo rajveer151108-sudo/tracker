@@ -10,7 +10,7 @@
     initVault();
     $("playpause").innerHTML = ICON_PLAY;
     poll();
-    setInterval(poll, 1000);
+    setInterval(poll, 750);
     requestAnimationFrame(frame);
   })();
 
