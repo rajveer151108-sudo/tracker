@@ -1,7 +1,8 @@
 // =====================================================================
   // Beat reaction: listens to system audio, finds bass hits, pulses the UI + screen glow
   // =====================================================================
-  let audioCtx = null, analyser = null, freq = null, wave = null, previousSpectrum = null, beatStream = null;
+  let audioCtx = null, analyser = null, freq = null, wave = null, previousSpectrum = null, productionSpectrum = null, beatStream = null;
+  let productionSpectrumReady = false;
   let beatOn = false, beatStarting = false;
   let pulse = 0, avgBass = 0, lastBeat = 0, outLevel = 0, lastSend = 0, lastBass = 0, peak = 0;
   let motionEnergy = 0, motionVocal = 0, motionLift = 0, motionSyllable = 0, motionPhrase = 0, motionSibilance = 0;
@@ -11,6 +12,7 @@
   let structureContrast = 0, structureTimbreShift = 0, structureSwitchUp = 0, structureSwitchDown = 0;
   let structureLowActivity = 0, structureQuietHold = 0, structureReentry = 0;
   let audioLoudnessTrend = 0, audioVocalTrend = 0, audioBeatConfidence = 0, audioBpm = 0, audioBassLevel = 0, audioFluxLevel = 0;
+  let audioDrumChange = 0, audioHarmonyChange = 0, audioProductionAgreement = 0, audioTonality = 0, audioOnsetDensity = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
   let lyricWordAttack = 0, lyricWordSustain = 0, lyricTimingConfidence = 0;
   const motionStyleCache = new Map();
@@ -42,6 +44,10 @@
     structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = 0;
     structureLowActivity = structureQuietHold = structureReentry = 0;
     audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+    audioDrumChange = audioHarmonyChange = audioProductionAgreement = audioTonality = audioOnsetDensity = 0;
+    productionSpectrumReady = false;
+    if (previousSpectrum) previousSpectrum.fill(0);
+    if (productionSpectrum) productionSpectrum.fill(0);
   }
 
   async function startBeat(requestPermission = false) {
@@ -79,9 +85,9 @@
       await audioCtx.resume();
       const src = audioCtx.createMediaStreamSource(new MediaStream(tracks));
       analyser = audioCtx.createAnalyser();
-      // 1024 bins are enough to separate bass, vocals and brightness while
-      // halving the transform and time-domain work versus the old 2048 size.
-      analyser.fftSize = 1024;
+      // 2048 samples keep live analysis inexpensive while giving the harmonic
+      // profile enough resolution to distinguish chord colour and drum bands.
+      analyser.fftSize = 2048;
       analyser.minDecibels = -95;
       analyser.maxDecibels = -10;                                  // more headroom, so loud songs don't max out
       analyser.smoothingTimeConstant = 0.45;
@@ -89,6 +95,7 @@
       freq = new Uint8Array(analyser.frequencyBinCount);
       wave = new Uint8Array(analyser.fftSize);
       previousSpectrum = new Float32Array(analyser.frequencyBinCount);
+      productionSpectrum = new Float32Array(analyser.frequencyBinCount);
       beatStream = stream;
       tracks[0].addEventListener("ended", () => stopBeat("Audio stopped"));
       beatOn = true;
@@ -107,9 +114,10 @@
     beatOn = false;
     try { if (beatStream) beatStream.getTracks().forEach((t) => t.stop()); } catch (e) {}
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
-    beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null;
+    beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null; productionSpectrum = null;
     motionEnergy = motionVocal = motionLift = motionSyllable = motionPhrase = motionSibilance = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
     structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = structureLowActivity = structureQuietHold = structureReentry = audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+    audioDrumChange = audioHarmonyChange = audioProductionAgreement = audioTonality = audioOnsetDensity = 0;
     resetAudioStructureAnalysis();
     window.tracker.sendBeat(applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0, word: 0, pace: 0,
       build: 0, duck: 0, drop: 0, emotion: 0, syllable: 0, phrase: 0, sibilance: 0 }));
@@ -136,6 +144,55 @@
     let sum = 0;
     for (let i = lo; i <= hi; i++) sum += freq[i];
     return sum / Math.max(1, (hi - lo + 1) * 255);
+  }
+
+  // A lightweight production profile: positive spectral flux estimates kick,
+  // snare and hi-hat activity, while a 12-bin pitch-class profile follows the
+  // harmonic/chord colour of the full mix. These are evidence channels, not
+  // isolated stems; Director only trusts them when several layers agree.
+  function productionFeatures(binHz, beatHit) {
+    const chroma = Array(12).fill(0);
+    let totalMagnitude = 0, tonalMagnitude = 0;
+    let kickFlux = 0, kickBins = 0, snareFlux = 0, snareBins = 0;
+    let hatFlux = 0, hatBins = 0, onsetFlux = 0, onsetBins = 0;
+    for (let index = 1; index < freq.length; index++) {
+      const hz = index * binHz;
+      const value = freq[index] / 255;
+      const before = productionSpectrumReady ? productionSpectrum[index] : value;
+      const positive = Math.max(0, value - before);
+      productionSpectrum[index] = value;
+      if (hz >= 35 && hz <= 180) { kickFlux += positive; kickBins++; }
+      if ((hz >= 170 && hz <= 520) || (hz >= 1500 && hz <= 5200)) { snareFlux += positive; snareBins++; }
+      if (hz >= 5200 && hz <= 12000) { hatFlux += positive; hatBins++; }
+      if (hz >= 35 && hz <= 12000) { onsetFlux += positive; onsetBins++; }
+      if (hz < 80 || hz > 5000) continue;
+      const left = freq[Math.max(1, index - 2)] / 255;
+      const right = freq[Math.min(freq.length - 1, index + 2)] / 255;
+      const localFloor = (left + right) * .5;
+      const prominence = Math.max(0, value - localFloor * .82);
+      const midi = 69 + 12 * Math.log2(hz / 440);
+      const pitchClass = ((Math.round(midi) % 12) + 12) % 12;
+      const weight = prominence * (1 / (1 + hz / 4200));
+      chroma[pitchClass] += weight;
+      totalMagnitude += value;
+      tonalMagnitude += prominence;
+    }
+    productionSpectrumReady = true;
+    const chromaTotal = chroma.reduce((sum, value) => sum + value, 0);
+    if (chromaTotal > .0001) for (let index = 0; index < chroma.length; index++) chroma[index] /= chromaTotal;
+    const meanFlux = (sum, count, scale) => clamp01(sum / Math.max(1, count) * scale);
+    const kick = Math.max(meanFlux(kickFlux, kickBins, 9.5), beatHit ? .72 : 0);
+    const onset = Math.max(meanFlux(onsetFlux, onsetBins, 11), beatHit ? .5 : 0);
+    return {
+      chroma,
+      tonality: clamp01((tonalMagnitude / Math.max(.001, totalMagnitude) - .035) / .24),
+      drums: {
+        kick,
+        snare: meanFlux(snareFlux, snareBins, 12),
+        hat: meanFlux(hatFlux, hatBins, 14),
+        onset,
+      },
+    };
   }
 
   // This is intentionally a voice-aware mix analyser, not a claim of stem
@@ -242,6 +299,7 @@
     let beatHit = false;
     if (rise > 0.10 && norm > 0.5 && tNow - lastBeat > 160) { pulse = 1; lastBeat = tNow; beatHit = true; }
     pulse *= Math.exp(-dt / 0.16);                                // each hit fades out over ~0.16s
+    const production = productionFeatures(binHz, beatHit);
 
     const profile = motionProfile();
     const k = (settings.beatStrength || 100) / 100 * feel.beat;
@@ -282,6 +340,9 @@
       rawLoudness: rms,
       vocal: vocalTarget,
       beat: beatHit,
+      chroma: production.chroma,
+      tonality: production.tonality,
+      drums: production.drums,
     }, tNow, dt);
     structureContrast = structure.contrast;
     structureTimbreShift = structure.timbreShift;
@@ -296,6 +357,11 @@
     audioBpm = structure.bpm;
     audioBassLevel = norm;
     audioFluxLevel = syllableTarget;
+    audioDrumChange = structure.drumChange;
+    audioHarmonyChange = structure.harmonyChange;
+    audioProductionAgreement = structure.productionAgreement;
+    audioTonality = structure.tonality;
+    audioOnsetDensity = structure.onsetDensity;
     motionEnergy = follow(motionEnergy, energyTarget, 0.045, 0.22, dt);
     motionVocal = follow(motionVocal, vocalTarget, 0.07, 0.28, dt);
     motionLift = follow(motionLift, liftTarget, 0.09, 0.3, dt);

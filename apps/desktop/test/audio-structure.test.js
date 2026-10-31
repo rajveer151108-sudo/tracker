@@ -58,3 +58,74 @@ test("low-volume stable audio does not become a permanent quiet break", () => {
   assert.ok(result.quietHold < .1);
   assert.ok(result.reentry < .05);
 });
+
+test("an isolated chord change does not impersonate a beat switch", () => {
+  const detector = createAudioStructureDetector();
+  const base = {
+    bands: [.42, .24, .17, .11, .06], loudness: .68, rawLoudness: .06, vocal: .48,
+    chroma: [.38, 0, 0, 0, .31, 0, 0, .31, 0, 0, 0, 0], tonality: .78,
+    drums: { kick: .42, snare: .3, hat: .28, onset: .34 }, beat: true,
+  };
+  feed(detector, 7, base);
+  const result = feed(detector, 1.2, {
+    ...base,
+    chroma: [0, .34, 0, 0, 0, .33, 0, 0, .33, 0, 0, 0],
+  }, 7000);
+  assert.ok(result.harmonyChange > .2);
+  assert.ok(result.productionAgreement < .4);
+  assert.ok(result.switchUp < .08);
+  assert.ok(result.switchDown < .08);
+});
+
+test("a drum fill alone stays an accent instead of becoming a section switch", () => {
+  const detector = createAudioStructureDetector();
+  const base = {
+    bands: [.44, .23, .16, .11, .06], loudness: .7, rawLoudness: .065, vocal: .44,
+    chroma: [.4, 0, 0, 0, .3, 0, 0, .3, 0, 0, 0, 0], tonality: .7,
+    drums: { kick: .38, snare: .28, hat: .24, onset: .3 }, beat: true,
+  };
+  feed(detector, 7, base);
+  const result = feed(detector, .9, {
+    ...base,
+    drums: { kick: .92, snare: .95, hat: .9, onset: 1 },
+  }, 7000);
+  assert.ok(result.drumChange > .25);
+  assert.ok(result.switchUp < .08);
+  assert.ok(result.switchDown < .08);
+});
+
+test("a vocal entrance without a production-layer change is not a beat switch", () => {
+  const detector = createAudioStructureDetector();
+  const production = {
+    chroma: [.38, 0, 0, 0, .31, 0, 0, .31, 0, 0, 0, 0], tonality: .74,
+    drums: { kick: .4, snare: .3, hat: .24, onset: .32 }, beat: true,
+  };
+  feed(detector, 7, {
+    ...production, bands: [.42, .23, .17, .12, .06], loudness: .58, rawLoudness: .05, vocal: .08,
+  });
+  const result = feed(detector, 1.1, {
+    ...production, bands: [.33, .25, .22, .14, .06], loudness: .76, rawLoudness: .073, vocal: .9,
+  }, 7000);
+  assert.ok(result.vocalTrend > .25);
+  assert.ok(result.drumChange < .15);
+  assert.ok(result.harmonyChange < .15);
+  assert.ok(result.switchUp < .08);
+});
+
+test("drums, harmony and timbre agreeing create one production switch", () => {
+  const detector = createAudioStructureDetector();
+  feed(detector, 7, {
+    bands: [.22, .2, .27, .2, .11], loudness: .48, rawLoudness: .04, vocal: .62,
+    chroma: [.38, 0, 0, 0, .31, 0, 0, .31, 0, 0, 0, 0], tonality: .75,
+    drums: { kick: .28, snare: .44, hat: .2, onset: .3 }, beat: true,
+  });
+  const result = feed(detector, 1.1, {
+    bands: [.58, .22, .09, .07, .04], loudness: .9, rawLoudness: .1, vocal: .3,
+    chroma: [0, .34, 0, 0, 0, .33, 0, 0, .33, 0, 0, 0], tonality: .8,
+    drums: { kick: .88, snare: .2, hat: .7, onset: .92 }, beat: true,
+  }, 7000);
+  assert.ok(result.drumChange > .2);
+  assert.ok(result.harmonyChange > .2);
+  assert.ok(result.productionAgreement > .35);
+  assert.ok(result.switchUp > .2);
+});

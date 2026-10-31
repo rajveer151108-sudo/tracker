@@ -2,7 +2,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-  VISUAL_KEYS, extractPreset, averageWordGap, lyricDirectorContext, directorScene, directorDecision, directorSection,
+  VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
+  averageWordGap, lyricDirectorContext, directorScene, directorDecision, directorSection,
   directorSectionTiming, directorCutAllowed, directorSectionScene,
 } = require("../src/shared/visual-scenes");
 
@@ -11,6 +12,17 @@ test("song presets contain visual settings only", () => {
   assert.deepEqual(preset, { lyricsLayout: "prism", lyricsSize: 142 });
   assert.ok(VISUAL_KEYS.includes("glowStyle"));
   assert.ok(!VISUAL_KEYS.includes("directorMode"));
+});
+
+test("manual visual locks protect only the controls the user changed", () => {
+  assert.deepEqual(changedVisualKeys(
+    { lyricsSize: 132, backdropStyle: "album", glowStrength: 110 },
+    { lyricsSize: 96, backdropStyle: "album", glowStrength: 110 },
+  ), ["lyricsSize"]);
+  assert.deepEqual(filterVisualPatch(
+    { lyricsSize: 86, lyricsLayout: "kinetic", backdropStyle: "canvas", glowStrength: 145, directorMode: true },
+    new Set(["lyricsSize", "backdropStyle"]),
+  ), { lyricsLayout: "kinetic", glowStrength: 145 });
 });
 
 test("director scenes match genre and promote dense timed vocals to Prism Roll", () => {
@@ -40,7 +52,10 @@ test("lyric context forecasts the next line's flow before it begins", () => {
 });
 
 test("multimodal decisions combine structural, vocal and future flow signals", () => {
-  const switchDecision = directorDecision({ reentry: .9, switchUp: .9, structure: .8, energy: .75, bass: .8 }, "steady");
+  const switchDecision = directorDecision({
+    reentry: .9, switchUp: .9, structure: .8, energy: .75, bass: .8,
+    onsetDensity: .8, productionAgreement: .7, drumChange: .72, harmonyChange: .65, timbreShift: .7,
+  }, "steady");
   assert.equal(switchDecision.section, "drop");
   assert.ok(switchDecision.reasons.includes("arrangement return"));
   const forecastDecision = directorDecision({ pace: .35, nextPace: .95, forecastFlow: .9, density: .7, vocal: .65 }, "steady");
@@ -48,11 +63,32 @@ test("multimodal decisions combine structural, vocal and future flow signals", (
 });
 
 test("section director distinguishes drops, rapid verses, builds and held notes", () => {
-  assert.equal(directorSection({ drop: .9, structure: .8, energy: .8 }), "drop");
+  assert.equal(directorSection({
+    drop: .9, structure: .8, switchUp: .85, energy: .8, productionAgreement: .72,
+    drumChange: .7, harmonyChange: .62, timbreShift: .74,
+  }), "drop");
   assert.equal(directorSection({ pace: .92, density: .8, flow: .85, flowHold: .9, vocal: .7, energy: .65 }), "rapid");
   assert.equal(directorSection({ build: .7, energy: .62 }), "build");
   assert.equal(directorSection({ phrase: .85, vocal: .8, wordSustain: .88, vocalSustain: .82, lineActive: 1, pace: .2 }), "sustain");
   assert.equal(directorSection({ duck: .8, lowActivity: .9, quietHold: .8, energy: .28 }), "quiet");
+});
+
+test("beat-switch decisions require multiple production layers", () => {
+  const chordOnly = directorDecision({
+    harmonyChange: .95, tonality: .9, timbreShift: .12, structure: .18, productionAgreement: .18,
+  });
+  assert.notEqual(chordOnly.section, "drop");
+  const drumFill = directorDecision({
+    drumChange: .95, onsetDensity: 1, impact: .9, timbreShift: .18, structure: .2, productionAgreement: .2,
+  });
+  assert.notEqual(drumFill.section, "drop");
+  const fullSwitch = directorDecision({
+    drumChange: .78, harmonyChange: .72, timbreShift: .7, structure: .75,
+    productionAgreement: .76, switchUp: .86, drop: .7, onsetDensity: .8,
+  });
+  assert.equal(fullSwitch.section, "drop");
+  assert.equal(fullSwitch.priority, "beat-switch");
+  assert.ok(fullSwitch.reasons.includes("drum pattern change"));
 });
 
 test("sentence endings and forecasts do not invent held notes, quiet breaks, or flow runs", () => {

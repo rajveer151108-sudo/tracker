@@ -12,6 +12,9 @@ let pendingVisualPatch = null;
 let automationToggleSnapshot = null;
 let userVisualBaseline = null;
 let activeVisualOverlay = null;
+let pendingManualVisualKeys = [];
+const directorLockedVisualKeys = new Set();
+const queuedManualVisualKeys = new Set();
 
 function visualSongKey(np) {
   return String(np?.uri || np?.id || currentTrackKey(np) || "").normalize("NFKC").trim().toLowerCase();
@@ -23,6 +26,10 @@ function visualSnapshot() {
 
 function sameVisualValue(a, b) {
   return typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < .001 : a === b;
+}
+
+function markVisualControlManual(key) {
+  if (window.VisualScenes.VISUAL_KEYS.includes(key)) queuedManualVisualKeys.add(key);
 }
 
 function showVisualSceneBadge(kicker, title) {
@@ -38,20 +45,30 @@ function showVisualSceneBadge(kicker, title) {
   visualBadgeTimer = setTimeout(() => badge.classList.remove("show"), 2600);
 }
 
-// Automation is a temporary layer over the user's real settings. Keeping it
-// local prevents a Director scene from silently becoming the next song's
-// default, while still letting a manual settings change take control at once.
+// Automation is a temporary layer over the user's real settings. A manual
+// change locks only that individual control; the rest of Director keeps going.
 function prepareVisualAutomationSettings(nextSettings = {}) {
   const incomingVisual = window.VisualScenes.extractPreset(nextSettings);
-  const visualChanged = userVisualBaseline && Object.keys(incomingVisual)
-    .some((key) => !sameVisualValue(incomingVisual[key], userVisualBaseline[key]));
+  const detected = userVisualBaseline
+    ? window.VisualScenes.changedVisualKeys(incomingVisual, userVisualBaseline)
+    : [];
+  const changed = [...new Set([...detected, ...queuedManualVisualKeys])];
+  queuedManualVisualKeys.clear();
+  const shouldLock = changed.length && visualTrackState
+    && (settings?.directorMode || visualTrackState.preset || activeVisualOverlay);
   userVisualBaseline = incomingVisual;
-  if (visualChanged) {
-    activeVisualOverlay = null;
+  pendingManualVisualKeys = shouldLock ? changed : [];
+  if (shouldLock) {
+    changed.forEach((key) => directorLockedVisualKeys.add(key));
+    if (activeVisualOverlay) {
+      activeVisualOverlay = window.VisualScenes.filterVisualPatch(activeVisualOverlay, directorLockedVisualKeys);
+      if (!Object.keys(activeVisualOverlay).length) activeVisualOverlay = null;
+    }
     pendingVisualPatch = null;
-    window.tracker.previewGlow(null);
+    window.tracker.previewGlow(activeVisualOverlay);
+    visualTrackState.manualLocks = [...directorLockedVisualKeys];
   }
-  return activeVisualOverlay && !visualChanged
+  return activeVisualOverlay
     ? { ...nextSettings, ...activeVisualOverlay }
     : nextSettings;
 }
@@ -78,23 +95,27 @@ function updateVisualAutomationStatus() {
       : "No saved look for this song yet.";
   }
   if (directorStatus) {
+    const locked = visualTrackState?.manualLocks?.length || 0;
+    const manualNote = locked ? ` · respecting ${locked} manual choice${locked === 1 ? "" : "s"}` : "";
     directorStatus.textContent = !settings?.directorMode
       ? "Off — your normal settings stay in control."
-      : visualTrackState?.manualOverride ? "Your manual changes have priority for this song."
       : visualTrackState?.preset ? "A saved song look has priority."
-      : !settings?.beat ? `Directing from lyric flow${visualTrackState?.directorName ? `: ${visualTrackState.directorName}` : ""}. Turn on Listen and react for full audio analysis.`
-      : visualTrackState?.directorName ? `Directing: ${visualTrackState.directorName}${visualTrackState.decision?.reasons?.length ? ` · ${visualTrackState.decision.reasons.join(" + ")}` : ""}.`
+      : !settings?.beat ? `Directing from lyric flow${visualTrackState?.directorName ? `: ${visualTrackState.directorName}` : ""}${manualNote}. Turn on Listen and react for full audio analysis.`
+      : visualTrackState?.directorName ? `Directing: ${visualTrackState.directorName}${visualTrackState.decision?.reasons?.length ? ` · ${visualTrackState.decision.reasons.join(" + ")}` : ""}${manualNote}.`
       : "Waiting for the song's genre and lyric pace.";
   }
 }
 
 function applyVisualPatch(patch, source, name) {
-  const visual = window.VisualScenes.extractPreset(patch);
+  const visual = window.VisualScenes.filterVisualPatch(patch, directorLockedVisualKeys);
   if (!Object.keys(visual).length) return;
   pendingVisualPatch = { visual, source };
   activeVisualOverlay = visual;
   window.tracker.previewGlow(visual);
-  if (visualTrackState) visualTrackState.source = source;
+  if (visualTrackState) {
+    visualTrackState.source = source;
+    visualTrackState.manualLocks = [...directorLockedVisualKeys];
+  }
   settings = { ...settings, ...visual };
   applySettings();
   if (name) showVisualSceneBadge(
@@ -118,7 +139,8 @@ function playDirectorAccent(kind = "beat") {
   void document.body.offsetWidth;
   document.body.classList.add("director-accent");
   clearTimeout(visualAccentTimer);
-  visualAccentTimer = setTimeout(() => document.body.classList.remove("director-accent"), kind === "structure" ? 620 : 360);
+  const duration = kind === "drop" ? 860 : kind === "structure" ? 620 : 360;
+  visualAccentTimer = setTimeout(() => document.body.classList.remove("director-accent"), duration);
 }
 
 function playCinematicTrackTransition(np, previousNp = null) {
@@ -153,7 +175,6 @@ async function loadPresetForVisualTrack() {
   state.presetStatus = preset ? "loaded" : "none";
   state.preset = preset;
   if (preset?.visual) {
-    state.manualOverride = false;
     state.directorName = "";
     state.pendingPreset = preset;
   } else {
@@ -164,7 +185,7 @@ async function loadPresetForVisualTrack() {
 
 function maybeApplyDirector() {
   const state = visualTrackState;
-  if (!state || !settings?.directorMode || state.preset || state.presetStatus === "checking" || state.manualOverride) {
+  if (!state || !settings?.directorMode || state.preset || state.presetStatus === "checking") {
     updateVisualAutomationStatus();
     return;
   }
@@ -210,7 +231,7 @@ function beginVisualTrack(np, key, previousKey) {
     presetStatus: "none",
     preset: null,
     pendingPreset: null,
-    manualOverride: false,
+    manualLocks: [...directorLockedVisualKeys],
     directorName: "",
     directorSignature: "",
     directorBase: null,
@@ -239,7 +260,8 @@ function beginVisualTrack(np, key, previousKey) {
       progress: 0, structure: 0, timbreShift: 0, switchUp: 0, switchDown: 0, loudnessTrend: 0,
       lowActivity: 0, quietHold: 0, reentry: 0, vocalTrend: 0, beatConfidence: 0, bpm: 0,
       bass: 0, flux: 0, emotion: 0, audioConfidence: 0, lineActive: 0, wordSustain: 0,
-      vocalSustain: 0, flowHold: 0,
+      vocalSustain: 0, flowHold: 0, drumChange: 0, harmonyChange: 0,
+      productionAgreement: 0, tonality: 0, onsetDensity: 0,
     },
     lastSectionSampleAt: 0,
     source: "defaults",
@@ -268,6 +290,7 @@ function commitDirectorSection(state, section, decision, nowMs) {
     section,
     genre: state.genre || "other",
     baseVisual: state.directorBase,
+    cue: decision?.priority,
   });
   state.section = section;
   state.sectionChangedAt = nowMs;
@@ -289,7 +312,7 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   const state = visualTrackState;
   if (!state || !playing) return;
   const lineIndex = Number.isInteger(sample.lineIndex) ? sample.lineIndex : -1;
-  if (nowMs - state.lastSectionSampleAt < 180) return;
+  if (nowMs - state.lastSectionSampleAt < 90) return;
   const lineBoundary = state.lastLyricLine !== null && lineIndex !== state.lastLyricLine
     && (lineIndex >= 0 || state.lastLyricLine >= 0);
   state.lastLyricLine = lineIndex;
@@ -299,14 +322,14 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     lineActive: sample.lineActive !== 0,
     lineBoundary,
   });
-  if (state.pendingPreset && settings?.songPresetsEnabled && !state.manualOverride && safeCut) {
+  if (state.pendingPreset && settings?.songPresetsEnabled && safeCut) {
     const preset = state.pendingPreset;
     state.pendingPreset = null;
     applyVisualPatch(preset.visual, "preset", preset.title || state.np.title || "Saved look");
     updateVisualAutomationStatus();
     return;
   }
-  if (!settings?.directorMode || state.preset || state.manualOverride
+  if (!settings?.directorMode || state.preset
     || (!state.directorBase && !state.pendingBaseScene)) return;
   if (state.pendingBaseScene && (!sample.hasLyrics || lineBoundary)) {
     applyDirectorBaseScene(state, state.pendingBaseScene.scene, state.pendingBaseScene.signature);
@@ -344,7 +367,19 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   signal.flowHold = state.rapidEvidence;
   signal.vocalSustain = state.sustainEvidence;
   const structural = Math.max(signal.reentry, signal.switchUp, signal.switchDown, signal.structure);
-  if (structural > .45 && nowMs - state.lastAccentAt > 1100) {
+  const rawReentry = Number(sample.reentry) || 0;
+  const rawDrop = Number(sample.drop) || 0;
+  const rawSwitchUp = Number(sample.switchUp) || 0;
+  const rawStructure = Number(sample.structure) || 0;
+  const rawProductionAgreement = Number(sample.productionAgreement) || 0;
+  const rawDrumChange = Number(sample.drumChange) || 0;
+  const beatSwitchHit = (rawReentry > .42 && (Number(sample.onsetDensity) || 0) > .18)
+    || (rawSwitchUp > .72 && rawProductionAgreement > .36 && rawDrumChange > .28)
+    || (rawDrop > .7 && rawStructure > .3 && rawProductionAgreement > .42);
+  if (beatSwitchHit && nowMs - state.lastAccentAt > 520) {
+    state.lastAccentAt = nowMs;
+    playDirectorAccent("drop");
+  } else if (structural > .45 && nowMs - state.lastAccentAt > 950) {
     state.lastAccentAt = nowMs;
     playDirectorAccent("structure");
   } else if (signal.impact > .82 && nowMs - state.lastAccentAt > 620) {
@@ -361,7 +396,7 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     state.queuedSection = null;
     state.queuedDecision = null;
   }
-  const protectedQueue = ["reentry", "structural"].includes(state.queuedDecision?.priority);
+  const protectedQueue = ["reentry", "beat-switch", "structural"].includes(state.queuedDecision?.priority);
   if (state.queuedSection && decision.section !== state.queuedSection && !protectedQueue
     && nowMs - state.queuedSectionSince > 450) {
     state.queuedSection = null;
@@ -388,7 +423,9 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     state.queuedSection = next;
     state.queuedDecision = decision;
     state.queuedSectionSince = nowMs;
-    state.queuedReadyAt = decision.priority === "reentry" ? nowMs : Math.max(nowMs, state.sectionChangedAt + 900);
+    state.queuedReadyAt = ["reentry", "beat-switch"].includes(decision.priority)
+      ? nowMs
+      : Math.max(nowMs, state.sectionChangedAt + 900);
     state.queuedUntil = nowMs + 6500;
   }
   // The line boundary is a one-frame event. When a remembered arrangement
@@ -434,7 +471,6 @@ async function saveCurrentSongPreset() {
   visualTrackState.preset = result.preset;
   visualTrackState.pendingPreset = null;
   visualTrackState.presetStatus = "loaded";
-  visualTrackState.manualOverride = false;
   visualTrackState.directorName = "";
   visualTrackState.directorBase = null;
   showToast(settings.songPresetsEnabled ? "SONG LOOK SAVED" : "SONG LOOK SAVED — AUTO-LOAD IS OFF");
@@ -458,19 +494,15 @@ function onVisualAutomationSettingsApplied() {
   if (!settings?.automationNotifications) $("visualSceneBadge")?.classList.remove("show");
   const current = visualSnapshot();
   if (lastVisualSnapshot) {
-    const changed = Object.keys(current).filter((key) => !sameVisualValue(current[key], lastVisualSnapshot[key]));
     const automated = pendingVisualPatch
       && Object.keys(pendingVisualPatch.visual).every((key) => sameVisualValue(current[key], pendingVisualPatch.visual[key]));
     if (automated) pendingVisualPatch = null;
-    else if (changed.length && visualTrackState) {
-      visualTrackState.manualOverride = true;
-      visualTrackState.source = "manual";
-      visualTrackState.directorName = "";
-      visualTrackState.directorBase = null;
-      visualTrackState.pendingPreset = null;
-      activeVisualOverlay = null;
+    else if (pendingManualVisualKeys.length && visualTrackState) {
+      visualTrackState.source = "director+manual";
+      visualTrackState.manualLocks = [...directorLockedVisualKeys];
     }
   }
+  pendingManualVisualKeys = [];
   lastVisualSnapshot = current;
 
   const toggles = {
@@ -490,7 +522,8 @@ function onVisualAutomationSettingsApplied() {
       else restoreUserVisualBaseline();
     }
     if (!previousToggles.directorMode && toggles.directorMode) {
-      visualTrackState.manualOverride = false;
+      directorLockedVisualKeys.clear();
+      visualTrackState.manualLocks = [];
       visualTrackState.directorSignature = "";
       maybeApplyDirector();
     } else if (previousToggles.directorMode && !toggles.directorMode && !visualTrackState.preset) {

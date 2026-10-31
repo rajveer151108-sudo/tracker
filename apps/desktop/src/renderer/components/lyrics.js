@@ -136,11 +136,39 @@
       : "";
   }
 
+  // A layout rebuild replaces every lyric node at once. Prime the new nodes
+  // synchronously so creative layouts never paint all rows in the same slot
+  // while waiting for the next animation frame.
+  function primeLyricsLayout() {
+    const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0) + offset;
+    const idx = lines.length ? window.LyricTiming.activeLyricIndex(lines, now) : -1;
+    const stackLayout = settings.lyricsLayout === "stack" || settings.lyricsLayout === "wordstack";
+    const stackLines = Math.max(2, Math.min(6, Number(settings.lyricsHistoryLines) || 4));
+    const buildStack = settings.lyricsLayout === "buildstack";
+    document.body.classList.toggle("lyrics-waiting", idx < 0);
+    lineEls.forEach((el, index) => {
+      el.classList.toggle("active", index === idx);
+      el.classList.toggle("stack-hidden", stackLayout && idx >= 0 && (index > idx || index <= idx - stackLines));
+      el.dataset.d = idx < 0 ? "4" : String(Math.min(Math.abs(index - idx), 4));
+      el.dataset.side = idx < 0 ? "next" : index < idx ? "past" : index > idx ? "next" : "current";
+      if (buildStack) {
+        el._w.spans.forEach((span, wordIndex) => {
+          const revealed = idx >= 0 && index < idx;
+          span.classList.toggle("revealed", revealed);
+          el._w.revealed[wordIndex] = revealed;
+        });
+      }
+      if (el._w.emojiSpan) el._w.emojiSpan.classList.toggle("word-revealed", idx >= 0 && index < idx);
+    });
+    if (typeof updateCreativeLayout === "function") updateCreativeLayout(idx);
+  }
+
   function rebuildLyricsLayout() {
     lines = isWordLayout()
       ? wordStreamRows(sourceLines)
       : window.LyricEffects.decorateLines(sourceLines);
     buildLines();
+    primeLyricsLayout();
     updateTimingInfo();
   }
 

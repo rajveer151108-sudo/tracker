@@ -54,7 +54,7 @@
     { key: "cinematicTransitions", label: "Cinematic track transitions", type: "toggle",
       hint: "Choreographs artwork, colour and typography when the actual song changes. Seeking and pausing do not trigger it." },
     { key: "directorMode", label: "Director Mode", type: "toggle", status: true,
-      hint: "Scores vocals, loudness, bass, beat confidence, timbre, WPM, flow, emotion and song structure—plus upcoming lyric pace and gaps—then lands scene changes on lyric boundaries. Manual changes win for the current song." },
+      hint: "Scores vocals, loudness, bass, drum pattern, harmonic colour, beat confidence, timbre, WPM, flow, emotion and song structure—plus upcoming lyric pace and gaps—then lands scene changes on lyric boundaries. A manual change locks only that control while Director keeps running everything else." },
     { key: "automationNotifications", label: "Show automation notices", type: "toggle",
       hint: "Shows the small top-right card when a saved look or Director scene is applied. Turning this off keeps every visual change silent." },
 
@@ -142,6 +142,7 @@
         const sw = document.createElement("label"); sw.className = "switch";
         const input = document.createElement("input"); input.type = "checkbox";
         input.addEventListener("change", () => {
+          if (typeof markVisualControlManual === "function") markVisualControlManual(def.key);
           window.tracker.setSettings({ [def.key]: input.checked });
           if (def.key === "beat" && input.checked && typeof startBeat === "function") startBeat(true);
         });
@@ -152,14 +153,20 @@
         const seg = document.createElement("div"); seg.className = "seg";
         const btns = def.options.map(([val, text]) => {
           const b = document.createElement("button"); b.textContent = text;
-          b.addEventListener("click", () => window.tracker.setSettings({ [def.key]: val }));
+          b.addEventListener("click", () => {
+            if (typeof markVisualControlManual === "function") markVisualControlManual(def.key);
+            window.tracker.setSettings({ [def.key]: val });
+          });
           seg.appendChild(b); return [val, b];
         });
         row.appendChild(seg);
         controlsByKey[def.key] = (v) => btns.forEach(([val, b]) => b.classList.toggle("active", val === v));
       } else if (def.type === "color") {
         const input = document.createElement("input"); input.type = "color"; input.className = "colorIn";
-        input.addEventListener("input", () => window.tracker.setSettings({ [def.key]: input.value }));
+        input.addEventListener("input", () => {
+          if (typeof markVisualControlManual === "function") markVisualControlManual(def.key);
+          window.tracker.setSettings({ [def.key]: input.value });
+        });
         row.appendChild(input);
         controlsByKey[def.key] = (v) => { if (input.value !== v) input.value = v; };
       } else if (def.type === "button") {
@@ -172,6 +179,7 @@
         input.type = "range"; input.min = def.min; input.max = def.max; input.step = def.step;
         const val = document.createElement("span");
         input.addEventListener("input", () => {
+          if (typeof markVisualControlManual === "function") markVisualControlManual(def.key);
           val.textContent = input.value + (def.unit || "");
           window.tracker.setSettings({ [def.key]: Number(input.value) });
         });
@@ -186,6 +194,7 @@
   let lyricsWereOn = true;
   let appliedLyricsLayout = null;
   let appliedBackdropZoom = null;
+  let lyricsLayoutTransition = 0;
   function applySettings() {
     for (const def of SETTINGS_UI) if (def.key && controlsByKey[def.key]) controlsByKey[def.key](settings[def.key]);
 
@@ -207,12 +216,19 @@
     if (typeof renderHome === "function") renderHome();
     if(previousHomeMode&&typeof onHomeModeChange==="function")onHomeModeChange(previousHomeMode,nextHomeMode);
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
+    if (layoutChanged) document.body.classList.add("lyrics-layout-switching");
     document.body.dataset.layout = settings.lyricsLayout;
     document.body.dataset.glowStyle = settings.glowStyle || "steady";
     appliedLyricsLayout = settings.lyricsLayout;
     root.style.setProperty("--lyric-size", settings.lyricsSize + "px");
     applyFeel();
-    if (layoutChanged) rebuildLyricsLayout();
+    if (layoutChanged) {
+      rebuildLyricsLayout();
+      const transition = ++lyricsLayoutTransition;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (transition === lyricsLayoutTransition) document.body.classList.remove("lyrics-layout-switching");
+      }));
+    }
     activeIdx = -2;                   // re-measure and re-centre the current line after a layout change
 
     $("lines").style.display = settings.showLyrics ? "" : "none";

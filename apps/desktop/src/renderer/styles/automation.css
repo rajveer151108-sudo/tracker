@@ -17,6 +17,7 @@ body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:t
 
 #visualSceneBadge{position:absolute;z-index:7;top:76px;right:22px;display:flex;flex-direction:column;align-items:flex-end;max-width:min(340px,60vw);padding:9px 13px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(7,7,10,.72);box-shadow:0 12px 38px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .25s,transform .25s}
 #visualSceneBadge.show{opacity:1;transform:none}#visualSceneBadge small{font-size:9px;font-weight:800;letter-spacing:.17em;opacity:.48}#visualSceneBadge strong{margin-top:2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+body.lyrics-layout-switching #lines{opacity:0!important;animation:none!important;transition:none!important}
 body.director-section-changing #lines{animation:directorSectionStage .76s cubic-bezier(.18,.76,.22,1) both}
 body.director-section-changing #backdrop{animation:directorBackdropShift .9s ease both}
 body.director-section-changing #glow{animation:directorSectionGlow .76s ease-out both}
@@ -26,12 +27,22 @@ body.director-section-changing #viewTransitionGlow{animation:directorSectionWash
 @keyframes directorSectionGlow{0%{opacity:.42;filter:saturate(1)}32%{opacity:.94;filter:saturate(1.65) brightness(1.18)}100%{filter:saturate(1)}}
 @keyframes directorSectionWash{0%,100%{opacity:0;transform:scale(.7)}36%{opacity:.62;transform:scale(1.08)}}
 body[data-director-section="drop"].director-section-changing #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.58),rgba(var(--glow),.44) 22%,transparent 66%)}
+body[data-director-section="drop"].director-section-changing #glow{animation:directorDropSectionGlow .86s cubic-bezier(.12,.82,.2,1) both}
 body[data-director-section="quiet"].director-section-changing #viewTransitionGlow{opacity:.28}
 body.director-accent #lines{animation:directorBeatAccent .36s cubic-bezier(.16,.82,.22,1) both}
 body.director-accent #glow{animation:directorAccentGlow .36s ease-out both}
 body[data-director-accent="structure"].director-accent #lines{animation-duration:.62s}
 body[data-director-accent="structure"].director-accent #backdrop{animation:directorStructureAccent .62s ease-out both}
+body[data-director-accent="drop"].director-accent #lines{animation:directorDropAccentStage .86s cubic-bezier(.12,.82,.2,1) both}
+body[data-director-accent="drop"].director-accent #glow{animation:directorDropAccentGlow .86s cubic-bezier(.12,.82,.2,1) both}
+body[data-director-accent="drop"].director-accent #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.76),rgba(var(--glow),.62) 18%,rgba(var(--glow),.18) 42%,transparent 68%);animation:directorDropAccentWash .86s cubic-bezier(.12,.82,.2,1) both}
+body[data-director-accent="drop"].director-accent #backdrop{animation:directorDropAccentBackdrop .86s cubic-bezier(.12,.82,.2,1) both}
 @keyframes directorBeatAccent{0%,100%{scale:1;filter:none}30%{scale:1.012;filter:brightness(1.1)}}
 @keyframes directorAccentGlow{0%,100%{filter:none}30%{filter:saturate(1.35) brightness(1.2)}}
 @keyframes directorStructureAccent{0%,100%{scale:1;filter:none}38%{scale:1.018;filter:saturate(1.24) contrast(1.08)}}
-@media(prefers-reduced-motion:reduce){body.track-transitioning #trackTransition{animation:trackTransitionFade .65s ease both}body.track-transitioning .trackTransitionCard,body.track-transitioning .trackTransitionArtwork img,body.track-transitioning #stage,body.track-transitioning #homeScreen,body.director-section-changing #lines,body.director-section-changing #backdrop,body.director-section-changing #glow,body.director-section-changing #viewTransitionGlow{animation:none}@keyframes trackTransitionFade{0%,100%{opacity:0}30%,70%{opacity:1}}}
+@keyframes directorDropSectionGlow{0%,100%{opacity:.46;filter:saturate(1) brightness(1);transform:scale(1)}16%{opacity:1;filter:saturate(2.15) brightness(1.62);transform:scale(1.035)}48%{opacity:.76;filter:saturate(1.55) brightness(1.28);transform:scale(1.012)}}
+@keyframes directorDropAccentStage{0%,100%{scale:1;filter:none}14%{scale:1.022;filter:brightness(1.18)}44%{scale:1.006;filter:brightness(1.06)}}
+@keyframes directorDropAccentGlow{0%,100%{opacity:.44;filter:saturate(1) brightness(1);transform:scale(1)}13%{opacity:1;filter:saturate(2.3) brightness(1.78);transform:scale(1.048)}42%{opacity:.82;filter:saturate(1.62) brightness(1.32);transform:scale(1.016)}}
+@keyframes directorDropAccentWash{0%{opacity:0;transform:scale(.5);filter:blur(18px)}14%{opacity:.94;transform:scale(.88);filter:blur(5px)}48%{opacity:.46;transform:scale(1.06);filter:blur(1px)}100%{opacity:0;transform:scale(1.24);filter:blur(4px)}}
+@keyframes directorDropAccentBackdrop{0%,100%{scale:1;filter:none}16%{scale:1.018;filter:saturate(1.42) brightness(1.12) contrast(1.08)}52%{scale:1.008;filter:saturate(1.18) brightness(1.04)}}
+@media(prefers-reduced-motion:reduce){body.track-transitioning #trackTransition{animation:trackTransitionFade .65s ease both}body.track-transitioning .trackTransitionCard,body.track-transitioning .trackTransitionArtwork img,body.track-transitioning #stage,body.track-transitioning #homeScreen,body.director-section-changing #lines,body.director-section-changing #backdrop,body.director-section-changing #glow,body.director-section-changing #viewTransitionGlow,body.director-accent #lines,body.director-accent #backdrop,body.director-accent #glow,body.director-accent #viewTransitionGlow{animation:none}@keyframes trackTransitionFade{0%,100%{opacity:0}30%,70%{opacity:1}}}

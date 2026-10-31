@@ -20,6 +20,23 @@
     return visual;
   }
 
+  function sameVisualValue(a, b) {
+    return typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < .001 : a === b;
+  }
+
+  function changedVisualKeys(nextSettings = {}, previousSettings = {}) {
+    const next = extractPreset(nextSettings);
+    const previous = extractPreset(previousSettings);
+    return VISUAL_KEYS.filter((key) => Object.hasOwn(next, key)
+      && Object.hasOwn(previous, key)
+      && !sameVisualValue(next[key], previous[key]));
+  }
+
+  function filterVisualPatch(patch = {}, lockedKeys = []) {
+    const locked = lockedKeys instanceof Set ? lockedKeys : new Set(lockedKeys);
+    return Object.fromEntries(Object.entries(extractPreset(patch)).filter(([key]) => !locked.has(key)));
+  }
+
   function averageWordGap(lines = []) {
     const starts = [];
     for (const line of Array.isArray(lines) ? lines : []) {
@@ -172,7 +189,8 @@
     const keys = ["energy", "vocal", "phrase", "build", "duck", "drop", "impact", "pace", "density", "flow",
       "timingConfidence", "vocalGap", "nextPace", "nextDensity", "nextGap", "paceTrend", "forecastFlow", "hook", "structure",
       "timbreShift", "switchUp", "switchDown", "lowActivity", "quietHold", "reentry", "beatConfidence", "bass", "flux",
-      "emotion", "lineActive", "wordSustain", "vocalSustain", "flowHold"];
+      "emotion", "lineActive", "wordSustain", "vocalSustain", "flowHold", "drumChange", "harmonyChange",
+      "productionAgreement", "tonality", "onsetDensity"];
     const s = Object.fromEntries(keys.map((key) => [key, bounded(signal[key])]));
     const audio = bounded(signal.audioConfidence == null ? 1 : signal.audioConfidence);
     const wpm = Math.max(0, Number(signal.wpm) || 0);
@@ -193,7 +211,18 @@
       Math.min(1, s.switchDown * .72 + s.quietHold * .38),
       Math.min(1, s.duck) * Math.min(1, s.quietHold + .15),
     );
-    const structuralLift = Math.max(s.reentry, s.switchUp, Math.min(1, s.drop * Math.max(.45, s.structure)));
+    const arrangementReturn = s.reentry > .4 && (s.onsetDensity > .12 || s.productionAgreement > .25);
+    const verifiedProductionSwitch = s.productionAgreement > .32
+      && (s.drumChange > .28 || s.harmonyChange > .32)
+      && (s.timbreShift > .26 || s.structure > .3 || s.switchUp > .42);
+    const productionSwitch = verifiedProductionSwitch
+      ? Math.min(1, s.productionAgreement * .72 + s.drumChange * .2 + s.harmonyChange * .2)
+      : 0;
+    const structuralLift = Math.max(
+      arrangementReturn ? s.reentry : 0,
+      verifiedProductionSwitch ? s.switchUp : 0,
+      Math.min(1, s.drop * Math.max(.45, s.structure) * (.45 + productionSwitch * .55)),
+    );
     const actualFlow = Math.min(1, s.flowHold);
     const heldVocal = Math.max(s.vocalSustain, Math.min(s.wordSustain, s.phrase, s.vocal));
     const scores = {
@@ -204,7 +233,8 @@
         + vocalRising * .24 + forecastNear * (Math.max(0, s.paceTrend) * .5
           + Math.max(0, futurePace - pace) * 1.3 + futurePace * .3)
         + s.hook * .16,
-      drop: .08 + audio * (s.reentry * 2.2 + s.drop * 1.18 + s.switchUp * 1.12
+      drop: .08 + audio * ((arrangementReturn ? s.reentry : 0) * 2.05 + s.drop * .82
+        + (verifiedProductionSwitch ? s.switchUp : 0) * 1.05 + productionSwitch * 1.18
         + structuralLift * s.structure * .38 + structuralLift * s.timbreShift * .28
         + structuralLift * rising * .34 - s.duck * .14),
       rapid: .1 + actualFlow * 1.24 + pace * .42 + s.density * .3 + s.flow * .38 + s.vocal * .12
@@ -219,7 +249,7 @@
     if (s.quietHold < .28 && s.switchDown < .72) scores.quiet = Math.min(scores.quiet, .82);
     if (actualFlow < .28) scores.rapid = Math.min(scores.rapid, .86 + actualFlow * .12);
     if (s.lineActive < .5 || s.wordSustain < .28 || heldVocal < .3) scores.sustain = Math.min(scores.sustain, .82);
-    if (structuralLift < .28) scores.drop = Math.min(scores.drop, .88);
+    if (!arrangementReturn && !verifiedProductionSwitch) scores.drop = Math.min(scores.drop, .82);
     if (progress > .965) scores.steady += .18;
     if (Object.hasOwn(scores, current)) scores[current] += .14;
     const ordered = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -227,9 +257,11 @@
     const margin = ordered[0][1] - ordered[1][1];
     if (section !== current && margin < .04 && Object.hasOwn(scores, current)) section = current;
     const sectionReasons = {
-      drop: s.reentry > .4
-        ? ["arrangement return", "loudness jump"]
-        : s.timbreShift > .45 ? ["timbre shift", "structural impact"] : ["structural impact", "bass release"],
+      drop: arrangementReturn
+        ? ["arrangement return", "drum re-entry"]
+        : s.drumChange > .38 && s.harmonyChange > .38 ? ["drum pattern change", "harmonic shift"]
+        : s.harmonyChange > .38 ? ["harmonic shift", "production change"]
+        : ["drum pattern change", "timbre shift"],
       quiet: s.quietHold > .55 ? ["sustained low energy", "instrumental space"] : ["arrangement softened", "low energy"],
       rapid: [wpm >= 120 ? `${Math.round(wpm)} WPM` : "dense delivery", "sustained flow"],
       sustain: ["held vocal", "long word sustain"],
@@ -243,7 +275,9 @@
       margin,
       scores,
       reasons: sectionReasons[section] || sectionReasons.steady,
-      priority: s.reentry > .4 ? "reentry" : structuralLift > .68 && ["drop", "quiet"].includes(section) ? "structural" : "normal",
+      priority: section === "drop" && verifiedProductionSwitch ? "beat-switch"
+        : arrangementReturn ? "reentry"
+        : structuralLift > .68 && ["drop", "quiet"].includes(section) ? "structural" : "normal",
     };
   }
 
@@ -263,7 +297,7 @@
     return !hasLyrics || lineActive === false || !!lineBoundary;
   }
 
-  function directorSectionScene({ section = "steady", genre = "other", baseVisual = {} } = {}) {
+  function directorSectionScene({ section = "steady", genre = "other", baseVisual = {}, cue = "beat-switch" } = {}) {
     const base = { ...baseVisual };
     const sectionPatches = {
       quiet: {
@@ -277,7 +311,8 @@
         backdropOpacity: 58, lyricsDanceStyle: "bounce", motionStrength: 112,
       },
       drop: {
-        name: "Beat switch", lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch", lyricsSize: 86,
+        name: cue === "reentry" ? "Arrangement return" : cue === "beat-switch" ? "Beat switch" : "Production drop",
+        lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch", lyricsSize: 86,
         glowStyle: "flowline", glowStrength: 145, glowThickness: 190,
         backdropOpacity: 68, lyricsDanceStyle: genre === "rock" ? "shake" : "snap", motionStrength: 148,
       },
@@ -298,7 +333,8 @@
   }
 
   return {
-    VISUAL_KEYS, extractPreset, averageWordGap, lyricLineStats, lyricDirectorContext,
+    VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
+    averageWordGap, lyricLineStats, lyricDirectorContext,
     directorScene, directorDecision, directorSection,
     directorSectionTiming, directorCutAllowed, directorSectionScene,
   };
