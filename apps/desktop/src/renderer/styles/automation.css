@@ -13,4 +13,12 @@ body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:t
 
 #visualSceneBadge{position:absolute;z-index:7;top:76px;right:22px;display:flex;flex-direction:column;align-items:flex-end;max-width:min(340px,60vw);padding:9px 13px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(7,7,10,.72);box-shadow:0 12px 38px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .25s,transform .25s}
 #visualSceneBadge.show{opacity:1;transform:none}#visualSceneBadge small{font-size:9px;font-weight:800;letter-spacing:.17em;opacity:.48}#visualSceneBadge strong{margin-top:2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+body.director-section-changing #stage{animation:directorSectionStage .76s cubic-bezier(.18,.76,.22,1) both}
+body.director-section-changing #glow{animation:directorSectionGlow .76s ease-out both}
+body.director-section-changing #viewTransitionGlow{animation:directorSectionWash .76s ease-out both}
+@keyframes directorSectionStage{0%{opacity:1;filter:none;transform:scale(1)}38%{opacity:.26;filter:blur(8px);transform:scale(.975)}100%{opacity:1;filter:none;transform:scale(1)}}
+@keyframes directorSectionGlow{0%{opacity:.42;filter:saturate(1)}32%{opacity:.94;filter:saturate(1.65) brightness(1.18)}100%{filter:saturate(1)}}
+@keyframes directorSectionWash{0%,100%{opacity:0;transform:scale(.7)}36%{opacity:.62;transform:scale(1.08)}}
+body[data-director-section="drop"].director-section-changing #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.58),rgba(var(--glow),.44) 22%,transparent 66%)}
+body[data-director-section="quiet"].director-section-changing #viewTransitionGlow{opacity:.28}
 @media(prefers-reduced-motion:reduce){body.track-transitioning #trackTransition{animation:trackTransitionFade .65s ease both}body.track-transitioning .trackTransitionCard,body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:none}@keyframes trackTransitionFade{0%,100%{opacity:0}30%,70%{opacity:1}}}

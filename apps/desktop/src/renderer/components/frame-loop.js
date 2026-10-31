@@ -143,6 +143,18 @@
 
     const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0);
     const t = now + offset;
+    if (settings.beat && beatOn && typeof updateDirectorPerformance === "function") {
+      updateDirectorPerformance({
+        energy: motionEnergy,
+        vocal: motionVocal,
+        phrase: motionPhrase,
+        build: motionBuild,
+        duck: motionDuck,
+        drop: dropFlash,
+        impact: outLevel,
+        pace: lyricWordPace,
+      }, tNow);
+    }
     if (tNow - lastUiT >= 100) {
       lastUiT = tNow;
       const seekPercent = durSec ? Math.max(0, Math.min(100, (now / durSec) * 100)) : 0;

@@ -54,7 +54,7 @@
     { key: "cinematicTransitions", label: "Cinematic track transitions", type: "toggle",
       hint: "Choreographs artwork, colour and typography when the actual song changes. Seeking and pausing do not trigger it." },
     { key: "directorMode", label: "Director Mode", type: "toggle", status: true,
-      hint: "Automatically stages lyrics, background, glow and motion from genre and vocal pace. Manual changes win for the current song." },
+      hint: "Directs the whole song, then detects builds, drops, rapid verses, held notes and quiet breaks inside it. Manual changes win for the current song." },
 
     { type: "heading", label: "Background" },
     { key: "backdrop", label: "Show background", type: "toggle" },

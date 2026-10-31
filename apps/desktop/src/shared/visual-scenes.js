@@ -101,5 +101,56 @@
     return { name, visual };
   }
 
-  return { VISUAL_KEYS, extractPreset, averageWordGap, directorScene };
+  function directorSection(signal = {}) {
+    const energy = Number(signal.energy) || 0;
+    const vocal = Number(signal.vocal) || 0;
+    const phrase = Number(signal.phrase) || 0;
+    const build = Number(signal.build) || 0;
+    const duck = Number(signal.duck) || 0;
+    const drop = Number(signal.drop) || 0;
+    const impact = Number(signal.impact) || 0;
+    const pace = Number(signal.pace) || 0;
+    if (drop > .58 || (impact > .82 && energy > .74 && duck < .34)) return "drop";
+    if (pace > .78 && vocal > .34 && energy > .38) return "rapid";
+    if (build > .46 && energy > .46 && drop < .3) return "build";
+    if (phrase > .68 && vocal > .55 && pace < .42) return "sustain";
+    if ((duck > .58 && energy < .52) || (energy < .27 && vocal < .3)) return "quiet";
+    return "steady";
+  }
+
+  function directorSectionScene({ section = "steady", genre = "other", baseVisual = {} } = {}) {
+    const base = { ...baseVisual };
+    const sectionPatches = {
+      quiet: {
+        name: "Quiet break", lyricsLayout: "morphstack", lyricsMotion: "glide", lyricsSize: 78,
+        glowStyle: "steady", glowStrength: 70, glowThickness: 88,
+        backdropOpacity: 42, lyricsDanceStyle: "subtle", motionStrength: 68,
+      },
+      build: {
+        name: "Pressure rising", lyricsLayout: "buildstack", lyricsMotion: "slide", lyricsSize: 82,
+        glowStyle: "frame", glowStrength: 112, glowThickness: 128,
+        backdropOpacity: 58, lyricsDanceStyle: "bounce", motionStrength: 112,
+      },
+      drop: {
+        name: "Beat switch", lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch", lyricsSize: 104,
+        glowStyle: "flowline", glowStrength: 145, glowThickness: 190,
+        backdropOpacity: 68, lyricsDanceStyle: genre === "rock" ? "shake" : "snap", motionStrength: 148,
+      },
+      rapid: {
+        name: "Flow run", lyricsLayout: "prism", lyricsHighlight: "word", lyricsMotion: "punch", lyricsSize: 98,
+        glowStyle: "flowline", glowStrength: 126, glowThickness: 168,
+        lyricsDanceStyle: "punch", motionStrength: 138,
+      },
+      sustain: {
+        name: "Held note", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide", lyricsSize: 96,
+        glowStyle: "comet", glowStrength: 100, glowThickness: 130,
+        backdropOpacity: 52, lyricsDanceStyle: "float", motionStrength: 86,
+      },
+    };
+    if (section === "steady" || !sectionPatches[section]) return { name: "Main scene", visual: base };
+    const { name, ...patch } = sectionPatches[section];
+    return { name, visual: { ...base, ...patch } };
+  }
+
+  return { VISUAL_KEYS, extractPreset, averageWordGap, directorScene, directorSection, directorSectionScene };
 });

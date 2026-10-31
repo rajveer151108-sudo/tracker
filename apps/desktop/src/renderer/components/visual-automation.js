@@ -5,6 +5,7 @@ let visualTrackState = null;
 let visualPresetRequest = 0;
 let visualTransitionTimer = 0;
 let visualBadgeTimer = 0;
+let visualSectionTimer = 0;
 let lastVisualSnapshot = null;
 let pendingVisualPatch = null;
 let automationToggleSnapshot = null;
@@ -60,7 +61,19 @@ function applyVisualPatch(patch, source, name) {
   pendingVisualPatch = { visual, source };
   if (visualTrackState) visualTrackState.source = source;
   window.tracker.setSettings(visual);
-  if (name) showVisualSceneBadge(source === "preset" ? "SAVED SONG LOOK" : "DIRECTOR MODE", name);
+  if (name) showVisualSceneBadge(
+    source === "preset" ? "SAVED SONG LOOK" : source === "director-section" ? "DIRECTOR // SECTION" : "DIRECTOR MODE",
+    name,
+  );
+}
+
+function playDirectorSectionTransition(section) {
+  document.body.dataset.directorSection = section || "steady";
+  document.body.classList.remove("director-section-changing");
+  void document.body.offsetWidth;
+  document.body.classList.add("director-section-changing");
+  clearTimeout(visualSectionTimer);
+  visualSectionTimer = setTimeout(() => document.body.classList.remove("director-section-changing"), 760);
 }
 
 function playCinematicTrackTransition(np) {
@@ -112,6 +125,12 @@ function maybeApplyDirector() {
   if (signature === state.directorSignature) return;
   state.directorSignature = signature;
   state.directorName = scene.name;
+  state.directorBase = scene.visual;
+  state.section = "steady";
+  state.sectionCandidate = "steady";
+  state.sectionCandidateSince = performance.now();
+  state.sectionChangedAt = performance.now();
+  Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
   applyVisualPatch(scene.visual, "director", scene.name);
   updateVisualAutomationStatus();
 }
@@ -129,6 +148,13 @@ function beginVisualTrack(np, key, previousKey) {
     manualOverride: false,
     directorName: "",
     directorSignature: "",
+    directorBase: null,
+    section: "steady",
+    sectionCandidate: "steady",
+    sectionCandidateSince: performance.now(),
+    sectionChangedAt: performance.now(),
+    sectionSignal: { energy: 0, vocal: 0, phrase: 0, build: 0, duck: 0, drop: 0, impact: 0, pace: 0 },
+    lastSectionSampleAt: 0,
     source: "defaults",
   };
   loadPresetForVisualTrack();
@@ -141,9 +167,48 @@ function updateVisualTrackContext(np, context = {}) {
   maybeApplyDirector();
 }
 
+function updateDirectorPerformance(sample = {}, nowMs = performance.now()) {
+  const state = visualTrackState;
+  if (!state || !settings?.directorMode || state.preset || state.manualOverride || !state.directorBase || !playing) return;
+  if (nowMs - state.lastSectionSampleAt < 180) return;
+  state.lastSectionSampleAt = nowMs;
+  const signal = state.sectionSignal;
+  for (const key of Object.keys(signal)) {
+    const raw = Math.max(0, Math.min(1.5, Number(sample[key]) || 0));
+    const rate = key === "drop" || key === "impact" ? .72 : raw > signal[key] ? .34 : .13;
+    signal[key] += (raw - signal[key]) * rate;
+  }
+  // A drop is intentionally caught from the raw transient before smoothing;
+  // every other section must remain convincing for a short window.
+  if ((Number(sample.drop) || 0) > .62) signal.drop = Math.max(signal.drop, Number(sample.drop));
+  const next = window.VisualScenes.directorSection(signal);
+  if (next !== state.sectionCandidate) {
+    state.sectionCandidate = next;
+    state.sectionCandidateSince = nowMs;
+  }
+  if (next === state.section) return;
+  const stableFor = nowMs - state.sectionCandidateSince;
+  const required = next === "drop" ? 0 : next === "build" ? 850 : next === "rapid" ? 1050 : next === "sustain" ? 1250 : next === "quiet" ? 1450 : 2100;
+  const sinceChange = nowMs - state.sectionChangedAt;
+  const hold = next === "drop" ? 2400 : state.section === "drop" ? 3400 : 5200;
+  if (stableFor < required || sinceChange < hold) return;
+  const scene = window.VisualScenes.directorSectionScene({
+    section: next,
+    genre: state.genre || "other",
+    baseVisual: state.directorBase,
+  });
+  state.section = next;
+  state.sectionChangedAt = nowMs;
+  state.directorName = next === "steady" ? window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name : scene.name;
+  playDirectorSectionTransition(next);
+  applyVisualPatch(scene.visual, "director-section", scene.name);
+  updateVisualAutomationStatus();
+}
+
 function endVisualTrack() {
   visualPresetRequest++;
   visualTrackState = null;
+  delete document.body.dataset.directorSection;
   updateVisualAutomationStatus();
 }
 
@@ -161,6 +226,7 @@ async function saveCurrentSongPreset() {
   visualTrackState.presetStatus = "loaded";
   visualTrackState.manualOverride = false;
   visualTrackState.directorName = "";
+  visualTrackState.directorBase = null;
   showToast(settings.songPresetsEnabled ? "SONG LOOK SAVED" : "SONG LOOK SAVED — AUTO-LOAD IS OFF");
   updateVisualAutomationStatus();
 }
@@ -188,6 +254,7 @@ function onVisualAutomationSettingsApplied() {
       visualTrackState.manualOverride = true;
       visualTrackState.source = "manual";
       visualTrackState.directorName = "";
+      visualTrackState.directorBase = null;
     }
   }
   lastVisualSnapshot = current;
