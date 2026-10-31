@@ -36,5 +36,32 @@
     return clamp(Math.min(widthFit, heightFit, max), min, max);
   }
 
-  return { lyricBoxMetrics, glyphUnits, fitTextToLyricBox };
+  // Auto-fit is intentionally dramatic for a single lyric, but layouts that
+  // keep several lyrics on screen have to size the whole composition rather
+  // than letting every word claim the entire lyric box. These caps follow the
+  // spacing used by each layout and remain responsive to the stage dimensions.
+  function compositionFontCap(layout = "", viewportWidth = 1280, viewportHeight = 720, options = {}) {
+    const width = Math.max(320, Number(viewportWidth) || 1280);
+    const height = Math.max(240, Number(viewportHeight) || 720);
+    const historyLines = clamp(options.historyLines || 4, 2, 6);
+    const immersive = !!options.immersive;
+    const profiles = {
+      buildstack: { height: .115, width: .09 },
+      wordstream: { height: .2, width: .15 },
+      kinetic: { height: .2, width: .14 },
+      morphstack: { height: .17, width: .12 },
+      prism: { height: .16, width: .12 },
+      ribbon: { height: .16, width: .11 },
+      splitstage: { height: .18, width: .1 },
+    };
+    let profile = profiles[layout];
+    if (layout === "stack" || layout === "wordstack") {
+      profile = { height: clamp(.56 / historyLines, .09, .2), width: .11 };
+    }
+    if (!profile) return Infinity;
+    const absoluteMax = immersive ? 190 : 170;
+    return clamp(Math.min(height * profile.height, width * profile.width), 34, absoluteMax);
+  }
+
+  return { lyricBoxMetrics, glyphUnits, fitTextToLyricBox, compositionFontCap };
 });

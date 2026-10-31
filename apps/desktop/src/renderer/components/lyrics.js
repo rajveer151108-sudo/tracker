@@ -262,7 +262,7 @@
 
   const BOX_FIT_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "ribbon", "splitstage"]);
   function refreshLyricBoxSizing() {
-    if (!window.LyricBox || !lineEls.length) return;
+    if (!window.LyricBox) return;
     const stage = $("stage");
     if (!stage?.clientWidth || !stage?.clientHeight) return;
     const immersiveNow = document.body.classList.contains("immersive");
@@ -274,6 +274,17 @@
     );
     root.style.setProperty("--lyric-box-width", metrics.width.toFixed(1) + "px");
     root.style.setProperty("--lyric-box-height", metrics.height.toFixed(1) + "px");
+    const compositionCap = window.LyricBox.compositionFontCap(
+      settings.lyricsLayout,
+      stage.clientWidth,
+      stage.clientHeight,
+      { historyLines: settings.lyricsHistoryLines, immersive: immersiveNow },
+    );
+    if (Number.isFinite(compositionCap)) {
+      root.style.setProperty("--lyric-composition-cap", compositionCap.toFixed(1) + "px");
+    } else {
+      root.style.removeProperty("--lyric-composition-cap");
+    }
     const boxLayout = settings.lyricsFit && BOX_FIT_LAYOUTS.has(settings.lyricsLayout);
     lineEls.forEach((el) => {
       if (!boxLayout) return el.style.removeProperty("--lyric-box-font");
@@ -282,7 +293,7 @@
         : settings.lyricsLayout === "splitstage" ? { ...metrics, width: metrics.width * .46 }
         : metrics;
       const fontSize = window.LyricBox.fitTextToLyricBox(el.dataset.lyric || el.textContent, fitMetrics, {
-        max: immersiveNow ? 460 : 420,
+        max: Math.min(immersiveNow ? 460 : 420, compositionCap),
         lineHeight: settings.lyricsLayout === "wordstream" ? 1.12 : .96,
       });
       el.style.setProperty("--lyric-box-font", fontSize.toFixed(1) + "px");
@@ -307,8 +318,14 @@
     const metrics = window.LyricBox.lyricBoxMetrics(settings.lyricsSize, stage.clientWidth, stage.clientHeight, immersiveNow);
     const boxW = metrics.width;
     const boxH = metrics.height;
+    const compositionCap = window.LyricBox.compositionFontCap(
+      settings.lyricsLayout,
+      stage.clientWidth,
+      stage.clientHeight,
+      { historyLines: settings.lyricsHistoryLines, immersive: immersiveNow },
+    );
     const target = window.LyricBox.fitTextToLyricBox(text, metrics, {
-      max: immersiveNow ? 460 : 420,
+      max: Math.min(immersiveNow ? 460 : 420, compositionCap),
       lineHeight: 1.12,
     });
     el.style.maxWidth = boxW + "px";

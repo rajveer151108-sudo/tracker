@@ -246,6 +246,55 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   updateVisualAutomationStatus();
 }
 
+function resetDirectorMode() {
+  directorLockedVisualKeys.clear();
+  queuedManualVisualKeys.clear();
+  pendingManualVisualKeys = [];
+  pendingVisualPatch = null;
+  clearTimeout(visualSectionTimer);
+  clearTimeout(visualAccentTimer);
+  document.body.classList.remove("director-section-changing", "director-accent");
+  document.body.dataset.directorSection = "steady";
+  document.body.dataset.directorAccent = "";
+  if (typeof resetAudioStructureAnalysis === "function") resetAudioStructureAnalysis();
+
+  const state = visualTrackState;
+  if (!state) {
+    showToast("DIRECTOR RESET — ALL CONTROLS UNLOCKED");
+    updateVisualAutomationStatus();
+    return;
+  }
+  state.manualLocks = [];
+  state.pendingBaseScene = null;
+  state.queuedSection = null;
+  state.queuedDecision = null;
+  state.queuedSectionSince = 0;
+  state.queuedReadyAt = 0;
+  state.queuedUntil = 0;
+  state.decision = null;
+  state.lastAccentAt = 0;
+  state.lastImmediateBeatSwitchAt = 0;
+  state.lastSectionSampleAt = 0;
+  state.sectionEligibleAt = performance.now() + 4000;
+  state.directorSignature = "";
+
+  if (state.preset && settings?.songPresetsEnabled) {
+    showToast("DIRECTOR UNLOCKED — SAVED SONG LOOK STILL HAS PRIORITY");
+    updateVisualAutomationStatus();
+    return;
+  }
+  if (!settings?.directorMode) {
+    showToast("DIRECTOR RESET — TURN IT ON WHEN READY");
+    updateVisualAutomationStatus();
+    return;
+  }
+
+  state.contextSettled = true;
+  const scene = window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap });
+  applyDirectorBaseScene(state, scene, JSON.stringify(scene));
+  showToast("DIRECTOR RESET — ALL CONTROLS UNLOCKED");
+}
+
 function beginVisualTrack(np, key, previousKey) {
   const previousNp = visualTrackState?.np || null;
   if (previousKey) playCinematicTrackTransition(np, previousNp);

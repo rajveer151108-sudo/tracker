@@ -56,6 +56,9 @@
       hint: "Choreographs artwork, colour and typography when the actual song changes. Seeking and pausing do not trigger it." },
     { key: "directorMode", label: "Director Mode", type: "toggle", status: true,
       hint: "Scores vocals, loudness, bass, instruments, drum pattern, harmonic colour, beat confidence, timbre, WPM, flow, emotion and upcoming lyrics. Normal scenes land between lines; verified production pivots can cut on the next word, and a cadence timer keeps the look evolving. A manual change locks only that control." },
+    { type: "button", label: "Reset Director",
+      hint: "Unlocks every visual control, clears queued scene changes and learned section evidence, then directs the current song again from a clean slate.",
+      button: "Reset & unlock", action: () => resetDirectorMode() },
     { key: "automationNotifications", label: "Show automation notices", type: "toggle",
       hint: "Shows the small top-right card when a saved look or Director scene is applied. Turning this off keeps every visual change silent." },
 
