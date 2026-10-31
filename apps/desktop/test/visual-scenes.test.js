@@ -40,27 +40,39 @@ test("lyric context forecasts the next line's flow before it begins", () => {
 });
 
 test("multimodal decisions combine structural, vocal and future flow signals", () => {
-  const switchDecision = directorDecision({ switchUp: .9, structure: .8, energy: .75, bass: .8 }, "steady");
+  const switchDecision = directorDecision({ reentry: .9, switchUp: .9, structure: .8, energy: .75, bass: .8 }, "steady");
   assert.equal(switchDecision.section, "drop");
-  assert.ok(switchDecision.reasons.includes("structure"));
+  assert.ok(switchDecision.reasons.includes("arrangement return"));
   const forecastDecision = directorDecision({ pace: .35, nextPace: .95, forecastFlow: .9, density: .7, vocal: .65 }, "steady");
-  assert.ok(["build", "rapid"].includes(forecastDecision.section));
+  assert.equal(forecastDecision.section, "build");
 });
 
 test("section director distinguishes drops, rapid verses, builds and held notes", () => {
-  assert.equal(directorSection({ drop: .9, energy: .8 }), "drop");
-  assert.equal(directorSection({ pace: .92, vocal: .7, energy: .65 }), "rapid");
+  assert.equal(directorSection({ drop: .9, structure: .8, energy: .8 }), "drop");
+  assert.equal(directorSection({ pace: .92, density: .8, flow: .85, flowHold: .9, vocal: .7, energy: .65 }), "rapid");
   assert.equal(directorSection({ build: .7, energy: .62 }), "build");
-  assert.equal(directorSection({ phrase: .85, vocal: .8, pace: .2 }), "sustain");
-  assert.equal(directorSection({ duck: .8, energy: .28 }), "quiet");
+  assert.equal(directorSection({ phrase: .85, vocal: .8, wordSustain: .88, vocalSustain: .82, lineActive: 1, pace: .2 }), "sustain");
+  assert.equal(directorSection({ duck: .8, lowActivity: .9, quietHold: .8, energy: .28 }), "quiet");
+});
+
+test("sentence endings and forecasts do not invent held notes, quiet breaks, or flow runs", () => {
+  const sentenceEnd = directorDecision({
+    phrase: .88, vocal: .7, vocalGap: 1, lineActive: 0, wordSustain: 0, energy: .54, audioConfidence: 1,
+  });
+  assert.equal(sentenceEnd.section, "steady");
+  const forecastOnly = directorDecision({
+    pace: .28, density: .3, flow: .2, nextPace: 1, nextDensity: .9, forecastFlow: 1, boundaryIn: .7,
+  });
+  assert.notEqual(forecastOnly.section, "rapid");
 });
 
 test("director cuts only at lyric boundaries while instrumentals stay music-led", () => {
-  assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: false }), false);
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, lineBoundary: false }), false);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: true }), true);
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: false, lineBoundary: false }), true);
   assert.equal(directorCutAllowed({ hasLyrics: false, lineBoundary: false }), true);
-  assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 0, holdMs: 1400 });
-  assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 1200, holdMs: 2400 });
+  assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 0, holdMs: 2800 });
+  assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 1700, holdMs: 9000 });
 });
 
 test("section scenes keep the song's base direction while changing composition", () => {

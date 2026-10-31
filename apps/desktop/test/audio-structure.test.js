@@ -31,3 +31,30 @@ test("structural detector distinguishes a quieter section change", () => {
   const result = feed(detector, .8, { bands: [.12, .18, .28, .27, .15], loudness: .28, vocal: .2 }, 6000);
   assert.ok(result.switchDown > .2);
 });
+
+test("structural detector remembers an interlude and fires once on its return", () => {
+  const detector = createAudioStructureDetector();
+  feed(detector, 6, {
+    bands: [.48, .25, .14, .09, .04], loudness: .82, rawLoudness: .09, vocal: .58, beat: true,
+  });
+  const interlude = feed(detector, 2.2, {
+    bands: [.18, .2, .25, .23, .14], loudness: .24, rawLoudness: .012, vocal: .08,
+  }, 6000);
+  assert.ok(interlude.quietHold > .45);
+  assert.ok(interlude.lowActivity > .45);
+
+  const returned = feed(detector, .2, {
+    bands: [.58, .22, .1, .06, .04], loudness: .95, rawLoudness: .105, vocal: .5, beat: true,
+  }, 8200);
+  assert.ok(returned.reentry > .65);
+  assert.ok(returned.switchUp > .65);
+});
+
+test("low-volume stable audio does not become a permanent quiet break", () => {
+  const detector = createAudioStructureDetector();
+  const result = feed(detector, 9, {
+    bands: [.3, .25, .2, .15, .1], loudness: .7, rawLoudness: .018, vocal: .42,
+  });
+  assert.ok(result.quietHold < .1);
+  assert.ok(result.reentry < .05);
+});

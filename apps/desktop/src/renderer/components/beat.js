@@ -9,6 +9,7 @@
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
   const audioStructureDetector = window.AudioStructure.createAudioStructureDetector();
   let structureContrast = 0, structureTimbreShift = 0, structureSwitchUp = 0, structureSwitchDown = 0;
+  let structureLowActivity = 0, structureQuietHold = 0, structureReentry = 0;
   let audioLoudnessTrend = 0, audioVocalTrend = 0, audioBeatConfidence = 0, audioBpm = 0, audioBassLevel = 0, audioFluxLevel = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
   let lyricWordAttack = 0, lyricWordSustain = 0, lyricTimingConfidence = 0;
@@ -39,6 +40,7 @@
   function resetAudioStructureAnalysis() {
     audioStructureDetector.reset(performance.now());
     structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = 0;
+    structureLowActivity = structureQuietHold = structureReentry = 0;
     audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
   }
 
@@ -107,7 +109,7 @@
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
     beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null;
     motionEnergy = motionVocal = motionLift = motionSyllable = motionPhrase = motionSibilance = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
-    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = structureLowActivity = structureQuietHold = structureReentry = audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
     resetAudioStructureAnalysis();
     window.tracker.sendBeat(applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0, word: 0, pace: 0,
       build: 0, duck: 0, drop: 0, emotion: 0, syllable: 0, phrase: 0, sibilance: 0 }));
@@ -277,6 +279,7 @@
     const structure = audioStructureDetector.update({
       bands: [bass, bandLevel(170, 520, binHz), bandLevel(520, 1800, binHz), bandLevel(1800, 5200, binHz), bandLevel(5200, 10000, binHz)],
       loudness: energyTarget,
+      rawLoudness: rms,
       vocal: vocalTarget,
       beat: beatHit,
     }, tNow, dt);
@@ -284,6 +287,9 @@
     structureTimbreShift = structure.timbreShift;
     structureSwitchUp = structure.switchUp;
     structureSwitchDown = structure.switchDown;
+    structureLowActivity = structure.lowActivity;
+    structureQuietHold = structure.quietHold;
+    structureReentry = structure.reentry;
     audioLoudnessTrend = structure.loudnessTrend;
     audioVocalTrend = structure.vocalTrend;
     audioBeatConfidence = structure.beatConfidence;

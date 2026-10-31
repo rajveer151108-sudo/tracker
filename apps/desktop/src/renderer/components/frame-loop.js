@@ -96,8 +96,8 @@
       } else {
         el.classList.remove("constellation-current");
         const visible = layout === "buildstack"
-          ? relative <= 0 && relative >= -4
-          : Math.abs(relative) <= (layout === "prism" ? 3 : layout === "morphstack" ? 2 : layout === "kinetic" ? 1 : 0);
+          ? relative <= 0 && relative >= -3
+          : Math.abs(relative) <= (layout === "prism" ? 2 : layout === "morphstack" ? 1 : layout === "kinetic" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }
     });
@@ -160,6 +160,8 @@
         flow: lyricContext.flow,
         timingConfidence: lyricContext.timingConfidence,
         vocalGap: lyricContext.vocalGap,
+        lineActive: lyricContext.lineActive,
+        wordSustain: lyricWordSustain * lyricTimingConfidence,
         nextWpm: lyricContext.nextWpm,
         nextPace: lyricContext.nextPace,
         nextDensity: lyricContext.nextDensity,
@@ -173,6 +175,9 @@
         timbreShift: structureTimbreShift,
         switchUp: structureSwitchUp,
         switchDown: structureSwitchDown,
+        lowActivity: structureLowActivity,
+        quietHold: structureQuietHold,
+        reentry: structureReentry,
         loudnessTrend: audioLoudnessTrend,
         vocalTrend: audioVocalTrend,
         beatConfidence: audioBeatConfidence,

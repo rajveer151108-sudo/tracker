@@ -84,6 +84,7 @@
     return {
       hasLyrics: input.length > 0,
       lineIndex: currentIndex,
+      lineActive: currentIndex >= 0 ? 1 : 0,
       vocalGap: currentIndex < 0 ? 1 : 0,
       wpm: currentStats.wpm,
       pace: currentStats.pace,
@@ -170,7 +171,8 @@
   function directorDecision(signal = {}, current = "steady") {
     const keys = ["energy", "vocal", "phrase", "build", "duck", "drop", "impact", "pace", "density", "flow",
       "timingConfidence", "vocalGap", "nextPace", "nextDensity", "nextGap", "paceTrend", "forecastFlow", "hook", "structure",
-      "timbreShift", "switchUp", "switchDown", "beatConfidence", "bass", "flux", "emotion"];
+      "timbreShift", "switchUp", "switchDown", "lowActivity", "quietHold", "reentry", "beatConfidence", "bass", "flux",
+      "emotion", "lineActive", "wordSustain", "vocalSustain", "flowHold"];
     const s = Object.fromEntries(keys.map((key) => [key, bounded(signal[key])]));
     const audio = bounded(signal.audioConfidence == null ? 1 : signal.audioConfidence);
     const wpm = Math.max(0, Number(signal.wpm) || 0);
@@ -186,41 +188,62 @@
     const boundaryIn = Math.max(0, Number(signal.boundaryIn) || 0);
     const forecastNear = Math.max(.25, Math.min(1, (4.5 - boundaryIn) / 3.5));
     const progress = Math.max(0, Math.min(1, Number(signal.progress) || 0));
+    const quietEvidence = Math.max(
+      Math.min(1, s.lowActivity) * Math.min(1, s.quietHold),
+      Math.min(1, s.switchDown * .72 + s.quietHold * .38),
+      Math.min(1, s.duck) * Math.min(1, s.quietHold + .15),
+    );
+    const structuralLift = Math.max(s.reentry, s.switchUp, Math.min(1, s.drop * Math.max(.45, s.structure)));
+    const actualFlow = Math.min(1, s.flowHold);
+    const heldVocal = Math.max(s.vocalSustain, Math.min(s.wordSustain, s.phrase, s.vocal));
     const scores = {
-      steady: .82 + s.energy * .12 + s.vocal * .1 - Math.max(s.switchUp, s.switchDown, s.drop) * .35,
-      quiet: .12 + audio * ((1 - Math.min(1, s.energy)) * .7 + s.duck * .86 + s.switchDown * 1.35 + falling * .65)
-        + s.vocalGap * .45 + vocalFalling * .22 + Math.max(0, .4 - pace) * .32 + Math.min(.34, s.nextGap * .18),
-      build: .12 + audio * (s.build * 1.15 + rising * .82 + s.timbreShift * .28 + s.beatConfidence * .16 + s.energy * .34)
-        + vocalRising * .24 + forecastNear * (Math.max(0, s.paceTrend) * .62 + Math.max(0, futurePace - pace) * .78)
+      steady: .92 + s.energy * .08 + s.vocal * .08 - Math.max(s.reentry, s.switchUp, s.drop * s.structure) * .58,
+      quiet: .1 + audio * (quietEvidence * 1.48 + s.quietHold * .42 + falling * .24 + vocalFalling * .08)
+        + (audio < .2 && s.nextGap > 1.8 ? Math.min(.5, (s.nextGap - 1.8) * .18) : 0),
+      build: .12 + audio * (s.build * 1.28 + rising * .7 + s.timbreShift * .2 + s.beatConfidence * .1 + s.energy * .22)
+        + vocalRising * .24 + forecastNear * (Math.max(0, s.paceTrend) * .5
+          + Math.max(0, futurePace - pace) * 1.3 + futurePace * .3)
         + s.hook * .16,
-      drop: .08 + audio * (s.drop * 1.55 + s.switchUp * 1.5 + s.structure * .5 + s.impact * .42
-        + s.bass * .28 + rising * .32 - s.duck * .2),
-      rapid: .1 + pace * .88 + s.density * .55 + s.flow * .72 + s.vocal * .34 + s.flux * .3
-        + forecastNear * (futurePace * .36 + Math.max(0, s.paceTrend) * .28) + tempo * s.beatConfidence * .16
-        + s.energy * audio * .18 + s.emotion * .1 - s.vocalGap * .38,
-      sustain: .1 + s.phrase * 1.02 + s.vocal * .7 + Math.max(0, .58 - pace) * .58
-        + s.timingConfidence * .18 + s.hook * .22 + s.emotion * .2 - s.flux * .18,
+      drop: .08 + audio * (s.reentry * 2.2 + s.drop * 1.18 + s.switchUp * 1.12
+        + structuralLift * s.structure * .38 + structuralLift * s.timbreShift * .28
+        + structuralLift * rising * .34 - s.duck * .14),
+      rapid: .1 + actualFlow * 1.24 + pace * .42 + s.density * .3 + s.flow * .38 + s.vocal * .12
+        + actualFlow * (tempo * s.beatConfidence * .12 + s.flux * .14 + s.energy * audio * .12)
+        - s.vocalGap * .28,
+      sustain: .1 + heldVocal * 1.46 + s.wordSustain * .34 + s.phrase * .22 + s.vocal * .16
+        + Math.max(0, .5 - pace) * .18 + s.emotion * .12 - s.flux * .12,
     };
+    // Semantic gates prevent an ordinary sentence ending from becoming a
+    // "Quiet break" or "Held note", and keep a fast upcoming line from being
+    // labelled a Flow run before the performance actually sustains that pace.
+    if (s.quietHold < .28 && s.switchDown < .72) scores.quiet = Math.min(scores.quiet, .82);
+    if (actualFlow < .28) scores.rapid = Math.min(scores.rapid, .86 + actualFlow * .12);
+    if (s.lineActive < .5 || s.wordSustain < .28 || heldVocal < .3) scores.sustain = Math.min(scores.sustain, .82);
+    if (structuralLift < .28) scores.drop = Math.min(scores.drop, .88);
     if (progress > .965) scores.steady += .18;
-    if (Object.hasOwn(scores, current)) scores[current] += .16;
+    if (Object.hasOwn(scores, current)) scores[current] += .14;
     const ordered = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     let section = ordered[0][0];
     const margin = ordered[0][1] - ordered[1][1];
     if (section !== current && margin < .04 && Object.hasOwn(scores, current)) section = current;
-    const reasonWeights = [
-      ["structure", Math.max(s.switchUp, s.switchDown, s.structure)],
-      ["flow", Math.max(pace, s.flow, s.density)],
-      ["forecast", Math.max(futurePace, Math.abs(Number(signal.paceTrend) || 0))],
-      ["vocals", Math.max(s.vocal, s.phrase)],
-      ["loudness", Math.max(s.energy, rising, falling)],
-      ["beat", Math.max(s.drop, s.impact, s.bass, s.beatConfidence)],
-    ].sort((a, b) => b[1] - a[1]);
+    const sectionReasons = {
+      drop: s.reentry > .4
+        ? ["arrangement return", "loudness jump"]
+        : s.timbreShift > .45 ? ["timbre shift", "structural impact"] : ["structural impact", "bass release"],
+      quiet: s.quietHold > .55 ? ["sustained low energy", "instrumental space"] : ["arrangement softened", "low energy"],
+      rapid: [wpm >= 120 ? `${Math.round(wpm)} WPM` : "dense delivery", "sustained flow"],
+      sustain: ["held vocal", "long word sustain"],
+      build: Math.max(0, futurePace - pace) > .22
+        ? ["faster phrase ahead", "rising intensity"] : ["rising intensity", "arrangement lift"],
+      steady: ["stable arrangement"],
+    };
     return {
       section,
       confidence: Math.max(0, Math.min(1, .42 + margin * .58)),
       margin,
       scores,
-      reasons: reasonWeights.slice(0, 2).map(([reason]) => reason),
+      reasons: sectionReasons[section] || sectionReasons.steady,
+      priority: s.reentry > .4 ? "reentry" : structuralLift > .68 && ["drop", "quiet"].includes(section) ? "structural" : "normal",
     };
   }
 
@@ -229,15 +252,15 @@
   }
 
   function directorSectionTiming(next = "steady", current = "steady") {
-    const stable = { drop: 0, build: 600, rapid: 700, sustain: 850, quiet: 850, steady: 1200 };
+    const stable = { drop: 0, build: 1100, rapid: 1400, sustain: 1250, quiet: 1150, steady: 1700 };
     return {
       stableMs: Number.isFinite(stable[next]) ? stable[next] : stable.steady,
-      holdMs: next === "drop" ? 1400 : current === "drop" ? 2400 : 3200,
+      holdMs: current === "drop" ? 9000 : next === "drop" ? 2800 : 6000,
     };
   }
 
-  function directorCutAllowed({ hasLyrics = false, lineBoundary = false } = {}) {
-    return !hasLyrics || !!lineBoundary;
+  function directorCutAllowed({ hasLyrics = false, lineActive = true, lineBoundary = false } = {}) {
+    return !hasLyrics || lineActive === false || !!lineBoundary;
   }
 
   function directorSectionScene({ section = "steady", genre = "other", baseVisual = {} } = {}) {

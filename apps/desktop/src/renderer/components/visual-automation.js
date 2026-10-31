@@ -188,6 +188,9 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.queuedSection = null;
   state.queuedDecision = null;
   state.queuedUntil = 0;
+  state.lastEvidenceAt = 0;
+  state.rapidEvidence = 0;
+  state.sustainEvidence = 0;
   Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
   applyVisualPatch(scene.visual, "director", scene.name);
   updateVisualAutomationStatus();
@@ -226,12 +229,17 @@ function beginVisualTrack(np, key, previousKey) {
     decision: null,
     lastAccentAt: 0,
     lastStatusAt: 0,
+    lastEvidenceAt: 0,
+    rapidEvidence: 0,
+    sustainEvidence: 0,
     sectionSignal: {
       energy: 0, vocal: 0, phrase: 0, build: 0, duck: 0, drop: 0, impact: 0, pace: 0,
       wpm: 0, density: 0, flow: 0, timingConfidence: 0, vocalGap: 0, nextWpm: 0, nextPace: 0,
       nextDensity: 0, nextGap: 0, paceTrend: 0, forecastFlow: 0, boundaryIn: 99, hook: 0,
       progress: 0, structure: 0, timbreShift: 0, switchUp: 0, switchDown: 0, loudnessTrend: 0,
-      vocalTrend: 0, beatConfidence: 0, bpm: 0, bass: 0, flux: 0, emotion: 0, audioConfidence: 0,
+      lowActivity: 0, quietHold: 0, reentry: 0, vocalTrend: 0, beatConfidence: 0, bpm: 0,
+      bass: 0, flux: 0, emotion: 0, audioConfidence: 0, lineActive: 0, wordSustain: 0,
+      vocalSustain: 0, flowHold: 0,
     },
     lastSectionSampleAt: 0,
     source: "defaults",
@@ -286,7 +294,11 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     && (lineIndex >= 0 || state.lastLyricLine >= 0);
   state.lastLyricLine = lineIndex;
   state.lastSectionSampleAt = nowMs;
-  const safeCut = window.VisualScenes.directorCutAllowed({ hasLyrics: sample.hasLyrics, lineBoundary });
+  const safeCut = window.VisualScenes.directorCutAllowed({
+    hasLyrics: sample.hasLyrics,
+    lineActive: sample.lineActive !== 0,
+    lineBoundary,
+  });
   if (state.pendingPreset && settings?.songPresetsEnabled && !state.manualOverride && safeCut) {
     const preset = state.pendingPreset;
     state.pendingPreset = null;
@@ -308,14 +320,30 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     const raw = passthroughKeys.has(key) ? number
       : signedKeys.has(key) ? Math.max(-1.5, Math.min(1.5, number))
       : Math.max(0, Math.min(1.5, number));
-    const rate = key === "drop" || key === "impact" || key === "switchUp" || key === "switchDown" ? .72
+    const rate = key === "drop" || key === "impact" || key === "switchUp" || key === "switchDown" || key === "reentry" ? .72
       : raw > signal[key] ? .34 : .16;
     signal[key] += (raw - signal[key]) * rate;
   }
   // A drop is intentionally caught from the raw transient before smoothing;
   // every other section must remain convincing for a short window.
   if ((Number(sample.drop) || 0) > .62) signal.drop = Math.max(signal.drop, Number(sample.drop));
-  const structural = Math.max(signal.switchUp, signal.switchDown, signal.structure);
+  if ((Number(sample.reentry) || 0) > .38) signal.reentry = Math.max(signal.reentry, Number(sample.reentry));
+  const evidenceDt = state.lastEvidenceAt ? Math.max(.05, Math.min(.4, (nowMs - state.lastEvidenceAt) / 1000)) : .18;
+  state.lastEvidenceAt = nowMs;
+  const actualRapid = sample.lineActive !== 0 && !(Number(sample.vocalGap) || 0)
+    && ((Number(sample.wpm) || 0) >= 170 || (Number(sample.pace) || 0) >= .58)
+    && ((Number(sample.density) || 0) >= .42 || (Number(sample.flow) || 0) >= .52);
+  state.rapidEvidence = Math.max(0, Math.min(1, state.rapidEvidence
+    + (actualRapid ? evidenceDt / 1.05 : -evidenceDt / .62)));
+  const actualSustain = sample.lineActive !== 0
+    && (Number(sample.wordSustain) || 0) > .42
+    && (Number(sample.vocal) || 0) > .32
+    && (Number(sample.phrase) || 0) > .38;
+  state.sustainEvidence = Math.max(0, Math.min(1, state.sustainEvidence
+    + (actualSustain ? evidenceDt / .62 : -evidenceDt / .42)));
+  signal.flowHold = state.rapidEvidence;
+  signal.vocalSustain = state.sustainEvidence;
+  const structural = Math.max(signal.reentry, signal.switchUp, signal.switchDown, signal.structure);
   if (structural > .45 && nowMs - state.lastAccentAt > 1100) {
     state.lastAccentAt = nowMs;
     playDirectorAccent("structure");
@@ -333,6 +361,12 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     state.queuedSection = null;
     state.queuedDecision = null;
   }
+  const protectedQueue = ["reentry", "structural"].includes(state.queuedDecision?.priority);
+  if (state.queuedSection && decision.section !== state.queuedSection && !protectedQueue
+    && nowMs - state.queuedSectionSince > 450) {
+    state.queuedSection = null;
+    state.queuedDecision = null;
+  }
   if (safeCut && state.queuedSection && state.queuedSection !== state.section && nowMs >= state.queuedReadyAt) {
     commitDirectorSection(state, state.queuedSection, state.queuedDecision || decision, nowMs);
     return;
@@ -347,14 +381,22 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   const timing = window.VisualScenes.directorSectionTiming(next, state.section);
   const sinceChange = nowMs - state.sectionChangedAt;
   const requiredStable = timing.stableMs * (1.08 - decision.confidence * .38);
-  const requiredHold = structural > .5 ? Math.min(timing.holdMs, 1500) : timing.holdMs;
   const structuralCue = structural > .5 && (next === "drop" || next === "quiet");
+  const urgentStructuralCue = structuralCue && state.section !== "drop";
+  const requiredHold = urgentStructuralCue ? Math.min(timing.holdMs, 1500) : timing.holdMs;
   if (structuralCue && state.queuedSection !== next) {
     state.queuedSection = next;
     state.queuedDecision = decision;
     state.queuedSectionSince = nowMs;
-    state.queuedReadyAt = Math.max(nowMs, state.sectionChangedAt + 1000);
+    state.queuedReadyAt = decision.priority === "reentry" ? nowMs : Math.max(nowMs, state.sectionChangedAt + 900);
     state.queuedUntil = nowMs + 6500;
+  }
+  // The line boundary is a one-frame event. When a remembered arrangement
+  // return lands exactly there, commit it now instead of missing the boundary
+  // and waiting for the next line.
+  if (safeCut && structuralCue && state.queuedSection === next && nowMs >= state.queuedReadyAt) {
+    commitDirectorSection(state, next, decision, nowMs);
+    return;
   }
   if (stableFor < requiredStable || sinceChange < requiredHold) return;
   if (state.queuedSection !== next) {
