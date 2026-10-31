@@ -7,14 +7,13 @@
   let pulse = 0, avgBass = 0, lastBeat = 0, outLevel = 0, lastSend = 0, lastBass = 0, peak = 0;
   let motionEnergy = 0, motionVocal = 0, motionLift = 0, motionSyllable = 0, motionPhrase = 0, motionSibilance = 0;
   let energyPeak = 0.08, vocalPeak = 0.08, vocalFloor = 0.015, fluxPeak = 0.025;
-  let vocalTextureBaseline = null;
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
   const audioStructureDetector = window.AudioStructure.createAudioStructureDetector();
   let structureContrast = 0, structureTimbreShift = 0, structureSwitchUp = 0, structureSwitchDown = 0;
   let structureProductionSwitch = 0, structureSwitchConfidence = 0, structureArrangementLift = 0;
   let structureTimbreEvidence = 0, structureLoudnessEvidence = 0;
   let structureLowActivity = 0, structureQuietHold = 0, structureQuietConfidence = 0, structureReentry = 0;
-  let audioLoudnessTrend = 0, audioVocalTrend = 0, audioVocalLayering = 0, audioBeatConfidence = 0, audioBpm = 0, audioBassLevel = 0, audioFluxLevel = 0;
+  let audioLoudnessTrend = 0, audioVocalTrend = 0, audioBeatConfidence = 0, audioBpm = 0, audioBassLevel = 0, audioFluxLevel = 0;
   let audioDrumChange = 0, audioHarmonyChange = 0, audioProductionAgreement = 0, audioTonality = 0, audioOnsetDensity = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
   let lyricWordAttack = 0, lyricWordSustain = 0, lyricTimingConfidence = 0;
@@ -47,9 +46,8 @@
     structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = 0;
     structureProductionSwitch = structureSwitchConfidence = structureArrangementLift = structureTimbreEvidence = structureLoudnessEvidence = 0;
     structureLowActivity = structureQuietHold = structureQuietConfidence = structureReentry = 0;
-    audioLoudnessTrend = audioVocalTrend = audioVocalLayering = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+    audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
     audioDrumChange = audioHarmonyChange = audioProductionAgreement = audioTonality = audioOnsetDensity = 0;
-    vocalTextureBaseline = null;
     productionSpectrumReady = false;
     if (previousSpectrum) previousSpectrum.fill(0);
     if (productionSpectrum) productionSpectrum.fill(0);
@@ -121,9 +119,8 @@
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
     beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null; productionSpectrum = null;
     motionEnergy = motionVocal = motionLift = motionSyllable = motionPhrase = motionSibilance = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
-    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = structureProductionSwitch = structureSwitchConfidence = structureArrangementLift = structureTimbreEvidence = structureLoudnessEvidence = structureLowActivity = structureQuietHold = structureQuietConfidence = structureReentry = audioLoudnessTrend = audioVocalTrend = audioVocalLayering = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = structureProductionSwitch = structureSwitchConfidence = structureArrangementLift = structureTimbreEvidence = structureLoudnessEvidence = structureLowActivity = structureQuietHold = structureQuietConfidence = structureReentry = audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
     audioDrumChange = audioHarmonyChange = audioProductionAgreement = audioTonality = audioOnsetDensity = 0;
-    vocalTextureBaseline = null;
     resetAudioStructureAnalysis();
     window.tracker.sendBeat(applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0, word: 0, pace: 0,
       build: 0, duck: 0, drop: 0, emotion: 0, syllable: 0, phrase: 0, sibilance: 0 }));
@@ -229,13 +226,7 @@
     const tonal = Math.max(.45, 1 - Math.max(0, flatness - .5) * 1.05);
     const bassPenalty = Math.max(0, bass - (body + formant) * .48) * .32;
     const raw = Math.max(0, (body * .33 + formant * .43 + presence * .24) * (.68 + balance * .32) * tonal - bassPenalty);
-    const vocalMax = Math.max(.015, body, formant, presence);
-    const broadness = Math.min(body, formant, presence * 1.3) / vocalMax;
-    const spectralTexture = clamp01(1 - Math.abs(flatness - .28) / .36);
-    const noisePenalty = Math.max(0, flatness - .62) * .8;
-    const richness = clamp01((broadness - .16) * 1.25 + balance * .22 + spectralTexture * .18
-      - bassPenalty * 1.8 - noisePenalty);
-    return { raw, flux: flux / Math.max(1, count), presence, air, richness };
+    return { raw, flux: flux / Math.max(1, count), presence, air };
   }
 
   function applyMusicMotion(motion) {
@@ -276,13 +267,29 @@
     const glowEnergy = forGlow(motion.energy);
     const glowVocal = forGlow(motion.vocal);
     const glowDrop = forGlow(motion.drop);
+    const glowImpact = forGlow(motion.impact);
+    const glowLift = forGlow(motion.lift);
+    const glowBuild = forGlow(motion.build);
+    const glowDuck = forGlow(motion.duck);
+    const glowSyllable = forGlow(motion.syllable);
+    const glowPhrase = forGlow(motion.phrase);
+    const glowSibilance = forGlow(motion.sibilance);
+    const glowWord = forGlow(motion.word);
     setMotionStyle("--glow-motion-energy", glowEnergy.toFixed(3));
     setMotionStyle("--glow-motion-vocal", glowVocal.toFixed(3));
     setMotionStyle("--glow-motion-drop", glowDrop.toFixed(3));
-    return { impact: forGlow(motion.impact), energy: glowEnergy, vocal: glowVocal, lift: forGlow(motion.lift),
-      build: forGlow(motion.build), duck: forGlow(motion.duck), drop: glowDrop, emotion: forGlow(motion.emotion),
-      syllable: forGlow(motion.syllable), phrase: forGlow(motion.phrase), sibilance: forGlow(motion.sibilance),
-      word: forGlow(motion.word), pace: forGlow(motion.pace), sway: (Number(motion.sway) || 0) * Math.min(1.5, glowStrength) };
+    setMotionStyle("--glow-motion-impact", glowImpact.toFixed(3));
+    setMotionStyle("--glow-motion-lift", glowLift.toFixed(3));
+    setMotionStyle("--glow-motion-build", glowBuild.toFixed(3));
+    setMotionStyle("--glow-motion-duck", glowDuck.toFixed(3));
+    setMotionStyle("--glow-motion-syllable", glowSyllable.toFixed(3));
+    setMotionStyle("--glow-motion-phrase", glowPhrase.toFixed(3));
+    setMotionStyle("--glow-motion-sibilance", glowSibilance.toFixed(3));
+    setMotionStyle("--glow-motion-word", glowWord.toFixed(3));
+    return { impact: glowImpact, energy: glowEnergy, vocal: glowVocal, lift: glowLift,
+      build: glowBuild, duck: glowDuck, drop: glowDrop, emotion: forGlow(motion.emotion),
+      syllable: glowSyllable, phrase: glowPhrase, sibilance: glowSibilance,
+      word: glowWord, pace: forGlow(motion.pace), sway: (Number(motion.sway) || 0) * Math.min(1.5, glowStrength) };
   }
 
   function beatStep(tNow, dt) {
@@ -326,17 +333,6 @@
     const vocalRange = Math.max(.018, vocalPeak - vocalFloor * .55);
     const timingGate = .72 + Math.max(lyricMotionLife, lyricMotionEmotion) * .28;
     const vocalTarget = clamp01((voice.raw - vocalFloor * .55) / vocalRange) * timingGate;
-    if (!Number.isFinite(vocalTextureBaseline)) vocalTextureBaseline = voice.richness;
-    const richnessContrast = Math.max(0, voice.richness - vocalTextureBaseline);
-    // A stacked vocal should become broader than this song's own vocal
-    // baseline. The small absolute fallback can support that evidence but can
-    // never trigger the Director by itself, which protects rich solo voices.
-    const layeringTarget = Math.max(
-      clamp01((richnessContrast - .07) / .22),
-      clamp01((voice.richness - .88) / .12) * .28,
-    ) * vocalTarget;
-    vocalTextureBaseline = follow(vocalTextureBaseline, voice.richness, 10, 1.8, dt);
-    audioVocalLayering = follow(audioVocalLayering, layeringTarget, .32, .72, dt);
     const audioSyllable = fluxPeak > .002 ? clamp01(voice.flux / fluxPeak * 1.18 - .16) * (.36 + vocalTarget * .64) : 0;
     // Exact lyric timing gives us a clean word attack even when a soft vocal is
     // hidden under drums. Audio still leads; timing only reinforces it.

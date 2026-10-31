@@ -20,7 +20,7 @@
       hint: "Classic views, both lyric transitions from your newest reference, and Afterglow's creative layouts.",
       options: [["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"], ["wordstream", "Word stream"],
         ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["prism", "Prism roll"], ["buildstack", "Phrase builder"],
-        ["constellation", "Constellation"], ["ribbon", "Ribbon trail"], ["splitstage", "Split stage"],
+        ["constellation", "Constellation"], ["ribbon", "Ribbon trail"],
         ["captioncards", "Caption cards"], ["poster", "Poster cutout"]] },
     { key: "phraseAccents", label: "Phrase builder accents", type: "choice",
       hint: "Optional editorial contrast for Phrase builder. Cards highlights selected words; Editorial also adds a restrained type tilt.",

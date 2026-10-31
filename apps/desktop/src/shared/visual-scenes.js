@@ -117,12 +117,6 @@
     const repeated = currentText && currentIndex > 0
       ? input.slice(Math.max(0, currentIndex - 16), currentIndex).some((line) => normalise(line?.text) === currentText)
       : false;
-    const backgroundWords = Array.isArray(current?.backgroundWords) ? current.backgroundWords : [];
-    const layeredVocals = backgroundWords.some((word) => {
-      const start = Number(word?.t);
-      const end = Math.max(start + .06, Number(word?.end) || start + .5);
-      return Number.isFinite(start) && time >= start - .04 && time <= end + .08;
-    }) ? 1 : 0;
     return {
       hasLyrics: input.length > 0,
       lineIndex: currentIndex,
@@ -143,7 +137,6 @@
       paceTrend: Math.max(-1, Math.min(1, nextStats.pace - currentStats.pace)),
       forecastFlow: Math.max(0, Math.min(1, nextStats.pace * .58 + nextStats.density * .42 - nextGap * .28)),
       hook: repeated ? 1 : 0,
-      layeredVocals,
       progress: duration > 0 ? Math.max(0, Math.min(1, time / duration)) : 0,
     };
   }
@@ -232,7 +225,7 @@
       backdropOpacity: 56, lyricsDanceStyle: "float", motionStrength: 88,
     },
     {
-      name: "Split flare", lyricsLayout: "splitstage", lyricsHighlight: "whole", lyricsMotion: "glide",
+      name: "Nebula poster", lyricsLayout: "poster", lyricsHighlight: "whole", lyricsMotion: "glide",
       glowStyle: "nebula", glowStrength: 116, glowThickness: 158,
       backdropOpacity: 54, lyricsDanceStyle: "sway", motionStrength: 94,
     },
@@ -285,7 +278,7 @@
       "timbreShift", "timbreEvidence", "loudnessEvidence", "switchUp", "switchDown", "productionSwitch",
       "switchConfidence", "lowActivity", "quietHold", "quietConfidence", "reentry", "beatConfidence", "bass", "flux",
       "emotion", "lineActive", "wordSustain", "vocalSustain", "flowHold", "drumChange", "harmonyChange",
-      "productionAgreement", "tonality", "onsetDensity", "arrangementLift", "vocalLayers", "lyricLayers"];
+      "productionAgreement", "tonality", "onsetDensity", "arrangementLift"];
     const s = Object.fromEntries(keys.map((key) => [key, bounded(signal[key])]));
     const audio = bounded(signal.audioConfidence == null ? 1 : signal.audioConfidence);
     const wpm = Math.max(0, Number(signal.wpm) || 0);
@@ -304,11 +297,11 @@
     const quietEvidence = Math.min(1, s.quietConfidence)
       * Math.min(1, s.lowActivity * .62 + s.quietHold * .58);
     const arrangementReturn = s.reentry > .4 && (s.onsetDensity > .12 || s.productionAgreement > .25);
-    const verifiedProductionSwitch = s.productionSwitch > .34 && s.switchConfidence > .38
-      && s.productionAgreement > .3
-      && (s.drumChange > .2 || s.harmonyChange > .28
+    const verifiedProductionSwitch = s.productionSwitch > .3 && s.switchConfidence > .33
+      && s.productionAgreement > .26
+      && (s.drumChange > .18 || s.harmonyChange > .25
         || (s.timbreEvidence > .48 && s.loudnessEvidence > .48))
-      && (s.timbreEvidence > .28 || s.timbreShift > .3 || s.structure > .32);
+      && (s.timbreEvidence > .25 || s.timbreShift > .27 || s.structure > .3);
     const productionSwitch = verifiedProductionSwitch
       ? Math.min(1, s.switchConfidence * .48 + s.productionAgreement * .38
         + s.drumChange * .12 + s.harmonyChange * .12 + s.loudnessEvidence * .12)
@@ -338,8 +331,6 @@
         - s.vocalGap * .28,
       sustain: .1 + heldVocal * 1.46 + s.wordSustain * .34 + s.phrase * .22 + s.vocal * .16
         + Math.max(0, .5 - pace) * .18 + s.emotion * .12 - s.flux * .12,
-      layered: .08 + s.vocalLayers * 1.52 + s.lyricLayers * 1.42 + s.vocal * .24 + s.phrase * .2
-        - s.vocalGap * .35,
     };
     // Semantic gates prevent an ordinary sentence ending from becoming a
     // "Quiet break" or "Held note", and keep a fast upcoming line from being
@@ -348,7 +339,6 @@
     if (actualFlow < .42) scores.rapid = Math.min(scores.rapid, .82 + actualFlow * .1);
     if (s.lineActive < .5 || s.wordSustain < .5 || s.vocalSustain < .48 || heldVocal < .52) scores.sustain = Math.min(scores.sustain, .78);
     if (!arrangementReturn && !verifiedProductionSwitch) scores.drop = Math.min(scores.drop, .82);
-    if (s.vocalLayers < .48 && s.lyricLayers < .5) scores.layered = Math.min(scores.layered, .78);
     if (progress > .965) scores.steady += .18;
     if (Object.hasOwn(scores, current)) scores[current] += .14;
     const ordered = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -365,8 +355,6 @@
       quiet: ["sustained arrangement space", "reduced drum activity"],
       rapid: [wpm >= 120 ? `${Math.round(wpm)} WPM` : "dense delivery", "sustained flow"],
       sustain: ["held vocal", "long word sustain"],
-      layered: s.lyricLayers >= .5 ? ["overlapping vocal line", "layered voices"]
-        : ["stacked vocal spectrum", "sustained vocal layers"],
       build: s.arrangementLift > .34 ? ["new instrumental layer", "rising intensity"]
         : Math.max(0, futurePace - pace) > .22
           ? ["faster phrase ahead", "rising intensity"] : ["rising intensity", "arrangement lift"],
@@ -380,7 +368,6 @@
       reasons: sectionReasons[section] || sectionReasons.steady,
       priority: section === "drop" && verifiedProductionSwitch ? "beat-switch"
         : arrangementReturn ? "reentry"
-        : section === "layered" ? "vocal-layer"
         : section === "build" && s.arrangementLift > .34 ? "instrument-lift"
         : structuralLift > .68 && ["drop", "quiet"].includes(section) ? "structural" : "normal",
     };
@@ -391,20 +378,19 @@
   }
 
   function directorSectionTiming(next = "steady", current = "steady") {
-    const stable = { drop: 120, layered: 1200, build: 1500, rapid: 2100, sustain: 1900, quiet: 2200, steady: 2200 };
+    const stable = { drop: 120, build: 1500, rapid: 2100, sustain: 1900, quiet: 2200, steady: 2200 };
     return {
       stableMs: Number.isFinite(stable[next]) ? stable[next] : stable.steady,
       holdMs: current === "drop" ? 10000
         : next === "quiet" ? 8500
         : next === "drop" ? 4500
-        : next === "layered" ? 7000
         : next === "steady" ? 6500
         : 7500,
     };
   }
 
   function directorCutAllowed({ hasLyrics = false, lineActive = true, lineBoundary = false, wordBoundary = false, priority = "normal" } = {}) {
-    const musicalCut = priority === "beat-switch" || priority === "instrument-lift" || priority === "reentry" || priority === "vocal-layer";
+    const musicalCut = priority === "beat-switch" || priority === "instrument-lift" || priority === "reentry";
     return !hasLyrics || lineActive === false || !!lineBoundary || (musicalCut && !!wordBoundary);
   }
 
@@ -436,11 +422,6 @@
         name: "Held note", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
         glowStyle: "aurora", glowStrength: 104, glowThickness: 145,
         backdropOpacity: 52, lyricsDanceStyle: "float", motionStrength: 86,
-      },
-      layered: {
-        name: "Layered voices", lyricsLayout: "splitstage", lyricsHighlight: "whole", lyricsMotion: "glide",
-        glowStyle: "nebula", glowStrength: 118, glowThickness: 158,
-        backdropOpacity: 54, lyricsDanceStyle: "sway", motionStrength: 96,
       },
     };
     if (section === "steady" || !sectionPatches[section]) return { name: "Main scene", visual: base };

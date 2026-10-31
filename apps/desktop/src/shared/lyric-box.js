@@ -52,7 +52,6 @@
       morphstack: { height: .17, width: .12 },
       prism: { height: .16, width: .12 },
       ribbon: { height: .16, width: .11 },
-      splitstage: { height: .18, width: .1 },
     };
     let profile = profiles[layout];
     if (layout === "stack" || layout === "wordstack") {

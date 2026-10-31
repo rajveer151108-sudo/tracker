@@ -28,6 +28,10 @@
   .rng span { width: 46px; text-align: right; font-size: 13px; opacity: .7; }
   .btn { border: 0; background: rgba(255,255,255,.14); padding: 8px 14px; border-radius: 9px; font-size: 13px; cursor: pointer; flex: none; }
   .btn:hover { background: rgba(255,255,255,.24); }
+  .testOut { width: 100%; max-height: min(38vh, 360px); margin: 14px 0 0; padding: 14px 16px;
+             overflow: auto; overscroll-behavior: contain; white-space: pre-wrap; overflow-wrap: anywhere;
+             border: 1px solid rgba(var(--glow),.26); border-radius: 11px;
+             background: rgba(0,0,0,.46); color: rgba(255,255,255,.78); font: 11px/1.55 ui-monospace,monospace; }
   #closeSettings { position: sticky; bottom: 0; margin-top: 22px; width: 100%; padding: 12px; border: 0; border-radius: 10px; font-size: 15px;
                    background: #fff; color: #000; cursor: pointer; font-weight: 600; }
 

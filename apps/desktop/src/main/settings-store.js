@@ -60,7 +60,7 @@ const LIMITS = {
 
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
-  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "splitstage", "captioncards", "poster"],
+  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "captioncards", "poster"],
   phraseAccents: ["off", "cards", "editorial"],
   lyricsMotion: ["punch", "slide", "glide", "cube"],
   lyricsAlign: ["center", "left"],

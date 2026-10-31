@@ -29,13 +29,20 @@
     to   { transform: scale(1.65) rotate(9deg)  translate(8%, 6%); }
   }
   #glow { position: absolute; inset: 0; pointer-events: none;
-          opacity: calc(.42 + var(--pulse) * .12 + var(--motion-energy) * .14 + var(--motion-build) * .1 + var(--motion-drop) * .24 - var(--motion-duck) * .24 + var(--motion-lift) * .06);
+          opacity: calc(.42 + var(--glow-motion-impact) * .12 + var(--glow-motion-energy) * .14 + var(--glow-motion-build) * .1 + var(--glow-motion-drop) * .24 - var(--glow-motion-duck) * .24 + var(--glow-motion-lift) * .06);
           background:
-            radial-gradient(ellipse 26% 62% at calc(4% + var(--motion-sway) * 2%) 52%, rgba(var(--glow), calc(.04 + var(--motion-vocal) * .13 + var(--motion-phrase) * .06)), transparent 72%),
-            radial-gradient(ellipse 24% 58% at calc(96% - var(--motion-sway) * 2%) 46%, rgba(255,255,255, calc(.01 + var(--motion-sibilance) * .055)), transparent 74%),
+            radial-gradient(ellipse 26% 62% at calc(4% + var(--motion-sway) * 2%) 52%, rgba(var(--glow), calc(.04 + var(--glow-motion-vocal) * .13 + var(--glow-motion-phrase) * .06)), transparent 72%),
+            radial-gradient(ellipse 24% 58% at calc(96% - var(--motion-sway) * 2%) 46%, rgba(var(--glow2), calc(.025 + var(--glow-motion-sibilance) * .055 + var(--glow-motion-word) * .05)), transparent 74%),
             radial-gradient(ellipse 88% 30% at 50% -4%, rgba(var(--glow), .30), transparent 72%),
-            radial-gradient(ellipse 88% 26% at 50% 104%, rgba(var(--glow), .22), transparent 72%);
-          filter: saturate(calc(1 + var(--motion-vocal) * .3)) brightness(calc(1 + var(--motion-syllable) * .07)); }
+            radial-gradient(ellipse 88% 26% at 50% 104%, rgba(var(--glow2), .22), transparent 72%);
+          filter: saturate(calc(1 + var(--glow-motion-vocal) * .3)) brightness(calc(1 + var(--glow-motion-syllable) * .12 + var(--glow-motion-word) * .08)); }
+
+  body.director-colour-flip #glow { animation: directorColourBloom .88s cubic-bezier(.16,.78,.2,1) both; }
+  @keyframes directorColourBloom {
+    0% { opacity: .4; transform: scale(.97); filter: saturate(1.1) brightness(1); }
+    32% { opacity: 1; transform: scale(1.035); filter: saturate(1.75) brightness(1.35); }
+    100% { transform: none; }
+  }
 
   #viewTransitionGlow { position: absolute; z-index: 12; inset: -18%; pointer-events: none; opacity: 0;
                         background: radial-gradient(circle at 50% 48%, rgba(var(--glow),.36), rgba(8,8,12,.72) 37%, transparent 68%);

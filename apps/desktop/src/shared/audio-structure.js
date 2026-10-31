@@ -218,7 +218,7 @@
       const strongRhythmicPivot = state.peakTimbre > .48
         && state.peakLoudness > .44 && state.peakDrum > .17;
       const productionConsensus = !hasProductionFeatures || (arrangementPresent
-        && productionAgreement > .3 && (layeredPivot || strongRhythmicPivot));
+        && productionAgreement > .26 && (layeredPivot || strongRhythmicPivot));
       const pivotConfidence = hasProductionFeatures
         ? clamp01(productionAgreement * .58 + state.peakTimbre * .22
           + state.peakLoudness * .12 + Math.max(state.peakDrum, state.peakHarmony) * .18)
@@ -253,13 +253,13 @@
       const effectivePivotConfidence = Math.max(pivotConfidence,
         armedPivotReturn ? state.pivotArmedConfidence : 0);
       const confidentPivot = !hasProductionFeatures
-        || (productionAgreement > .78 && effectivePivotConfidence > .68);
+        || (productionAgreement > .72 && effectivePivotConfidence > .62);
       const audibleProductionConsensus = productionConsensus
         || (lowLevelTonalPivot && productionAgreement > .58)
         || armedPivotReturn || majorProductionPivot;
-      if (contrast > .38 && audibleProductionConsensus && (confidentPivot || armedPivotReturn || majorProductionPivot)) state.contrastHold = Math.min(1.5, state.contrastHold + dt);
+      if (contrast > .34 && audibleProductionConsensus && (confidentPivot || armedPivotReturn || majorProductionPivot)) state.contrastHold = Math.min(1.5, state.contrastHold + dt);
       else state.contrastHold = Math.max(0, state.contrastHold - dt * .82);
-      const cooledDown = nowMs - state.lastSwitchAt > 10000;
+      const cooledDown = nowMs - state.lastSwitchAt > 8000;
       const requiredHold = majorProductionPivot ? 0 : hasProductionFeatures ? .05 : .38;
       if (warmedUp && cooledDown && state.contrastHold > requiredHold
         && (confidentPivot || armedPivotReturn || majorProductionPivot)) {

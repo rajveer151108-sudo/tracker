@@ -62,17 +62,6 @@ test("lyric context exposes exact and estimated word boundaries for mid-verse pr
   assert.equal(estimated.wordIndex, 3);
 });
 
-test("lyric context exposes overlapping timed background vocals", () => {
-  const context = lyricDirectorContext([{
-    t: 10, end: 13, text: "lead voice", words: [{ text: "lead", t: 10, end: 11.5 }],
-    backgroundWords: [{ text: "second voice", t: 10.8, end: 12.2 }],
-  }], 0, 11, 100);
-  assert.equal(context.layeredVocals, 1);
-  assert.equal(lyricDirectorContext([{
-    t: 10, end: 13, text: "lead voice", backgroundWords: [{ text: "later", t: 12, end: 12.5 }],
-  }], 0, 11, 100).layeredVocals, 0);
-});
-
 test("scheduled cadence leads with Constellation and never leaves a whole song visually static", () => {
   const scene = directorCadenceScene({
     sequence: 0,
@@ -93,9 +82,9 @@ test("scheduled cadence leads with Constellation and never leaves a whole song v
   const ribbon = directorCadenceScene({ sequence: 1, baseVisual: {}, signal: { pace: .4, density: .5 } });
   assert.equal(ribbon.visual.lyricsLayout, "ribbon");
   assert.equal(ribbon.visual.glowStyle, "eclipse");
-  const split = directorCadenceScene({ sequence: 4, baseVisual: {}, signal: { pace: .4, density: .5 } });
-  assert.equal(split.visual.lyricsLayout, "splitstage");
-  assert.equal(split.visual.glowStyle, "nebula");
+  const poster = directorCadenceScene({ sequence: 4, baseVisual: {}, signal: { pace: .4, density: .5 } });
+  assert.equal(poster.visual.lyricsLayout, "poster");
+  assert.equal(poster.visual.glowStyle, "nebula");
 });
 
 test("multimodal decisions combine structural, vocal and future flow signals", () => {
@@ -144,6 +133,16 @@ test("beat-switch decisions require multiple production layers", () => {
   assert.ok(fullSwitch.reasons.includes("drum pattern change"));
 });
 
+test("moderate multi-layer production pivots still register as beat switches", () => {
+  const decision = directorDecision({
+    productionSwitch: .36, switchConfidence: .38, productionAgreement: .31,
+    drumChange: .24, harmonyChange: .27, timbreShift: .32, structure: .34,
+    timbreEvidence: .29, loudnessEvidence: .42, onsetDensity: .38,
+  });
+  assert.equal(decision.section, "drop");
+  assert.equal(decision.priority, "beat-switch");
+});
+
 test("sentence endings and forecasts do not invent held notes, quiet breaks, or flow runs", () => {
   const sentenceEnd = directorDecision({
     phrase: .88, vocal: .7, vocalGap: 1, lineActive: 0, wordSustain: 0, energy: .54, audioConfidence: 1,
@@ -155,15 +154,12 @@ test("sentence endings and forecasts do not invent held notes, quiet breaks, or 
   assert.notEqual(forecastOnly.section, "rapid");
 });
 
-test("layered vocals open a dedicated dual-voice scene without confusing a loud solo", () => {
-  const layered = directorDecision({
+test("layered vocals stay in the normal Director language instead of opening a dual-voice scene", () => {
+  const decision = directorDecision({
     vocalLayers: .92, lyricLayers: 1, vocal: .82, phrase: .74, lineActive: 1,
   });
-  assert.equal(layered.section, "layered");
-  assert.equal(layered.priority, "vocal-layer");
-  assert.ok(layered.reasons.includes("overlapping vocal line"));
-  const solo = directorDecision({ vocal: 1, phrase: .9, energy: .9, lineActive: 1 });
-  assert.notEqual(solo.section, "layered");
+  assert.notEqual(decision.section, "layered");
+  assert.notEqual(decision.priority, "vocal-layer");
 });
 
 test("director keeps style changes on lines but lets real production hits use word boundaries", () => {
@@ -171,7 +167,7 @@ test("director keeps style changes on lines but lets real production hits use wo
   assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true }), false);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true, priority: "beat-switch" }), true);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true, priority: "instrument-lift" }), true);
-  assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true, priority: "vocal-layer" }), true);
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true, priority: "vocal-layer" }), false);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: true }), true);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: false, lineBoundary: false }), true);
   assert.equal(directorCutAllowed({ hasLyrics: false, lineBoundary: false }), true);
@@ -193,8 +189,8 @@ test("section scenes keep the song's base direction while changing composition",
 });
 
 test("every Director function has its own glow language", () => {
-  const styles = ["quiet", "build", "drop", "rapid", "sustain", "layered"]
+  const styles = ["quiet", "build", "drop", "rapid", "sustain"]
     .map((section) => directorSectionScene({ section, genre: "rap", baseVisual: {} }).visual.glowStyle);
-  assert.deepEqual(styles, ["halo", "horizon", "prism", "flowline", "aurora", "nebula"]);
+  assert.deepEqual(styles, ["halo", "horizon", "prism", "flowline", "aurora"]);
   assert.equal(new Set(styles).size, styles.length);
 });

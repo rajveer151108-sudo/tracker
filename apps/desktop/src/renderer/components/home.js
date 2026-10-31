@@ -217,26 +217,36 @@ async function launchHomeVinyl(item,source){
 
 async function launchHomeCd(item,source){
   if(!item?.uri||homeState.slotItem)return;
-  document.querySelectorAll(".homeStereoFlight").forEach(node=>node.remove());
+  document.querySelectorAll(".homeStereoFlight,.homeStereoFlightCase").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
   homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);
   const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("stereo-seated");screen.classList.add("stereo-loading");renderHomeHero();
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const target=hero.querySelector(".homeStereoSlot")?.getBoundingClientRect(),src=sourceRect||hero.getBoundingClientRect();
   if(target){
+    const flightCase=homeElement("div","homeStereoFlightCase"),caseArt=homeElement("img"),caseTitle=homeElement("span","",item.title);caseArt.alt="";if(item.img)caseArt.src=item.img;flightCase.append(caseArt,caseTitle);document.body.appendChild(flightCase);
     const disc=homeElement("div","homeStereoFlight"),label=homeElement("img");label.alt="";if(item.img)label.src=item.img;disc.append(label,homeElement("i",""));document.body.appendChild(disc);
-    const size=Math.min(260,Math.max(190,target.width*.82)),left=target.left+target.width/2-size/2,top=target.top+target.height/2-size/2;
-    const startScale=Math.max(.34,Math.min(.78,src.width/size)),dx=src.left+src.width/2-(left+size/2),dy=src.top+src.height/2-(top+size/2);
+    const size=Math.min(250,Math.max(180,target.width*.8)),left=target.left+target.width/2-size/2,top=target.top+target.height/2-size/2;
+    const caseSize=Math.min(154,Math.max(112,size*.6)),caseLeft=target.left-caseSize*.62,caseTop=target.top-caseSize*.9;
+    const startScale=Math.max(.3,Math.min(.76,src.width/caseSize)),dx=src.left+src.width/2-(left+size/2),dy=src.top+src.height/2-(top+size/2),caseDx=src.left+src.width/2-(caseLeft+caseSize/2),caseDy=src.top+src.height/2-(caseTop+caseSize/2);
+    Object.assign(flightCase.style,{left:`${caseLeft}px`,top:`${caseTop}px`,width:`${caseSize}px`,height:`${caseSize}px`});
     Object.assign(disc.style,{left:`${left}px`,top:`${top}px`,width:`${size}px`,height:`${size}px`});
+    const caseFlight=flightCase.animate([
+      {transform:`translate3d(${caseDx}px,${caseDy}px,0) scale(${startScale}) rotate(-3deg)`,opacity:1},
+      {transform:`translate3d(${caseDx*.25}px,${caseDy*.2}px,0) scale(.98) rotate(2deg)`,opacity:1,offset:.42},
+      {transform:"translate3d(0,0,0) scale(1.03) rotate(-2deg)",opacity:1,offset:.7},
+      {transform:"translate3d(-22px,8px,0) scale(.94) rotate(-8deg)",opacity:.72}
+    ],{duration:1380,easing:"cubic-bezier(.2,.78,.2,1)",fill:"forwards"});
     const flight=disc.animate([
-      {transform:`translate3d(${dx}px,${dy}px,0) scale(${startScale}) rotateZ(-18deg) rotateX(0deg)`,opacity:1},
-      {transform:`translate3d(${dx*.55}px,${dy*.55-28}px,90px) scale(.98) rotateZ(135deg) rotateX(28deg)`,opacity:1,offset:.42},
-      {transform:`translate3d(${dx*.12}px,${dy*.12-13}px,28px) scale(.96) rotateZ(300deg) rotateX(72deg)`,opacity:1,offset:.78},
-      {transform:"translate3d(0,2px,0) scale(.94) rotateZ(360deg) rotateX(86deg)",opacity:1}
-    ],{duration:1120,easing:"cubic-bezier(.24,.72,.2,1)",fill:"forwards"});
-    await flight.finished.catch(()=>{});
+      {transform:`translate3d(${dx}px,${dy}px,0) scale(${Math.max(.18,startScale*.58)}) rotateZ(-18deg) rotateX(0deg)`,opacity:0},
+      {transform:`translate3d(${dx}px,${dy}px,0) scale(${Math.max(.18,startScale*.58)}) rotateZ(-18deg) rotateX(0deg)`,opacity:1,offset:.22},
+      {transform:`translate3d(${dx*.52}px,${dy*.5-42}px,90px) scale(.9) rotateZ(150deg) rotateX(24deg)`,opacity:1,offset:.52},
+      {transform:`translate3d(${dx*.1}px,${dy*.1-17}px,28px) scale(.96) rotateZ(315deg) rotateX(72deg)`,opacity:1,offset:.82},
+      {transform:"translate3d(0,2px,0) scale(.94) rotateZ(390deg) rotateX(87deg)",opacity:1}
+    ],{duration:1380,easing:"cubic-bezier(.24,.72,.2,1)",fill:"forwards"});
+    await Promise.all([flight.finished.catch(()=>{}),caseFlight.finished.catch(()=>{})]);
     if(sequence===homeState.loadSequence){screen.classList.add("stereo-seated");await new Promise(resolve=>setTimeout(resolve,110));}
-    disc.remove();
+    disc.remove();flightCase.remove();
   }else await new Promise(resolve=>setTimeout(resolve,650));
   if(sequence!==homeState.loadSequence)return;
   const started=await homePlay(item);
@@ -323,18 +333,23 @@ function renderVinylPlayer(hero,item,copy){
 }
 
 function renderCdStereo(hero,item){
-  const scene=homeElement("div","homeStereoScene");
+  const scene=homeElement("div",`homeStereoScene ${playing?"is-playing":"is-paused"}`);
   if(item?.img){const ambience=homeElement("img","homeStereoAmbience");ambience.alt="";ambience.src=item.img;scene.appendChild(ambience);}
   const speaker=side=>{const box=homeElement("div",`homeStereoSpeaker ${side}`),grille=homeElement("div","homeStereoGrille");grille.append(homeElement("i","homeStereoTweeter"),homeElement("i","homeStereoWoofer"),homeElement("span","homeStereoPulse"));box.append(homeElement("b","",side==="left"?"L":"R"),grille);return box;};
   const receiver=homeElement("div","homeStereoReceiver"),brand=homeElement("div","homeStereoBrand");brand.append(homeElement("span","","AFTERGLOW / DIGITAL AUDIO"),homeElement("b","",playing?"SIGNAL LOCKED":"STANDBY"));
-  const display=homeElement("div","homeStereoDisplay"),art=homeElement("img");art.alt="";if(item.img)art.src=item.img;
+  const display=homeElement("div","homeStereoDisplay"),media=homeElement("div","homeStereoMedia"),jewel=homeElement("div","homeStereoJewel"),art=homeElement("img");art.alt="";if(item.img)art.src=item.img;jewel.append(art,homeElement("span","",item.title));
+  const disc=homeElement("div","homeStereoDisc"),label=homeElement("img");label.alt="";if(item.img)label.src=item.img;disc.append(label,homeElement("i",""),homeElement("b",""));media.append(disc,jewel);
   const info=homeElement("div","homeStereoInfo"),status=homeElement("span","",`CD 01  //  ${playing?"PLAYING":"PAUSED"}`);info.append(status,homeElement("strong","",item.title),homeElement("small","",`${item.sub||"Unknown artist"}${item.album?" · "+item.album:""}`));
-  const visualizer=homeElement("div","homeStereoVisualizer");for(let i=0;i<24;i++)visualizer.appendChild(homeElement("i",""));display.append(art,info,visualizer);
+  const visualizer=homeElement("div","homeStereoVisualizer");for(let i=0;i<24;i++)visualizer.appendChild(homeElement("i",""));
+  display.replaceChildren(media,info,visualizer);
+  const queue=homeElement("div","homeStereoQueue");queue.appendChild(homeElement("span","homeStereoQueueLabel",homeState.queueLoading?"READING NEXT DISCS…":"UP NEXT // DISC CHANGER"));
+  homeState.queue.filter(Boolean).slice(0,3).forEach((card,index)=>{const tile=homeElement("button","homeStereoQueueDisc"),image=homeElement("img");image.alt="";if(card.img)image.src=card.img;tile.append(homeElement("b","",String(index+2).padStart(2,"0")),image,homeElement("span","",card.title||"Unknown track"));tile.title=`Play ${card.title||"next track"}`;tile.addEventListener("click",()=>launchHomeCd(card,tile));queue.appendChild(tile);});
+  if(!homeState.queueLoading&&!homeState.queue.length)queue.appendChild(homeElement("small","","Queue a song in Spotify and its jewel case will appear here."));
   const slot=homeElement("div","homeStereoSlot");slot.append(homeElement("span","",homeState.slotItem?"ACCEPTING DISC":"SLOT-IN COMPACT DISC"),homeElement("i",""));
   const seek=homeElement("div","homeStereoSeek");seek.append(homeElement("span","","TRACK 01"),homeElement("i",""),homeElement("b","","SEEK"));wireArcadeSeek(seek);
   const controls=homeElement("div","homeStereoControls"),prev=homeElement("button","","◀"),play=homeElement("button","primary",playing?"Ⅱ":"▶"),next=homeElement("button","","▶"),lyrics=homeElement("button","wide","LYRICS");prev.addEventListener("click",()=>control("previous"));play.addEventListener("click",()=>control("playpause"));next.addEventListener("click",()=>control("next"));lyrics.addEventListener("click",()=>setAppView("lyrics"));controls.append(prev,play,next,lyrics);
   const volume=homeElement("label","homeStereoVolume"),volumeInput=homeElement("input");volumeInput.type="range";volumeInput.min="0";volumeInput.max="100";volumeInput.step="1";volumeInput.value=String(homeState.volume);volumeInput.setAttribute("aria-label","Spotify volume");volumeInput.addEventListener("input",()=>setHomeVolume(volumeInput.value));volumeInput.addEventListener("change",()=>setHomeVolume(volumeInput.value,true));volume.append(homeElement("span","","VOLUME"),volumeInput,homeElement("b","homeStereoVolumeValue",`${homeState.volume}%`));
-  receiver.append(brand,display,slot,seek,controls,volume);scene.append(speaker("left"),receiver,speaker("right"));hero.append(scene);
+  receiver.append(brand,display,queue,slot,seek,controls,volume);scene.append(speaker("left"),receiver,speaker("right"));hero.append(scene);
 }
 function renderHomeHero(){
   const hero=$("arcadeNow");hero.innerHTML="";const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem(homeState.slotItem||homeState.nowPlaying);
@@ -368,11 +383,11 @@ async function refreshHomeQueue(force=false,expectedUri=""){
     const queue=homeQueueFromResponse(response,expectedUri);if(!queue)return;
     homeState.queue=queue;homeState.queueLoadedAt=Date.now();
   }finally{
-    if(request===homeState.queueRequest){homeState.queueLoading=false;if(currentHomeMode()==="vinyl")renderHomeHero();}
+    if(request===homeState.queueRequest){homeState.queueLoading=false;if(["vinyl","cd"].includes(currentHomeMode()))renderHomeHero();}
   }
 }
 function scheduleHomeQueueRefresh(uri){
-  const schedule=++homeState.queueSchedule;homeState.queue=[];homeState.queueLoadedAt=0;if(currentHomeMode()==="vinyl")renderHomeHero();
+  const schedule=++homeState.queueSchedule;homeState.queue=[];homeState.queueLoadedAt=0;if(["vinyl","cd"].includes(currentHomeMode()))renderHomeHero();
   [200,700,1600,3200,6000].forEach(delay=>setTimeout(()=>{if(schedule===homeState.queueSchedule)refreshHomeQueue(true,uri);},delay));
 }
 async function loadHomeCollection(collection){
@@ -413,9 +428,9 @@ function updateHomeNowPlaying(np){
   }
   if(key===homeState.nowKey){if(pendingCleared||homeState.slotItem)renderHomeHero();return;}
   homeState.nowKey=key;homeState.nowPlaying=active?enrichHomeItem({uri,title:np.title||"Unknown track",sub:np.artist||"Unknown artist",album:np.album||"",img:np.artwork||"",isNow:true}):null;if(homeState.nowPlaying)setHomeGameColor(homeState.nowPlaying);
-  renderHome();if(active&&uri&&uri!==previousUri&&currentHomeMode()==="vinyl")scheduleHomeQueueRefresh(uri);
+  renderHome();if(active&&uri&&uri!==previousUri&&["vinyl","cd"].includes(currentHomeMode()))scheduleHomeQueueRefresh(uri);
 }
-function onHomeModeChange(previous,next){if(previous!==next&&next==="vinyl")scheduleHomeQueueRefresh(homeState.nowPlaying?.uri||"");}
+function onHomeModeChange(previous,next){if(previous!==next&&["vinyl","cd"].includes(next))scheduleHomeQueueRefresh(homeState.nowPlaying?.uri||"");}
 let viewTransitionTimer=0;
 function setAppView(view){
   const wanted=view==="lyrics"?"lyrics":"home",previous=document.body.dataset.view||"home";

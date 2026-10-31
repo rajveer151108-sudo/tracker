@@ -138,6 +138,19 @@
         <button class="btn primary" id="closeTracker"><b>×</b><span>Close</span></button>
       </div>
     </div>
+    <div id="trackerLive" class="trackerLive idle">
+      <div class="trackerLiveArt"><img id="trackerLiveCover" alt=""><i></i></div>
+      <div class="trackerLiveCopy">
+        <span id="trackerLiveState">LIVE PLAYBACK // WAITING</span>
+        <strong id="trackerLiveTitle">Start a song to wake the archive</strong>
+        <small id="trackerLiveArtist">Afterglow will follow Spotify in real time.</small>
+      </div>
+      <div class="trackerLiveSpectrum" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="trackerLiveTimeline">
+        <div><span id="trackerLivePosition">0:00</span><b id="trackerLiveDuration">0:00</b></div>
+        <i><span></span></i>
+      </div>
+    </div>
     <div id="trackerLoading"><span class="trackerLoader"><i></i><i></i><i></i><i></i></span><strong>CALIBRATING LISTENING SIGNAL</strong><small>Loading your private archive…</small></div>
     <webview id="trackerView" data-src="https://rajveer151108-sudo.github.io/tracker/" partition="persist:afterglow-tracker" webpreferences="contextIsolation=yes, nodeIntegration=no, sandbox=yes"></webview>
   </div>

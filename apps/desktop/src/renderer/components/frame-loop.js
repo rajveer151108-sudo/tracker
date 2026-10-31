@@ -98,7 +98,7 @@
         const visible = layout === "buildstack"
           ? relative <= 0 && relative >= -3
           : Math.abs(relative) <= (layout === "prism" || layout === "ribbon" ? 2
-            : layout === "morphstack" || layout === "kinetic" || layout === "splitstage" ? 1 : 0);
+            : layout === "morphstack" || layout === "kinetic" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }
     });
@@ -187,7 +187,6 @@
         reentry: structureReentry,
         loudnessTrend: audioLoudnessTrend,
         vocalTrend: audioVocalTrend,
-        vocalLayering: audioVocalLayering,
         beatConfidence: audioBeatConfidence,
         bpm: audioBpm,
         bass: audioBassLevel,
@@ -203,7 +202,6 @@
         hasLyrics: lyricContext.hasLyrics,
         lineIndex: directorLineIndex,
         wordIndex: lyricContext.wordIndex,
-        lyricLayers: lyricContext.layeredVocals,
       }, tNow);
     }
     if (tNow - lastUiT >= 100) {
@@ -214,6 +212,7 @@
       $("bar").setAttribute("aria-valuenow", String(Math.round(Math.max(0, Math.min(durSec, now)))));
       $("bar").setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
       $("pos").textContent = fmt(now);
+      if (typeof updateTrackerLiveProgress === "function") updateTrackerLiveProgress(now, durSec);
       $("homeScreen")?.style.setProperty("--home-progress", seekPercent.toFixed(2) + "%");
       if (document.body.dataset.view === "home") document.querySelectorAll(".arcadeStageProgress,.homeCdProgress,.homeCdDisc,.homeStereoSeek").forEach((homeProgress) => {
           homeProgress.setAttribute("aria-valuemax", String(Math.round(durSec)));

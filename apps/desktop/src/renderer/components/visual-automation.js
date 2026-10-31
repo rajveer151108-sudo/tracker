@@ -144,6 +144,7 @@ function applyDirectorBeatSwitchEnvironment(state, decision, nowMs) {
   state.lastImmediateBeatSwitchAt = nowMs;
   state.directorName = scene.name;
   state.decision = decision;
+  if (typeof window.toggleDirectorGlowPalette === "function") window.toggleDirectorGlowPalette();
   playDirectorAccent("production");
   applyVisualPatch(environment, "director-impact", scene.name);
 }
@@ -240,7 +241,6 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.nextCadenceAt = performance.now() + window.VisualScenes.directorCadenceDelay(0, true);
   state.rapidEvidence = 0;
   state.sustainEvidence = 0;
-  state.layeredEvidence = 0;
   Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
   applyVisualPatch(scene.visual, "director", scene.name);
   updateVisualAutomationStatus();
@@ -256,6 +256,7 @@ function resetDirectorMode() {
   document.body.classList.remove("director-section-changing", "director-accent");
   document.body.dataset.directorSection = "steady";
   document.body.dataset.directorAccent = "";
+  if (typeof window.resetDirectorGlowPalette === "function") window.resetDirectorGlowPalette();
   if (typeof resetAudioStructureAnalysis === "function") resetAudioStructureAnalysis();
 
   const state = visualTrackState;
@@ -321,7 +322,7 @@ function beginVisualTrack(np, key, previousKey) {
     sectionCandidate: "steady",
     sectionCandidateSince: performance.now(),
     sectionChangedAt: performance.now(),
-    sectionEligibleAt: performance.now() + 14000,
+    sectionEligibleAt: performance.now() + 9000,
     lastLyricLine: null,
     lastLyricWord: null,
     queuedSection: null,
@@ -338,7 +339,6 @@ function beginVisualTrack(np, key, previousKey) {
     lastEvidenceAt: 0,
     rapidEvidence: 0,
     sustainEvidence: 0,
-    layeredEvidence: 0,
     sectionSignal: {
       energy: 0, vocal: 0, phrase: 0, build: 0, duck: 0, drop: 0, impact: 0, pace: 0,
       wpm: 0, density: 0, flow: 0, timingConfidence: 0, vocalGap: 0, nextWpm: 0, nextPace: 0,
@@ -349,7 +349,6 @@ function beginVisualTrack(np, key, previousKey) {
       bass: 0, flux: 0, emotion: 0, audioConfidence: 0, lineActive: 0, wordSustain: 0,
       vocalSustain: 0, flowHold: 0, drumChange: 0, harmonyChange: 0,
       productionAgreement: 0, tonality: 0, onsetDensity: 0, arrangementLift: 0,
-      vocalLayers: 0, lyricLayers: 0,
     },
     lastSectionSampleAt: 0,
     source: "defaults",
@@ -491,17 +490,8 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     && (Number(sample.pace) || 0) < .48;
   state.sustainEvidence = Math.max(0, Math.min(1, state.sustainEvidence
     + (actualSustain ? evidenceDt / 1.15 : -evidenceDt / .4)));
-  const exactLyricLayers = (Number(sample.lyricLayers) || 0) > .5;
-  const actualLayered = sample.lineActive !== 0
-    && (Number(sample.vocal) || 0) > .52
-    && (Number(sample.phrase) || 0) > .42
-    && (exactLyricLayers || (Number(sample.vocalLayering) || 0) > .68);
-  state.layeredEvidence = Math.max(0, Math.min(1, state.layeredEvidence
-    + (actualLayered ? evidenceDt / (exactLyricLayers ? .35 : 1.2) : -evidenceDt / .5)));
   signal.flowHold = state.rapidEvidence;
   signal.vocalSustain = state.sustainEvidence;
-  signal.vocalLayers = Math.max(state.layeredEvidence, exactLyricLayers ? 1 : 0);
-  signal.lyricLayers = exactLyricLayers ? 1 : 0;
   const structural = Math.max(signal.reentry, signal.switchUp, signal.switchDown, signal.structure);
   const rawReentry = Number(sample.reentry) || 0;
   const rawProductionSwitch = Number(sample.productionSwitch) || 0;
@@ -509,13 +499,13 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   const rawProductionAgreement = Number(sample.productionAgreement) || 0;
   const rawDrumChange = Number(sample.drumChange) || 0;
   const nearTrackEnd = (Number(sample.progress) || 0) > .94;
-  const beatSwitchHit = !nearTrackEnd && ((rawProductionSwitch > .38 && rawSwitchConfidence > .38
-      && rawProductionAgreement > .3
-      && (rawDrumChange > .2 || (Number(sample.harmonyChange) || 0) > .28
+  const beatSwitchHit = !nearTrackEnd && ((rawProductionSwitch > .31 && rawSwitchConfidence > .33
+      && rawProductionAgreement > .26
+      && (rawDrumChange > .18 || (Number(sample.harmonyChange) || 0) > .25
         || ((Number(sample.timbreEvidence) || 0) > .48 && (Number(sample.loudnessEvidence) || 0) > .48)))
-    || (rawReentry > .5 && (Number(sample.onsetDensity) || 0) > .2));
+    || (rawReentry > .46 && (Number(sample.onsetDensity) || 0) > .18));
   if (nowMs < state.sectionEligibleAt) return;
-  if (beatSwitchHit && nowMs - state.lastImmediateBeatSwitchAt > 9000) {
+  if (beatSwitchHit && nowMs - state.lastImmediateBeatSwitchAt > 7500) {
     const scoredDecision = window.VisualScenes.directorDecision(signal, state.section);
     const immediateDecision = {
       ...scoredDecision,
@@ -550,7 +540,7 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     state.queuedSection = null;
     state.queuedDecision = null;
   }
-  const protectedQueue = ["reentry", "beat-switch", "instrument-lift", "vocal-layer"].includes(state.queuedDecision?.priority);
+  const protectedQueue = ["reentry", "beat-switch", "instrument-lift"].includes(state.queuedDecision?.priority);
   if (state.queuedSection && decision.section !== state.queuedSection && !protectedQueue
     && nowMs - state.queuedSectionSince > 450) {
     state.queuedSection = null;
@@ -577,18 +567,16 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   const sinceChange = nowMs - state.sectionChangedAt;
   const requiredStable = timing.stableMs * (1.08 - decision.confidence * .38);
   const structuralCue = (next === "drop" && ["reentry", "beat-switch"].includes(decision.priority))
-    || (next === "build" && decision.priority === "instrument-lift")
-    || (next === "layered" && decision.priority === "vocal-layer");
+    || (next === "build" && decision.priority === "instrument-lift");
   const requiredHold = decision.priority === "beat-switch" ? Math.min(timing.holdMs, 900)
     : decision.priority === "reentry" ? Math.min(timing.holdMs, 2400)
     : decision.priority === "instrument-lift" ? Math.min(timing.holdMs, 1800)
-    : decision.priority === "vocal-layer" ? Math.min(timing.holdMs, 1600)
     : timing.holdMs;
   if (structuralCue && state.queuedSection !== next) {
     state.queuedSection = next;
     state.queuedDecision = decision;
     state.queuedSectionSince = nowMs;
-    state.queuedReadyAt = ["reentry", "beat-switch", "instrument-lift", "vocal-layer"].includes(decision.priority)
+    state.queuedReadyAt = ["reentry", "beat-switch", "instrument-lift"].includes(decision.priority)
       ? nowMs
       : Math.max(nowMs, state.sectionChangedAt + 900);
     state.queuedUntil = nowMs + 6500;
@@ -620,6 +608,7 @@ function endVisualTrack() {
   visualPresetRequest++;
   visualTrackState = null;
   delete document.body.dataset.directorSection;
+  if (typeof window.resetDirectorGlowPalette === "function") window.resetDirectorGlowPalette();
   if (activeVisualOverlay) restoreUserVisualBaseline();
   updateVisualAutomationStatus();
 }

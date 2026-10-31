@@ -2,6 +2,44 @@
 // Tracker: authenticated stats website hosted inside Afterglow
 // =====================================================================
 let trackerLoaded = false;
+let trackerLiveNow = null;
+let trackerLivePosition = 0;
+let trackerLiveDuration = 0;
+
+function trackerTime(seconds) {
+  const value = Math.max(0, Number(seconds) || 0);
+  return `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, "0")}`;
+}
+
+function updateTrackerLiveProgress(position, duration) {
+  trackerLivePosition = Math.max(0, Number(position) || 0);
+  trackerLiveDuration = Math.max(0, Number(duration) || trackerLiveDuration || 0);
+  if (!$('trackerPanel')?.classList.contains('open')) return;
+  const ratio = trackerLiveDuration ? Math.min(1, trackerLivePosition / trackerLiveDuration) : 0;
+  $("trackerLive")?.style.setProperty("--tracker-progress", `${(ratio * 100).toFixed(2)}%`);
+  if ($("trackerLivePosition")) $("trackerLivePosition").textContent = trackerTime(trackerLivePosition);
+  if ($("trackerLiveDuration")) $("trackerLiveDuration").textContent = trackerTime(trackerLiveDuration);
+}
+
+function updateTrackerNowPlaying(np) {
+  trackerLiveNow = np && (np.state === "playing" || np.state === "paused") ? { ...np } : null;
+  const live = $("trackerLive");
+  if (!live) return;
+  live.classList.toggle("idle", !trackerLiveNow);
+  live.classList.toggle("playing", trackerLiveNow?.state === "playing");
+  live.classList.toggle("paused", trackerLiveNow?.state === "paused");
+  const cover = $("trackerLiveCover");
+  if (trackerLiveNow?.artwork) {
+    if (cover.getAttribute("src") !== trackerLiveNow.artwork) cover.src = trackerLiveNow.artwork;
+  } else cover.removeAttribute("src");
+  $("trackerLiveState").textContent = !trackerLiveNow ? "LIVE PLAYBACK // WAITING"
+    : trackerLiveNow.state === "playing" ? "LIVE PLAYBACK // RECORDING NOW" : "LIVE PLAYBACK // PAUSED";
+  $("trackerLiveTitle").textContent = trackerLiveNow?.title || "Start a song to wake the archive";
+  $("trackerLiveArtist").textContent = trackerLiveNow
+    ? `${trackerLiveNow.artist || "Unknown artist"}${trackerLiveNow.album ? ` · ${trackerLiveNow.album}` : ""}`
+    : "Afterglow will follow Spotify in real time.";
+  updateTrackerLiveProgress(trackerLiveNow?.positionSec || 0, (trackerLiveNow?.durationMs || 0) / 1000);
+}
 
 function freshTrackerUrl(rawUrl) {
   const url = new URL(rawUrl);
@@ -28,6 +66,8 @@ function openTracker() {
   const view = $("trackerView");
   panel.classList.add("open");
   panel.setAttribute("aria-hidden", "false");
+  updateTrackerNowPlaying(trackerLiveNow);
+  updateTrackerLiveProgress(posSec, durSec);
   if (!trackerLoaded) {
     const trackerUrl = view.dataset.src;
     if (!trackerUrl) {

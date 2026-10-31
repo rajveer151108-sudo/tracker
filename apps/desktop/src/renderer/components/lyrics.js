@@ -68,7 +68,7 @@
     out.style.display = "block";
     out.textContent = "Checking\u2026";
     out.textContent = lastInfo ? await window.tracker.lyricsDiag(lastInfo) : "Play a song first, then run the check.";
-    out.scrollIntoView({ block: "center" });
+    out.scrollTop = 0;
   }
 
   // rough syllable count, so words that take longer to sing get more of the line's time
@@ -117,29 +117,23 @@
   function wordStreamRows(input) {
     const rows = input.flatMap((line, index) => {
       const words = timedWords(line, input[index + 1]?.t);
-      const backgroundWords = Array.isArray(line.backgroundWords) ? line.backgroundWords : [];
       return words.map((word) => ({
         t: word.t,
         end: word.end,
         text: word.text,
         words: [word],
         wordStream: true,
-        backgroundText: backgroundWords
-          .filter((background) => Number(background?.t) < word.end && Number(background?.end) > word.t)
-          .map((background) => String(background.text || "").trim())
-          .filter(Boolean)
-          .join(" "),
       }));
     }).sort((a, b) => a.t - b.t);
     return window.LyricEffects.decorateRows(rows);
   }
 
-  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "splitstage"]);
-  const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "splitstage", "captioncards", "poster"]);
+  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon"]);
+  const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "captioncards", "poster"]);
   const LAYOUT_LABELS = {
     wordstream: "Word stream", wordstack: "Word stack", stack: "Lyric stack",
     kinetic: "Kinetic stack", morphstack: "Morph stack", prism: "Prism roll", buildstack: "Phrase builder",
-    constellation: "Constellation", ribbon: "Ribbon trail", splitstage: "Split stage", captioncards: "Caption cards",
+    constellation: "Constellation", ribbon: "Ribbon trail", captioncards: "Caption cards",
     poster: "Poster cutout",
   };
   function isWordLayout(layout = settings.lyricsLayout) { return WORD_LAYOUTS.has(layout); }
@@ -215,10 +209,6 @@
         div.classList.add("keyword");
         div.dataset.tone = l.tone;
       }
-      if (l.backgroundText) {
-        div.classList.add("has-background-vocal");
-        div.dataset.backgroundText = l.backgroundText;
-      }
       const timed = Array.isArray(l.words) && l.words.length > 0;
       const words = timed ? l.words.map((w) => w.text) : (l.text || "\u266A").split(/\s+/).filter(Boolean);
       let emojiSpan = null;
@@ -268,7 +258,7 @@
     refreshLyricBoxSizing();
   }
 
-  const BOX_FIT_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "ribbon", "splitstage"]);
+  const BOX_FIT_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "ribbon"]);
   function refreshLyricBoxSizing() {
     if (!window.LyricBox) return;
     const stage = $("stage");
@@ -298,7 +288,6 @@
       if (!boxLayout) return el.style.removeProperty("--lyric-box-font");
       const fitMetrics = settings.lyricsLayout === "prism"
         ? { ...metrics, width: metrics.width * .74 }
-        : settings.lyricsLayout === "splitstage" ? { ...metrics, width: metrics.width * .46 }
         : metrics;
       const fontSize = window.LyricBox.fitTextToLyricBox(el.dataset.lyric || el.textContent, fitMetrics, {
         max: Math.min(immersiveNow ? 460 : 420, compositionCap),
@@ -397,11 +386,35 @@
       .join("|");
   }
 
-  // set the glow colour here and on the full-screen edge glow
-  function applyGlow(rgb, rgb2) {
-    root.style.setProperty("--glow", rgb);
-    window.tracker.sendGlow({ color: rgb, color2: rgb2 || rgb });
+  // Keep both cover colours available so a verified production switch can
+  // invert the song's lighting without re-reading the artwork or overwriting
+  // the user's saved colour controls.
+  let glowPalette = ["29, 185, 84", "122, 92, 255"];
+  let directorGlowPaletteFlipped = false;
+  function publishGlowPalette() {
+    const primary = glowPalette[directorGlowPaletteFlipped ? 1 : 0];
+    const secondary = glowPalette[directorGlowPaletteFlipped ? 0 : 1];
+    root.style.setProperty("--glow", primary);
+    root.style.setProperty("--glow2", secondary);
+    window.tracker.sendGlow({ color: primary, color2: secondary });
   }
+  function applyGlow(rgb, rgb2) {
+    glowPalette = [rgb, rgb2 || rgb];
+    publishGlowPalette();
+  }
+  window.toggleDirectorGlowPalette = () => {
+    directorGlowPaletteFlipped = !directorGlowPaletteFlipped;
+    publishGlowPalette();
+    document.body.classList.remove("director-colour-flip");
+    void document.body.offsetWidth;
+    document.body.classList.add("director-colour-flip");
+    setTimeout(() => document.body.classList.remove("director-colour-flip"), 900);
+  };
+  window.resetDirectorGlowPalette = () => {
+    if (!directorGlowPaletteFlipped) return;
+    directorGlowPaletteFlipped = false;
+    publishGlowPalette();
+  };
   let lastActive = null;
   function sendActive(a) {
     if (a !== lastActive) { lastActive = a; window.tracker.sendGlow({ active: a }); }
@@ -463,6 +476,7 @@
     const gid = currentTrackKey(np);
     const generation = ++lyricsGeneration;
     trackId = gid;
+    window.resetDirectorGlowPalette();
     setLyricOffset(0);
     lastInfo = { id: np.id, title: np.title, artist: np.artist, album: np.album, durationSec: np.durationMs / 1000 };
     clearLyrics();
@@ -569,6 +583,7 @@
         setNotice(np.state === "error" ? ("Could not read Spotify: " + (np.message || "")) : "Press play in Spotify.");
       }
       if (typeof updateHomeNowPlaying === "function") updateHomeNowPlaying(np);
+      if (typeof updateTrackerNowPlaying === "function") updateTrackerNowPlaying(np);
       $("playpause").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
     } finally {
       pollInFlight = false;
