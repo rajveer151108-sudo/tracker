@@ -18,6 +18,7 @@ if (process.platform === "darwin") {
   app.commandLine.appendSwitch("disable-features", "MacCatapLoopbackAudioForScreenShare");
 }
 const { createSettingsStore } = require("./src/main/settings-store");
+const { createSongPresetsStore } = require("./src/main/song-presets-store");
 const { createSpotifyDesktop } = require("./src/main/spotify-desktop");
 const { createLyricsService } = require("./src/main/lyrics-service");
 const { createGenreService } = require("./src/main/genre-service");
@@ -28,6 +29,7 @@ const { TRACKER_URL } = require("./src/shared/config");
 
 const rootDir = __dirname;
 const settingsStore = createSettingsStore(app);
+const songPresets = createSongPresetsStore(app);
 const lyrics = createLyricsService(settingsStore.get);
 const genre = createGenreService(app);
 
@@ -129,6 +131,9 @@ function registerIpc() {
   ipcMain.on("tracker-observe", (_event, track) => trackerSync.observe(track));
 
   ipcMain.handle("settings-get", settingsStore.get);
+  ipcMain.handle("song-preset-get", (_event, key) => songPresets.get(key));
+  ipcMain.handle("song-preset-set", (_event, payload) => songPresets.set(payload));
+  ipcMain.handle("song-preset-remove", (_event, key) => songPresets.remove(key));
   ipcMain.on("settings-set", (_event, patch) => {
     const { before, settings } = settingsStore.update(patch);
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("settings", settings);
@@ -164,6 +169,7 @@ function registerIpc() {
 
 app.whenReady().then(() => {
   settingsStore.load();
+  songPresets.load();
   registerIpc();
   // Paint the full player before asking macOS Keychain to decrypt saved
   // sessions. A freshly rebuilt local app may need one approval; keeping the

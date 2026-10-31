@@ -376,6 +376,7 @@
       document.body.dataset.genre = g.bucket || "other";      // CSS can key off body[data-genre="rap"] etc.
       applyFeel();
       $("genre").textContent = g.raw || "";
+      if (typeof updateVisualTrackContext === "function") updateVisualTrackContext(np, { genre: g.bucket || "other" });
     }).catch(() => {});
     if (!settings.showLyrics) { setNotice("Lyrics are off. Turn them on in settings."); return; }
     setNotice("Looking for lyrics\u2026");
@@ -384,6 +385,9 @@
     if (res && Array.isArray(res.words) && res.words.length) {
       setLyrics(res.words.map((l) => ({ t: l.t, end: l.end, text: l.text, words: l.words, speakerHint: l.speakerHint || l.speaker || l.role || l.label || "" })),
         "Real word timing \u00b7 " + (res.source || "Timed source"));
+      if (typeof updateVisualTrackContext === "function") {
+        updateVisualTrackContext(np, { wordGap: window.VisualScenes.averageWordGap(res.words) });
+      }
       setNotice("");
     } else if (res && res.synced) {
       const parsed = parseLrc(res.synced);
@@ -438,6 +442,7 @@
         sendActive(true);
         $("dur").textContent = fmt(durSec);
         if (nextTrackId !== trackId) {
+          if (typeof beginVisualTrack === "function") beginVisualTrack(np, nextTrackId, trackId);
           window.tracker.historyAdd({ uri: np.id, name: np.title, artist: np.artist, album: np.album, img: np.artwork });
           loadTrack(np);
         }
@@ -447,6 +452,7 @@
         sendActive(false);
         if (trackId !== null) lyricsGeneration++;
         trackId = null; clearLyrics();
+        if (typeof endVisualTrack === "function") endVisualTrack();
         document.body.dataset.genre = ""; $("genre").textContent = "";
         $("title").textContent = np.state === "closed" ? "Spotify is not open" : "Nothing playing";
         $("artist").textContent = ""; $("album").textContent = "";

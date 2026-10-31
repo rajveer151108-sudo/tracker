@@ -9,6 +9,13 @@
   <div id="backdrop"></div>
   <div id="glow"></div>
   <div id="viewTransitionGlow" aria-hidden="true"></div>
+  <div id="trackTransition" aria-hidden="true">
+    <div class="trackTransitionCard">
+      <img id="trackTransitionArt" alt="" />
+      <div class="trackTransitionCopy"><small>NOW ENTERING</small><strong id="trackTransitionTitle"></strong><span id="trackTransitionArtist"></span></div>
+    </div>
+  </div>
+  <div id="visualSceneBadge" aria-hidden="true"><small>VISUAL SCENE</small><strong>Afterglow</strong></div>
   <header>
     <img id="cover" alt="" crossorigin="anonymous" />
     <div id="meta">
@@ -147,6 +154,7 @@
 <script src="src/shared/album-focus.js"></script>
 <script src="src/shared/lyric-timing.js"></script>
 <script src="src/shared/playback-clock.js"></script>
+<script src="src/shared/visual-scenes.js"></script>
 <script src="src/shared/dialogue-speaker.js"></script>
 <script src="src/renderer/components/backdrop.js"></script>
 <script src="src/renderer/components/lyric-effects.js"></script>
@@ -156,6 +164,7 @@
 <script src="src/renderer/components/queue-panel.js"></script>
 <script src="src/renderer/components/controls.js"></script>
 <script src="src/renderer/components/account-panel.js"></script>
+<script src="src/renderer/components/visual-automation.js"></script>
 <script src="src/renderer/components/home.js"></script>
 <script src="src/renderer/components/tracker-panel.js"></script>
 <script src="src/renderer/components/init.js"></script>

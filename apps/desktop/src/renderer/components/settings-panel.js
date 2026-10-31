@@ -42,6 +42,20 @@
       hint: "Cinematic word modes can now grow to 160px; long lines still stay inside the stage." },
     { key: "lyricsBlur", label: "Blur lines that aren't playing", type: "toggle" },
 
+    { type: "heading", label: "Scenes & automation" },
+    { key: "songPresetsEnabled", label: "Saved looks for each song", type: "toggle", status: true,
+      hint: "When enabled, a saved song look overrides Director Mode and your normal defaults." },
+    { type: "button", label: "Save this song's current look",
+      hint: "Remembers the lyric style, type, background, glow and motion currently on screen.",
+      button: "Save / replace", action: () => saveCurrentSongPreset() },
+    { type: "button", label: "Forget this song's saved look",
+      hint: "Only removes the current song's custom look. Your global settings stay untouched.",
+      button: "Forget", action: () => forgetCurrentSongPreset() },
+    { key: "cinematicTransitions", label: "Cinematic track transitions", type: "toggle",
+      hint: "Choreographs artwork, colour and typography when the actual song changes. Seeking and pausing do not trigger it." },
+    { key: "directorMode", label: "Director Mode", type: "toggle", status: true,
+      hint: "Automatically stages lyrics, background, glow and motion from genre and vocal pace. Manual changes win for the current song." },
+
     { type: "heading", label: "Background" },
     { key: "backdrop", label: "Show background", type: "toggle" },
     { key: "backdropStyle", label: "Style", type: "choice",
@@ -225,6 +239,8 @@
     const backdropZoomChanged = appliedBackdropZoom !== null && appliedBackdropZoom !== settings.backdropTourZoom;
     appliedBackdropZoom = settings.backdropTourZoom;
     if (backdropZoomChanged && settings.backdropStyle === "album" && typeof refreshAlbumTours === "function") refreshAlbumTours();
+
+    if (typeof onVisualAutomationSettingsApplied === "function") onVisualAutomationSettingsApplied();
 
     if (settings.beat && !beatOn && !beatStarting) startBeat();
     if (!settings.beat && beatOn) stopBeat("Off");
