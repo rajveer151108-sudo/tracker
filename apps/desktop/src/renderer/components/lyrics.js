@@ -109,23 +109,29 @@
   function wordStreamRows(input) {
     const rows = input.flatMap((line, index) => {
       const words = timedWords(line, input[index + 1]?.t);
+      const backgroundWords = Array.isArray(line.backgroundWords) ? line.backgroundWords : [];
       return words.map((word) => ({
         t: word.t,
         end: word.end,
         text: word.text,
         words: [word],
         wordStream: true,
+        backgroundText: backgroundWords
+          .filter((background) => Number(background?.t) < word.end && Number(background?.end) > word.t)
+          .map((background) => String(background.text || "").trim())
+          .filter(Boolean)
+          .join(" "),
       }));
     }).sort((a, b) => a.t - b.t);
     return window.LyricEffects.decorateRows(rows);
   }
 
-  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "constellation"]);
-  const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "prism", "buildstack", "constellation", "captioncards", "poster"]);
+  const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "splitstage"]);
+  const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "splitstage", "captioncards", "poster"]);
   const LAYOUT_LABELS = {
     wordstream: "Word stream", wordstack: "Word stack", stack: "Lyric stack",
     kinetic: "Kinetic stack", morphstack: "Morph stack", prism: "Prism roll", buildstack: "Phrase builder",
-    constellation: "Constellation", captioncards: "Caption cards",
+    constellation: "Constellation", ribbon: "Ribbon trail", splitstage: "Split stage", captioncards: "Caption cards",
     poster: "Poster cutout",
   };
   function isWordLayout(layout = settings.lyricsLayout) { return WORD_LAYOUTS.has(layout); }
@@ -201,6 +207,10 @@
         div.classList.add("keyword");
         div.dataset.tone = l.tone;
       }
+      if (l.backgroundText) {
+        div.classList.add("has-background-vocal");
+        div.dataset.backgroundText = l.backgroundText;
+      }
       const timed = Array.isArray(l.words) && l.words.length > 0;
       const words = timed ? l.words.map((w) => w.text) : (l.text || "\u266A").split(/\s+/).filter(Boolean);
       let emojiSpan = null;
@@ -250,7 +260,7 @@
     refreshLyricBoxSizing();
   }
 
-  const BOX_FIT_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack"]);
+  const BOX_FIT_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "ribbon", "splitstage"]);
   function refreshLyricBoxSizing() {
     if (!window.LyricBox || !lineEls.length) return;
     const stage = $("stage");
@@ -269,6 +279,7 @@
       if (!boxLayout) return el.style.removeProperty("--lyric-box-font");
       const fitMetrics = settings.lyricsLayout === "prism"
         ? { ...metrics, width: metrics.width * .74 }
+        : settings.lyricsLayout === "splitstage" ? { ...metrics, width: metrics.width * .46 }
         : metrics;
       const fontSize = window.LyricBox.fitTextToLyricBox(el.dataset.lyric || el.textContent, fitMetrics, {
         max: immersiveNow ? 460 : 420,
@@ -443,7 +454,10 @@
     const res = await window.tracker.lyrics(lastInfo);
     if (trackId !== gid || generation !== lyricsGeneration || !settings.showLyrics) return;
     if (res && Array.isArray(res.words) && res.words.length) {
-      setLyrics(res.words.map((l) => ({ t: l.t, end: l.end, text: l.text, words: l.words, speakerHint: l.speakerHint || l.speaker || l.role || l.label || "" })),
+      setLyrics(res.words.map((l) => ({
+        t: l.t, end: l.end, text: l.text, words: l.words, backgroundWords: l.backgroundWords,
+        speakerHint: l.speakerHint || l.speaker || l.role || l.label || "",
+      })),
         "Real word timing \u00b7 " + (res.source || "Timed source"));
       if (typeof updateVisualTrackContext === "function") {
         updateVisualTrackContext(np, { wordGap: window.VisualScenes.averageWordGap(res.words) });

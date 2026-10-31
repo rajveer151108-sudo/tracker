@@ -47,7 +47,7 @@ test("the lyrics backdrop can persist a full blackout style", () => {
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const lyricsLayout of ["kinetic", "morphstack", "prism", "buildstack", "constellation", "captioncards", "poster"]) {
+    for (const lyricsLayout of ["kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "splitstage", "captioncards", "poster"]) {
       const store = createSettingsStore({ getPath: () => userData });
       store.load();
       store.update({ lyricsLayout, glowStyle: "frame" });
@@ -118,11 +118,11 @@ test("the new cinematic glow styles persist", () => {
   try {
     const store = createSettingsStore({ getPath: () => userData });
     store.load();
-    for (const glowStyle of ["aurora", "halo", "prism", "horizon"]) {
+    for (const glowStyle of ["aurora", "halo", "prism", "horizon", "eclipse", "nebula"]) {
       store.update({ glowStyle });
       assert.equal(store.get().glowStyle, glowStyle);
     }
-    assert.equal(createSettingsStore({ getPath: () => userData }).load().glowStyle, "horizon");
+    assert.equal(createSettingsStore({ getPath: () => userData }).load().glowStyle, "nebula");
   } finally {
     fs.rmSync(userData, { recursive: true, force: true });
   }

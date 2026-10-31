@@ -97,7 +97,8 @@
         el.classList.remove("constellation-current");
         const visible = layout === "buildstack"
           ? relative <= 0 && relative >= -3
-          : Math.abs(relative) <= (layout === "prism" ? 2 : layout === "morphstack" ? 1 : layout === "kinetic" ? 1 : 0);
+          : Math.abs(relative) <= (layout === "prism" || layout === "ribbon" ? 2
+            : layout === "morphstack" || layout === "kinetic" || layout === "splitstage" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }
     });
@@ -186,6 +187,7 @@
         reentry: structureReentry,
         loudnessTrend: audioLoudnessTrend,
         vocalTrend: audioVocalTrend,
+        vocalLayering: audioVocalLayering,
         beatConfidence: audioBeatConfidence,
         bpm: audioBpm,
         bass: audioBassLevel,
@@ -201,6 +203,7 @@
         hasLyrics: lyricContext.hasLyrics,
         lineIndex: directorLineIndex,
         wordIndex: lyricContext.wordIndex,
+        lyricLayers: lyricContext.layeredVocals,
       }, tNow);
     }
     if (tNow - lastUiT >= 100) {

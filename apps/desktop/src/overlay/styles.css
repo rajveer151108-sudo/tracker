@@ -52,6 +52,17 @@
     filter: blur(calc(var(--atmo-line,3px) * .65)); box-shadow: 0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.58); }
   #edge[data-mode="horizon"] #atmosphere::before { top: 3%; animation: horizonTop var(--atmo-speed, 6s) ease-in-out infinite alternate; }
   #edge[data-mode="horizon"] #atmosphere::after { bottom: 3%; transform: scaleX(-1); animation: horizonBottom var(--atmo-speed, 6s) ease-in-out infinite alternate; }
+
+  /* Eclipse: off-axis orbital rings with an intentionally untouched centre. */
+  #edge[data-mode="eclipse"] #atmosphere{display:block;inset:4% 7%;padding:var(--atmo-width,18px);border-radius:50%;background:conic-gradient(from 38deg,transparent 0 12%,rgba(var(--atmo-a),.18) 18%,rgba(255,255,255,.9) 24%,rgba(var(--atmo-b),.92) 31%,transparent 42% 68%,rgba(var(--atmo-a),.86) 78%,rgba(255,255,255,.58) 84%,transparent 92%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;filter:drop-shadow(0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.62));animation:eclipseOrbit calc(var(--atmo-speed,7s) * 1.8) linear infinite}
+  #edge[data-mode="eclipse"] #atmosphere::before{inset:8% 11%;border:var(--atmo-line,3px) solid rgba(var(--atmo-b),.38);border-radius:50%;box-shadow:0 0 calc(var(--atmo-bloom,80px) * .52) rgba(var(--atmo-b),.38);animation:eclipseBreathe var(--atmo-speed,7s) ease-in-out infinite}
+  #edge[data-mode="eclipse"] #atmosphere::after{inset:17% 19%;border-top:1px solid rgba(255,255,255,.42);border-bottom:1px solid rgba(var(--atmo-a),.28);border-radius:50%;transform:rotate(-18deg);opacity:.68}
+
+  /* Nebula: asymmetric corner clouds. It reads as depth around a dual-vocal
+     scene without placing a fog layer over the words themselves. */
+  #edge[data-mode="nebula"] #atmosphere{display:block;overflow:hidden;background:radial-gradient(ellipse 44% 34% at -4% -5%,rgba(var(--atmo-a),.94),transparent 72%),radial-gradient(ellipse 40% 38% at 103% 104%,rgba(var(--atmo-b),.9),transparent 74%),radial-gradient(ellipse 18% 56% at 102% 12%,rgba(var(--atmo-a),.3),transparent 77%),radial-gradient(ellipse 18% 52% at -3% 88%,rgba(var(--atmo-b),.28),transparent 78%);filter:blur(calc(var(--atmo-blur,28px) * .72)) saturate(1.42);animation:nebulaDrift calc(var(--atmo-speed,8s) * 1.45) ease-in-out infinite alternate}
+  #edge[data-mode="nebula"] #atmosphere::before{inset:-12%;background:conic-gradient(from 28deg at 0 0,rgba(255,255,255,.38),rgba(var(--atmo-a),.36) 8%,transparent 18% 79%,rgba(var(--atmo-b),.24) 91%,transparent);filter:blur(calc(var(--atmo-blur,28px) * .46));opacity:.68}
+  #edge[data-mode="nebula"] #atmosphere::after{right:-12%;bottom:-16%;width:52%;height:54%;border-radius:50%;border:1px solid rgba(var(--atmo-b),.34);box-shadow:0 0 var(--atmo-bloom,80px) rgba(var(--atmo-b),.46),inset 0 0 calc(var(--atmo-bloom,80px) * .54) rgba(var(--atmo-a),.24);transform:rotate(-24deg)}
   #frame { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   #frame path { fill: none; stroke: rgba(var(--frame-a), var(--frame-o, .6)); stroke-width: var(--frame-w, 3px); vector-effect: non-scaling-stroke;
                 filter: drop-shadow(0 0 var(--frame-b, 18px) rgba(var(--frame-a), .95)); }
@@ -72,3 +83,6 @@
   @keyframes prismShift { 0%{background-position:0 0;filter:drop-shadow(0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.58))} 50%{background-position:100% 100%;filter:drop-shadow(0 0 calc(var(--atmo-bloom,80px) * 1.15) rgba(var(--atmo-b),.74))} 100%{background-position:0 0;filter:drop-shadow(0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.58))} }
   @keyframes horizonTop { from{transform:translateY(-30%) scaleX(.82);opacity:.62} to{transform:translateY(130%) scaleX(1);opacity:1} }
   @keyframes horizonBottom { from{transform:translateY(30%) scaleX(-.82);opacity:.58} to{transform:translateY(-130%) scaleX(-1);opacity:1} }
+  @keyframes eclipseOrbit{to{transform:rotate(360deg)}}
+  @keyframes eclipseBreathe{0%,100%{transform:scale(.985);opacity:.48}50%{transform:scale(1.025);opacity:.95}}
+  @keyframes nebulaDrift{from{transform:scale(1) translate3d(-1%,1%,0);filter:blur(calc(var(--atmo-blur,28px) * .72)) saturate(1.2)}to{transform:scale(1.06) translate3d(1.5%,-1.5%,0);filter:blur(calc(var(--atmo-blur,28px) * .84)) saturate(1.58)}}

@@ -256,14 +256,14 @@
   }
 
   /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) #lines {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="ribbon"], [data-layout="splitstage"], [data-layout="captioncards"], [data-layout="poster"]) #lines {
     inset: 0; padding: 0; transform: none; transition: opacity .25s ease; z-index: 1;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="ribbon"], [data-layout="splitstage"], [data-layout="captioncards"], [data-layout="poster"]) .line {
     position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-arrive {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="ribbon"], [data-layout="splitstage"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="ribbon"], [data-layout="splitstage"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-arrive {
     animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
@@ -294,6 +294,35 @@
   body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .07em}
   body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-step-ms,210ms) cubic-bezier(.14,.88,.2,1) both}
   @keyframes morphStackSwap{0%{opacity:.1;transform:translate(-50%,calc(-50% + 54px));filter:blur(9px) brightness(1.25)}76%{opacity:1;transform:translate(-50%,calc(-50% - 3px));filter:blur(.5px)}100%{opacity:1;transform:translate(-50%,-50%);filter:none}}
+
+  /* Ribbon trail — five timed words travel along one calm S-curve. The path
+     supplies continuity while only the centre word asks to be read. */
+  body[data-layout="ribbon"] #lines::before{content:"";position:absolute;left:7%;top:20%;width:86%;height:60%;border-radius:50%;border-top:1px solid rgba(var(--glow),.28);border-bottom:1px solid rgba(var(--glow),.16);transform:rotate(11deg) skewX(-13deg);box-shadow:0 -16px 42px rgba(var(--glow),.08),0 18px 54px rgba(var(--glow),.06);filter:drop-shadow(0 0 9px rgba(var(--glow),.32));opacity:.82}
+  body[data-layout="ribbon"] .line{left:50%;top:50%;width:min(var(--lyric-box-width),76vw);max-width:76vw;font-size:var(--lyric-box-font,min(calc(var(--lyric-size) * .86),11vw,13vh));font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:860;line-height:.94;letter-spacing:-.045em;color:rgba(255,255,255,.25);opacity:0;transform:translate(-50%,-50%);transition:left var(--word-step-ms,210ms) cubic-bezier(.2,.78,.2,1),top var(--word-step-ms,210ms) cubic-bezier(.2,.78,.2,1),opacity .25s,transform var(--word-step-ms,210ms) cubic-bezier(.2,.78,.2,1),filter .25s}
+  body[data-layout="ribbon"] .line[data-slot="-2"]{left:12%;top:28%;opacity:.09;transform:translate(-50%,-50%) scale(.28) rotate(-7deg);filter:blur(5px)}
+  body[data-layout="ribbon"] .line[data-slot="-1"]{left:29%;top:39%;opacity:.26;transform:translate(-50%,-50%) scale(.48) rotate(-3deg);filter:blur(2px)}
+  body[data-layout="ribbon"] .line[data-slot="0"]{left:50%;top:50%;z-index:3;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .18em rgba(255,255,255,.18),0 0 .52em rgba(var(--glow),.54);filter:none}
+  body[data-layout="ribbon"] .line[data-slot="1"]{left:72%;top:63%;opacity:.25;transform:translate(-50%,-50%) scale(.46) rotate(4deg);filter:blur(2.2px)}
+  body[data-layout="ribbon"] .line[data-slot="2"]{left:89%;top:76%;opacity:.08;transform:translate(-50%,-50%) scale(.27) rotate(8deg);filter:blur(5.5px)}
+  body[data-layout="ribbon"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none}
+  body[data-layout="ribbon"] .line.creative-arrive{animation:ribbonArrive .34s cubic-bezier(.16,.84,.2,1) both}
+  @keyframes ribbonArrive{from{opacity:.12;transform:translate(-58%,-37%) scale(.82) rotate(-5deg);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
+
+  /* Split stage — one lead voice owns the left pane. A genuine background
+     vocal from TTML/Karaoke timing appears independently on the right; absent
+     metadata, restrained neighbouring words keep the composition balanced. */
+  body[data-layout="splitstage"] #lines::before{content:"";position:absolute;left:50%;top:14%;width:1px;height:72%;background:linear-gradient(transparent,rgba(255,255,255,.25) 22%,rgba(var(--glow),.72) 50%,rgba(255,255,255,.2) 78%,transparent);box-shadow:0 0 22px rgba(var(--glow),.55);opacity:.72}
+  body[data-layout="splitstage"] .line{left:30%;top:50%;width:min(calc(var(--lyric-box-width) * .46),40vw);max-width:40vw;font-size:var(--lyric-box-font,min(calc(var(--lyric-size) * .82),8.8vw,12vh));font-family:ui-sans-serif,"SF Pro Display",system-ui,sans-serif;font-weight:880;line-height:.96;letter-spacing:-.05em;color:rgba(255,255,255,.24);opacity:0;transform:translate(-50%,-50%);transition:left var(--word-step-ms,220ms) cubic-bezier(.18,.8,.2,1),top var(--word-step-ms,220ms) cubic-bezier(.18,.8,.2,1),opacity .25s,transform var(--word-step-ms,220ms) cubic-bezier(.18,.8,.2,1),filter .25s}
+  body[data-layout="splitstage"] .line[data-slot="0"]{left:28%;top:50%;z-index:3;opacity:1;color:#fff;text-align:right;transform:translate(-50%,-50%);text-shadow:0 0 .42em rgba(var(--glow),.48);filter:none}
+  body[data-layout="splitstage"] .line[data-slot="-1"]{left:72%;top:34%;opacity:.16;text-align:left;transform:translate(-50%,-50%) scale(.42);filter:blur(2.4px)}
+  body[data-layout="splitstage"] .line[data-slot="1"]{left:72%;top:68%;opacity:.3;text-align:left;transform:translate(-50%,-50%) scale(.56);filter:blur(1px)}
+  body[data-layout="splitstage"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none}
+  body[data-layout="splitstage"] .line[data-slot="0"].has-background-vocal::after{content:attr(data-background-text);position:absolute;left:calc(100% + 13vw);top:50%;width:min(calc(var(--lyric-box-width) * .42),36vw);color:rgba(255,255,255,.94);font-family:ui-serif,"New York",Georgia,serif;font-size:clamp(34px,.3em,104px);font-style:italic;font-weight:680;line-height:1.04;letter-spacing:-.025em;text-align:left;text-shadow:0 0 .52em rgba(var(--glow),.72);transform:translateY(-50%);animation:backgroundVoiceIn .38s cubic-bezier(.16,.84,.2,1) both}
+  body[data-layout="splitstage"] #lines:has(.line[data-slot="0"].has-background-vocal) .line:not([data-slot="0"]){opacity:.06}
+  body:is([data-layout="ribbon"],[data-layout="splitstage"]) .lyric-emoji{display:none!important}
+  body[data-layout="splitstage"] .line.creative-arrive{animation:splitLeadIn .32s cubic-bezier(.16,.84,.2,1) both}
+  @keyframes splitLeadIn{from{opacity:.08;transform:translate(-44%,-50%) scale(.9);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
+  @keyframes backgroundVoiceIn{from{opacity:0;transform:translate(1.2em,-50%);filter:blur(6px)}to{opacity:1;transform:translate(0,-50%);filter:none}}
 
   /* An invisible eight-faced prism. Every timed word occupies one physical
      face; advancing the lyric rotates the next face squarely toward us. */

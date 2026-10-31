@@ -20,7 +20,7 @@
   function layout() {
     ringwrap.style.display = style === "rotate" || style === "comet" ? "block" : "none";
     const frameStyle = style === "frame" || style === "flowline";
-    const atmosphereStyle = ["aurora", "halo", "prism", "horizon"].includes(style);
+    const atmosphereStyle = ["aurora", "halo", "prism", "horizon", "eclipse", "nebula"].includes(style);
     frame.style.display = frameStyle ? "block" : "none";
     atmosphere.style.display = atmosphereStyle ? "block" : "none";
     edge.dataset.mode = style;
@@ -92,7 +92,7 @@
 
     // soft inner glow (weaker when the moving light is on, so it stands out)
     const edgeLine = style === "flowline";
-    const atmospheric = ["aurora", "halo", "prism", "horizon"].includes(style);
+    const atmospheric = ["aurora", "halo", "prism", "horizon", "eclipse", "nebula"].includes(style);
     const soft = style === "steady" ? 1 : style === "frame" ? 0.18 : edgeLine ? 0 : atmospheric ? .1 : 0.38;
     const phraseGlow = Math.max(word * vocal, phrase * .48 + syllable * .34 + sibilance * .14);
     const a1 = Math.max(0, Math.min(1, (0.28 + 0.2 * energy + 0.16 * vocal + 0.18 * beat + 0.1 * lift +

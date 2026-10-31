@@ -24,6 +24,20 @@ test("TTML syllables are combined into timed words", () => {
   assert.equal(result.lines[0].words[0].end, 1.6);
 });
 
+test("TTML preserves overlapping background vocals without mixing them into the main lyric", () => {
+  const result = parseTTML(`
+    <tt><body><div>
+      <p begin="1s" end="4s">
+        <span begin="1s" end="2s">main </span>
+        <span begin="2s" end="3s">voice</span>
+        <span ttm:role="x-bg"><span begin="1.5s" end="2.4s">other</span></span>
+      </p>
+    </div></body></tt>
+  `);
+  assert.deepEqual(result.lines[0].words.map((word) => word.text), ["main", "voice"]);
+  assert.deepEqual(result.lines[0].backgroundWords, [{ t: 1.5, end: 2.4, text: "other" }]);
+});
+
 test("Kpoe timing ignores background vocals and preserves foreground words", () => {
   const result = parseKpoe({
     lyrics: [{
@@ -39,6 +53,7 @@ test("Kpoe timing ignores background vocals and preserves foreground words", () 
   });
   assert.ok(result);
   assert.deepEqual(result.lines[0].words.map((word) => word.text), ["fast", "verse"]);
+  assert.deepEqual(result.lines[0].backgroundWords, [{ t: 1.3, end: 1.6, text: "adlib" }]);
   assert.equal(result.lines[0].end, 2.8);
 });
 

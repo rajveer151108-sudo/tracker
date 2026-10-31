@@ -2,7 +2,8 @@
 //   parseTTML: the XML format Apple Music-style sources use (words or syllables with begin / end times)
 //   parseKpoe: the JSON some community lyric services use (lines with a "syllabus" of timed pieces)
 //   parseAny:  looks at a response and picks the right one
-// Every parser returns { lines: [{ t, end, text, words: [{ t, end, text }] }] } with times in seconds, or null.
+// Every parser returns { lines: [{ t, end, text, words, backgroundWords? }] }
+// with times in seconds, or null. Background vocals remain a separate layer.
 
 function decode(s) {
   return String(s)
@@ -32,6 +33,78 @@ function attr(str, name) {
   return m ? (m[1] != null ? m[1] : m[2]) : null;
 }
 
+function extractRoleSpans(markup, role) {
+  const ranges = [], contents = [];
+  const opening = /<span\b([^>]*)>/g;
+  let match;
+  while ((match = opening.exec(markup))) {
+    if (attr(match[1], "role") !== role) continue;
+    const contentStart = opening.lastIndex;
+    const tags = /<\/?span\b[^>]*>/g;
+    tags.lastIndex = contentStart;
+    let depth = 1, tag;
+    while ((tag = tags.exec(markup))) {
+      depth += /^<\/span/i.test(tag[0]) ? -1 : 1;
+      if (depth !== 0) continue;
+      ranges.push([match.index, tags.lastIndex]);
+      contents.push(markup.slice(contentStart, tag.index));
+      opening.lastIndex = tags.lastIndex;
+      break;
+    }
+  }
+  let cleaned = "", cursor = 0;
+  for (const [start, end] of ranges) {
+    cleaned += markup.slice(cursor, start);
+    cursor = end;
+  }
+  cleaned += markup.slice(cursor);
+  return { cleaned, contents };
+}
+
+function timedWordsFromMarkup(markup) {
+  const words = [];
+  let cur = null;
+  const close = () => {
+    if (cur && cur.text.trim()) words.push({ t: cur.t, end: cur.end, text: cur.text.trim() });
+    cur = null;
+  };
+  const tokRe = /<span\b([^>]*)>([^<]*)<\/span>|([^<]+)/g;
+  let token;
+  while ((token = tokRe.exec(markup))) {
+    if (token[3] != null) { if (/\s/.test(token[3])) close(); continue; }
+    const begin = parseTime(attr(token[1], "begin"));
+    const end = parseTime(attr(token[1], "end"));
+    if (begin == null) continue;
+    const raw = decode(token[2]);
+    if (/^\s/.test(raw)) close();
+    const piece = raw.trim();
+    if (piece && /\s/.test(piece)) {
+      close();
+      const parts = piece.split(/\s+/);
+      const total = parts.reduce((sum, word) => sum + word.length, 0) || 1;
+      const span = (end == null ? begin : end) - begin;
+      let consumed = 0;
+      for (const word of parts) {
+        words.push({
+          t: begin + span * (consumed / total),
+          end: begin + span * ((consumed + word.length) / total),
+          text: word,
+        });
+        consumed += word.length;
+      }
+      continue;
+    }
+    if (piece) {
+      if (!cur) cur = { t: begin, end: end == null ? begin : end, text: "" };
+      cur.text += piece;
+      if (end != null) cur.end = end;
+    }
+    if (/\s$/.test(raw)) close();
+  }
+  close();
+  return words;
+}
+
 function parseTTML(xml) {
   if (typeof xml !== "string" || !/<p[\s>]/.test(xml)) return null;
   const lines = [];
@@ -40,53 +113,22 @@ function parseTTML(xml) {
   while ((m = pRe.exec(xml))) {
     const pBegin = parseTime(attr(m[1], "begin"));
     const pEnd = parseTime(attr(m[1], "end"));
-    // background vocals (ad-libs) are timed separately; leave them out of the main line
-    const inner = m[2].replace(/<span\b[^>]*role\s*=\s*["']x-bg["'][^>]*>[\s\S]*?<\/span>\s*<\/span>/g, "");
-
-    const words = [];
-    let cur = null;
-    const close = () => {
-      if (cur && cur.text.trim()) words.push({ t: cur.t, end: cur.end, text: cur.text.trim() });
-      cur = null;
-    };
-    // walk the line: timed <span>s (words or syllables) and the plain text between them
-    const tokRe = /<span\b([^>]*)>([^<]*)<\/span>|([^<]+)/g;
-    let tk;
-    while ((tk = tokRe.exec(inner))) {
-      if (tk[3] != null) { if (/\s/.test(tk[3])) close(); continue; }      // whitespace between spans = a word break
-      const b = parseTime(attr(tk[1], "begin"));
-      const e = parseTime(attr(tk[1], "end"));
-      if (b == null) continue;
-      const raw = decode(tk[2]);
-      if (/^\s/.test(raw)) close();
-      const piece = raw.trim();
-      if (piece && /\s/.test(piece)) {                                      // several words in one timed piece: share the time out
-        close();
-        const parts = piece.split(/\s+/);
-        const total = parts.reduce((n, w) => n + w.length, 0) || 1;
-        const span = (e == null ? b : e) - b;
-        let acc = 0;
-        for (const w of parts) {
-          words.push({ t: b + span * (acc / total), end: b + span * ((acc + w.length) / total), text: w });
-          acc += w.length;
-        }
-        continue;
-      }
-      if (piece) {
-        if (!cur) cur = { t: b, end: e == null ? b : e, text: "" };
-        cur.text += piece;
-        if (e != null) cur.end = e;
-      }
-      if (/\s$/.test(raw)) close();
-    }
-    close();
+    // Keep timed background vocals as a second evidence channel. They never
+    // enter the main text stream, so overlapping takes cannot jumble lyrics.
+    const background = extractRoleSpans(m[2], "x-bg");
+    const inner = background.cleaned;
+    const words = timedWordsFromMarkup(inner);
+    const backgroundWords = background.contents.flatMap(timedWordsFromMarkup);
 
     const plain = decode(inner.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
     if (!plain && !words.length) continue;
     const t = words.length ? words[0].t : pBegin;
     if (t == null) continue;
     const end = pEnd != null ? pEnd : (words.length ? words[words.length - 1].end : t + 3);
-    lines.push({ t, end, text: words.length ? words.map((w) => w.text).join(" ") : plain, words });
+    lines.push({
+      t, end, text: words.length ? words.map((w) => w.text).join(" ") : plain, words,
+      ...(backgroundWords.length ? { backgroundWords } : {}),
+    });
   }
   if (!lines.length) return null;
   lines.sort((a, b) => a.t - b.t);
@@ -103,9 +145,19 @@ function parseKpoe(o) {
     if (!Number.isFinite(t0)) continue;
     const dur = (Number(L.duration) || 0) / 1000;
     const text = String(L.text == null ? "" : L.text);
-    const syl = Array.isArray(L.syllabus)
-      ? L.syllabus.filter((s) => s && !s.isBackground && Number.isFinite(Number(s.time)))
-      : [];
+    const syllabus = Array.isArray(L.syllabus) ? L.syllabus : [];
+    const syl = syllabus.filter((s) => s && !s.isBackground && Number.isFinite(Number(s.time)));
+    const backgroundWords = syllabus.filter((s) => s?.isBackground && Number.isFinite(Number(s.time)))
+      .flatMap((s) => {
+        const backgroundText = String(s.text == null ? "" : s.text).trim();
+        if (!backgroundText) return [];
+        const backgroundTime = Number(s.time) / 1000;
+        return [{
+          t: backgroundTime,
+          end: backgroundTime + Math.max(.06, (Number(s.duration) || 0) / 1000),
+          text: backgroundText,
+        }];
+      });
 
     const words = [];
     if (syl.length) {
@@ -140,6 +192,7 @@ function parseKpoe(o) {
       end: dur ? t0 + dur : (words.length ? words[words.length - 1].end : t0 + 3),
       text: words.length ? words.map((w) => w.text).join(" ") : text.trim(),
       words,
+      ...(backgroundWords.length ? { backgroundWords } : {}),
     });
   }
   if (!lines.length) return null;
