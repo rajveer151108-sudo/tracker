@@ -22,7 +22,7 @@
   .seg { display: flex; background: rgba(255,255,255,.1); border-radius: 9px; padding: 3px; flex: none; }
   .seg button { border: 0; background: transparent; padding: 6px 10px; border-radius: 7px; font-size: 12px; cursor: pointer; opacity: .7; white-space: nowrap; }
   .seg button.active { background: rgba(255,255,255,.9); color: #000; opacity: 1; }
-  .row[data-setting="lyricsLayout"] .seg { flex-wrap: wrap; justify-content: flex-end; max-width: 500px; gap: 2px; }
+  .row[data-setting="lyricsLayout"] .seg,.row[data-setting="backdropStyle"] .seg { flex-wrap: wrap; justify-content: flex-end; max-width: 500px; gap: 2px; }
   .rng { display: flex; align-items: center; gap: 10px; flex: none; }
   .rng input { width: 130px; accent-color: rgb(var(--glow)); }
   .rng span { width: 46px; text-align: right; font-size: 13px; opacity: .7; }

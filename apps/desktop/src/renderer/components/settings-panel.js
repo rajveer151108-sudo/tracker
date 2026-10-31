@@ -1,6 +1,19 @@
 // =====================================================================
   // Settings. To add a new setting: add a default in main.js, then add a row here.
   // =====================================================================
+  async function chooseLyricsCustomBackground() {
+    const result = await window.tracker.chooseLyricsBackground().catch((error) => ({ ok: false, error: error?.message }));
+    if (result?.canceled) return;
+    if (!result?.ok) { showToast(`BACKGROUND: ${result?.error || "IMPORT FAILED"}`); return; }
+    if (typeof markVisualControlManual === "function") markVisualControlManual("backdropStyle");
+    window.tracker.setSettings({ lyricsCustomBackground: result.url, backdropStyle: "custom", backdrop: true });
+    showToast("CUSTOM LYRICS BACKGROUND READY");
+  }
+  function clearLyricsCustomBackground() {
+    if (typeof markVisualControlManual === "function") markVisualControlManual("backdropStyle");
+    window.tracker.setSettings({ lyricsCustomBackground: "", ...(settings.backdropStyle === "custom" ? { backdropStyle: "blur" } : {}) });
+    showToast("CUSTOM LYRICS BACKGROUND CLEARED");
+  }
   const SETTINGS_UI = [
     { type: "heading", label: "Home" },
     { key: "homeMode", label: "Home style", type: "choice",
@@ -65,8 +78,12 @@
     { type: "heading", label: "Background" },
     { key: "backdrop", label: "Show background", type: "toggle" },
     { key: "backdropStyle", label: "Style", type: "choice",
-      hint: "Canvas uses Spotify's looping visual when available. Blackout removes every background light for distraction-free lyrics.",
-      options: [["blur", "Blurred"], ["album", "Album tour"], ["canvas", "Canvas"], ["black", "Blackout"]] },
+      hint: "Canvas uses Spotify's looping visual when available. Custom uses your own picture. Blackout removes every background light.",
+      options: [["blur", "Blurred"], ["album", "Album tour"], ["canvas", "Canvas"], ["custom", "My picture"], ["black", "Blackout"]] },
+    { type: "button", label: "Custom lyrics background", hint: "Imports a private local copy of your picture and keeps it behind every song until you change it.",
+      button: "Choose picture", action: () => chooseLyricsCustomBackground() },
+    { type: "button", label: "Clear custom background", hint: "Returns Custom mode to the normal blurred artwork background.",
+      button: "Clear picture", action: () => clearLyricsCustomBackground() },
     { key: "backdropTourFocus", label: "Album tour focus", type: "choice",
       hint: "Smart artwork finds detailed, colourful areas automatically. Center stage stays near the middle; Classic corners keeps the original route.",
       options: [["smart", "Smart artwork"], ["center", "Center stage"], ["corners", "Classic corners"]] },
@@ -254,8 +271,9 @@
     document.body.dataset.backdropStyle = settings.backdrop ? backdropStyle : "off";
     backdrop.style.display = settings.backdrop ? "" : "none";
     root.style.setProperty("--bdop", backdropStyle === "black" ? "1" : String((settings.backdropOpacity == null ? 60 : settings.backdropOpacity) / 100));
-    const wantedBackdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart");
+    const wantedBackdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart") + ":" + (settings.lyricsCustomBackground || "");
     if (settings.backdrop && backdropStyle === "black" && (!backdrop.children.length || backdropKey !== wantedBackdropKey)) setBackdrop("", lastBackdropTrackUri);
+    else if (settings.backdrop && backdropStyle === "custom" && (!backdrop.children.length || backdropKey !== wantedBackdropKey)) setBackdrop(settings.lyricsCustomBackground || lastArtwork || "", lastBackdropTrackUri);
     else if (settings.backdrop && lastArtwork && (!backdrop.children.length || backdropKey !== wantedBackdropKey)) setBackdrop(lastArtwork, lastBackdropTrackUri);
     else if (settings.backdrop && !lastArtwork && backdropKey !== wantedBackdropKey) {
       backdrop.replaceChildren();

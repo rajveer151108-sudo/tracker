@@ -433,15 +433,16 @@ function updateHomeNowPlaying(np){
 function onHomeModeChange(previous,next){if(previous!==next&&["vinyl","cd"].includes(next))scheduleHomeQueueRefresh(homeState.nowPlaying?.uri||"");}
 let viewTransitionTimer=0;
 function setAppView(view){
-  const wanted=view==="lyrics"?"lyrics":"home",previous=document.body.dataset.view||"home";
+  const wanted=["lyrics","vault"].includes(view)?view:"home",previous=document.body.dataset.view||"home";
   if($("accountPanel").classList.contains("open"))closeAccountPanel();if($("trackerPanel").classList.contains("open"))closeTracker();if($("settings").classList.contains("open"))closeSettings();
-  if(previous===wanted){if(wanted==="home")refreshArcadeHome();else activeIdx=-2;return;}
-  if(wanted==="lyrics")closeQueuePanel();
-  clearTimeout(viewTransitionTimer);document.body.classList.remove("view-enter-home","view-enter-lyrics");void document.body.offsetWidth;
+  if(previous===wanted){if(wanted==="home")refreshArcadeHome();else if(wanted==="lyrics")activeIdx=-2;else if(typeof refreshVault==="function")refreshVault();return;}
+  if(previous==="vault"&&wanted!=="vault"&&typeof isVaultPlaying==="function"&&isVaultPlaying())$("vaultAudio").pause();
+  if(wanted!=="home")closeQueuePanel();
+  clearTimeout(viewTransitionTimer);document.body.classList.remove("view-enter-home","view-enter-lyrics","view-enter-vault");void document.body.offsetWidth;
   document.body.dataset.view=wanted;document.body.classList.add(`view-enter-${wanted}`);
   document.querySelectorAll("#homeScreen video").forEach(video=>{if(wanted==="home")video.play().catch(()=>{});else video.pause();});
-  $("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");
-  if(wanted==="home")refreshArcadeHome();else activeIdx=-2;
+  $("homeBtn").classList.toggle("active",wanted==="home");$("lyricsBtn").classList.toggle("active",wanted==="lyrics");$("vaultBtn").classList.toggle("active",wanted==="vault");$("homeScreen").setAttribute("aria-hidden",wanted!=="home"?"true":"false");$("vaultScreen").setAttribute("aria-hidden",wanted!=="vault"?"true":"false");
+  if(wanted==="home")refreshArcadeHome();else if(wanted==="lyrics")activeIdx=-2;else if(typeof refreshVault==="function")refreshVault();
   viewTransitionTimer=setTimeout(()=>document.body.classList.remove(`view-enter-${wanted}`),900);
 }
 function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openAccountPanel();}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeQueueShortcut").addEventListener("click",openQueuePanel);$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);window.tracker.onAuthRestored?.(()=>{homeState.loadedAt=0;refreshArcadeHome(true);});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();setAppView("home");}

@@ -44,6 +44,20 @@ test("the lyrics backdrop can persist a full blackout style", () => {
   }
 });
 
+test("a custom lyrics picture and its backdrop mode persist together", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    store.update({ backdropStyle: "custom", lyricsCustomBackground: "file:///private/afterglow/background.webp" });
+    const settings = createSettingsStore({ getPath: () => userData }).load();
+    assert.equal(settings.backdropStyle, "custom");
+    assert.equal(settings.lyricsCustomBackground, "file:///private/afterglow/background.webp");
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {

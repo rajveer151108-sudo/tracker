@@ -127,6 +127,10 @@
     let albumLayer = null;
     if (settings.backdropStyle === "black") {
       wrap.classList.add("blackBackdrop");
+    } else if (settings.backdropStyle === "custom") {
+      const custom = document.createElement("div");
+      custom.className = "customBd"; custom.style.backgroundImage = u;
+      wrap.appendChild(custom);
     } else if (settings.backdropStyle === "album" || settings.backdropStyle === "canvas") {
       albumLayer = makeAlbumLayer(url, wrap);
       if (settings.backdropStyle === "canvas") wrap.classList.add("canvasFallback");
@@ -136,7 +140,7 @@
       wrap.appendChild(blur);
     }
     box.appendChild(wrap);
-    backdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart");
+    backdropKey = settings.backdropStyle + ":" + (settings.backdropTourFocus || "smart") + ":" + (settings.lyricsCustomBackground || "");
     revealBackdrop(wrap, old);
     if (settings.backdropStyle !== "canvas" || !trackUri || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const loadCanvas = (attempt = 0) => window.tracker.spotifyCanvas(trackUri).then((result) => {

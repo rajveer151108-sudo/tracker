@@ -20,6 +20,12 @@ function visualSongKey(np) {
   return String(np?.uri || np?.id || currentTrackKey(np) || "").normalize("NFKC").trim().toLowerCase();
 }
 
+function visualSequenceSeed(value) {
+  let hash = 2166136261;
+  for (const character of String(value || "afterglow")) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  return Math.abs(hash >>> 0) % 15;
+}
+
 function visualSnapshot() {
   return window.VisualScenes.extractPreset(settings || {});
 }
@@ -137,7 +143,9 @@ function applyDirectorBeatSwitchEnvironment(state, decision, nowMs) {
     section: "drop",
     genre: state.genre || "other",
     baseVisual: state.activeSteadyVisual || state.directorBase,
+    previousVisual: activeVisualOverlay || {},
     cue: "beat-switch",
+    sequence: state.sceneSequence,
   });
   const environment = Object.fromEntries(Object.entries(scene.visual)
     .filter(([key]) => DIRECTOR_ENVIRONMENT_KEYS.has(key)));
@@ -237,8 +245,9 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.queuedDecision = null;
   state.queuedUntil = 0;
   state.lastEvidenceAt = 0;
-  state.cadenceIndex = 0;
-  state.nextCadenceAt = performance.now() + window.VisualScenes.directorCadenceDelay(0, true);
+  state.cadenceIndex = state.sequenceSeed;
+  state.sceneSequence = state.sequenceSeed;
+  state.nextCadenceAt = performance.now() + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, true);
   state.rapidEvidence = 0;
   state.sustainEvidence = 0;
   Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
@@ -301,6 +310,7 @@ function beginVisualTrack(np, key, previousKey) {
   if (previousKey) playCinematicTrackTransition(np, previousNp);
   if (typeof resetAudioStructureAnalysis === "function") resetAudioStructureAnalysis();
   if (activeVisualOverlay) restoreUserVisualBaseline();
+  const sequenceSeed = visualSequenceSeed(key);
   visualTrackState = {
     key,
     presetKey: visualSongKey(np),
@@ -333,7 +343,9 @@ function beginVisualTrack(np, key, previousKey) {
     decision: null,
     lastAccentAt: 0,
     lastImmediateBeatSwitchAt: 0,
-    cadenceIndex: 0,
+    sequenceSeed,
+    cadenceIndex: sequenceSeed,
+    sceneSequence: sequenceSeed,
     nextCadenceAt: Infinity,
     lastStatusAt: 0,
     lastEvidenceAt: 0,
@@ -377,8 +389,11 @@ function commitDirectorSection(state, section, decision, nowMs) {
     section,
     genre: state.genre || "other",
     baseVisual: state.activeSteadyVisual || state.directorBase,
+    previousVisual: activeVisualOverlay || {},
     cue: decision?.priority,
+    sequence: state.sceneSequence,
   });
+  state.sceneSequence += 1;
   state.section = section;
   state.sectionChangedAt = nowMs;
   state.sectionCandidate = section;
@@ -400,6 +415,7 @@ function commitDirectorSection(state, section, decision, nowMs) {
 function commitDirectorCadence(state, nowMs) {
   const scene = window.VisualScenes.directorCadenceScene({
     baseVisual: state.directorBase,
+    previousVisual: activeVisualOverlay || {},
     sequence: state.cadenceIndex,
     signal: state.sectionSignal,
   });
@@ -551,10 +567,15 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     commitDirectorSection(state, state.queuedSection, state.queuedDecision || decision, nowMs);
     return;
   }
-  if (nowMs >= state.nextCadenceAt && state.section === "steady" && decision.section === "steady"
-    && !state.queuedSection && safeLineCut) {
-    commitDirectorCadence(state, nowMs);
-    return;
+  if (nowMs >= state.nextCadenceAt && !state.queuedSection && safeLineCut) {
+    if (state.section === "steady" && decision.section === "steady") {
+      commitDirectorCadence(state, nowMs);
+      return;
+    }
+    if (decision.section === state.section) {
+      commitDirectorSection(state, state.section, { ...decision, priority: "cadence" }, nowMs);
+      return;
+    }
   }
   const next = decision.section;
   if (next !== state.sectionCandidate) {

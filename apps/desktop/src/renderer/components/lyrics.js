@@ -533,6 +533,7 @@
         $("album").textContent = np.album;
         if (np.artwork && $("cover").getAttribute("src") !== np.artwork) {
           $("cover").src = np.artwork;
+          $("cover").style.visibility = "visible";
           lastArtwork = np.artwork;
         }
         if (settings.backdrop && np.artwork && (trackChanged || !$("backdrop").children.length)) setBackdrop(np.artwork, np.uri || np.id);
@@ -553,9 +554,10 @@
           syncAt = clock.atMs;
         }
         playing = np.state === "playing";
-        if (playbackAwake !== playing) {
-          playbackAwake = playing;
-          window.tracker.setPlaybackActive(playing);
+        const shouldStayAwake = playing || (typeof isVaultPlaying === "function" && isVaultPlaying());
+        if (playbackAwake !== shouldStayAwake) {
+          playbackAwake = shouldStayAwake;
+          window.tracker.setPlaybackActive(shouldStayAwake);
         }
         // Keep the chosen edge treatment visible at a calm idle while a track
         // is paused. Motion inputs naturally decay, then wake with playback.
@@ -569,9 +571,10 @@
       } else {
         window.tracker.observeForTracker(null);
         playing = false;
-        if (playbackAwake) {
-          playbackAwake = false;
-          window.tracker.setPlaybackActive(false);
+        const shouldStayAwake = typeof isVaultPlaying === "function" && isVaultPlaying();
+        if (playbackAwake !== shouldStayAwake) {
+          playbackAwake = shouldStayAwake;
+          window.tracker.setPlaybackActive(shouldStayAwake);
         }
         sendActive(false);
         if (trackId !== null) lyricsGeneration++;
@@ -584,6 +587,7 @@
       }
       if (typeof updateHomeNowPlaying === "function") updateHomeNowPlaying(np);
       if (typeof updateTrackerNowPlaying === "function") updateTrackerNowPlaying(np);
+      if (typeof updateVaultHeader === "function") updateVaultHeader();
       $("playpause").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
     } finally {
       pollInFlight = false;

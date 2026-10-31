@@ -244,20 +244,62 @@
       glowStyle: "frame", glowStrength: 116, glowThickness: 142,
       backdropOpacity: 62, lyricsDanceStyle: "punch", motionStrength: 116,
     },
+    {
+      name: "Type tower", lyricsLayout: "wordstack", lyricsHighlight: "word", lyricsMotion: "cube",
+      glowStyle: "rotate", glowStrength: 110, glowThickness: 146,
+      backdropOpacity: 54, lyricsDanceStyle: "bounce", motionStrength: 102,
+    },
+    {
+      name: "River text", lyricsLayout: "wordstream", lyricsHighlight: "word", lyricsMotion: "slide",
+      glowStyle: "comet", glowStrength: 118, glowThickness: 152,
+      backdropOpacity: 57, lyricsDanceStyle: "punch", motionStrength: 122,
+    },
+    {
+      name: "Layered verse", lyricsLayout: "stack", lyricsHighlight: "whole", lyricsMotion: "glide",
+      glowStyle: "nebula", glowStrength: 94, glowThickness: 124,
+      backdropOpacity: 48, lyricsDanceStyle: "float", motionStrength: 78,
+    },
+    {
+      name: "Flashpoint", lyricsLayout: "flash", lyricsHighlight: "whole", lyricsMotion: "punch",
+      glowStyle: "steady", glowStrength: 124, glowThickness: 164,
+      backdropOpacity: 64, lyricsDanceStyle: "snap", motionStrength: 128,
+    },
+    {
+      name: "Voltage field", lyricsLayout: "kinetic", lyricsHighlight: "word", lyricsMotion: "punch",
+      glowStyle: "prism", glowStrength: 138, glowThickness: 176,
+      backdropOpacity: 62, lyricsDanceStyle: "snap", motionStrength: 140,
+    },
+    {
+      name: "Clean cinema", lyricsLayout: "scroll", lyricsHighlight: "whole", lyricsMotion: "glide",
+      glowStyle: "eclipse", glowStrength: 92, glowThickness: 118,
+      backdropOpacity: 46, lyricsDanceStyle: "subtle", motionStrength: 70,
+    },
+    {
+      name: "Faceted flow", lyricsLayout: "prism", lyricsHighlight: "word", lyricsMotion: "cube",
+      glowStyle: "flowline", glowStrength: 132, glowThickness: 172,
+      backdropOpacity: 59, lyricsDanceStyle: "punch", motionStrength: 134,
+    },
   ]);
 
-  function directorCadenceScene({ baseVisual = {}, sequence = 0, signal = {} } = {}) {
+  function directorCadenceScene({ baseVisual = {}, previousVisual = {}, sequence = 0, signal = {} } = {}) {
     const pace = Math.max(0, Number(signal.pace) || 0);
     const density = Math.max(0, Number(signal.density) || 0);
     const futurePace = Math.max(0, Number(signal.nextPace) || 0, Number(signal.forecastFlow) || 0);
     const normalVerse = pace >= .12 && pace <= .72 && density <= .82;
     let index = Math.abs(Math.trunc(sequence)) % CADENCE_VARIANTS.length;
-    if (normalVerse && sequence % 3 === 0) index = sequence % 2 === 0 ? 0 : 3;
+    const previous = { ...baseVisual, ...previousVisual };
+    for (let offset = 0; offset < CADENCE_VARIANTS.length; offset++) {
+      const candidate = CADENCE_VARIANTS[(index + offset) % CADENCE_VARIANTS.length];
+      if (candidate.lyricsLayout !== previous.lyricsLayout && candidate.glowStyle !== previous.glowStyle) {
+        index = (index + offset) % CADENCE_VARIANTS.length;
+        break;
+      }
+    }
     const { name, ...patch } = CADENCE_VARIANTS[index];
     return {
       name,
       visual: { ...baseVisual, ...patch },
-      reasons: normalVerse && [0, 3].includes(index)
+      reasons: normalVerse
         ? ["normal-paced verse", "scheduled scene evolution"]
         : futurePace > pace + .28 ? ["faster phrase ahead", "scheduled scene evolution"]
         : ["scene cadence", "visual variety"],
@@ -265,8 +307,8 @@
   }
 
   function directorCadenceDelay(sequence = 0, first = false) {
-    const firstPattern = [18000, 21000, 19500];
-    const pattern = [26000, 30000, 24000, 28500, 25500, 31500];
+    const firstPattern = [10500, 12500, 14000];
+    const pattern = [14500, 17500, 15500, 19000, 16500, 13500];
     const values = first ? firstPattern : pattern;
     return values[Math.abs(Math.trunc(sequence)) % values.length];
   }
@@ -394,38 +436,92 @@
     return !hasLyrics || lineActive === false || !!lineBoundary || (musicalCut && !!wordBoundary);
   }
 
-  function directorSectionScene({ section = "steady", genre = "other", baseVisual = {}, cue = "beat-switch" } = {}) {
+  function directorSectionScene({ section = "steady", genre = "other", baseVisual = {}, previousVisual = {}, cue = "beat-switch", sequence = 0 } = {}) {
     const base = { ...baseVisual };
     const sectionPatches = {
-      quiet: {
+      quiet: [{
         name: "Quiet break", lyricsLayout: "morphstack", lyricsMotion: "glide",
         glowStyle: "halo", glowStrength: 72, glowThickness: 110,
         backdropOpacity: 42, lyricsDanceStyle: "subtle", motionStrength: 68,
-      },
-      build: {
+      }, {
+        name: "Open space", lyricsLayout: "captioncards", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "eclipse", glowStrength: 68, glowThickness: 102,
+        backdropOpacity: 38, lyricsDanceStyle: "float", motionStrength: 62,
+      }, {
+        name: "Low tide", lyricsLayout: "stack", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "aurora", glowStrength: 70, glowThickness: 108,
+        backdropOpacity: 40, lyricsDanceStyle: "sway", motionStrength: 64,
+      }],
+      build: [{
         name: "Pressure rising", lyricsLayout: "buildstack", lyricsMotion: "slide",
         glowStyle: "horizon", glowStrength: 116, glowThickness: 142,
         backdropOpacity: 58, lyricsDanceStyle: "bounce", motionStrength: 112,
-      },
-      drop: {
+      }, {
+        name: "Ignition", lyricsLayout: "kinetic", lyricsHighlight: "word", lyricsMotion: "punch",
+        glowStyle: "comet", glowStrength: 124, glowThickness: 154,
+        backdropOpacity: 60, lyricsDanceStyle: "snap", motionStrength: 124,
+      }, {
+        name: "Arrangement bloom", lyricsLayout: "ribbon", lyricsHighlight: "whole", lyricsMotion: "slide",
+        glowStyle: "nebula", glowStrength: 114, glowThickness: 146,
+        backdropOpacity: 56, lyricsDanceStyle: "sway", motionStrength: 106,
+      }],
+      drop: [{
         name: cue === "reentry" ? "Arrangement return" : cue === "beat-switch" ? "Beat switch" : "Production drop",
         lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch",
         glowStyle: "prism", glowStrength: 165, glowThickness: 210,
         backdropOpacity: 68, lyricsDanceStyle: genre === "rock" ? "shake" : "snap", motionStrength: 148,
-      },
-      rapid: {
+      }, {
+        name: cue === "beat-switch" ? "Beat switch: hard cut" : "Impact frame", lyricsLayout: "poster", lyricsHighlight: "word", lyricsMotion: "punch",
+        glowStyle: "frame", glowStrength: 172, glowThickness: 220,
+        backdropOpacity: 72, lyricsDanceStyle: genre === "rock" ? "shake" : "punch", motionStrength: 154,
+      }, {
+        name: cue === "reentry" ? "Arrangement return" : "Drop flare", lyricsLayout: "flash", lyricsHighlight: "whole", lyricsMotion: "punch",
+        glowStyle: "comet", glowStrength: 178, glowThickness: 228,
+        backdropOpacity: 70, lyricsDanceStyle: "snap", motionStrength: 160,
+      }, {
+        name: cue === "beat-switch" ? "Beat switch: refraction" : "Production refraction", lyricsLayout: "prism", lyricsHighlight: "word", lyricsMotion: "cube",
+        glowStyle: "flowline", glowStrength: 168, glowThickness: 214,
+        backdropOpacity: 66, lyricsDanceStyle: "punch", motionStrength: 152,
+      }],
+      rapid: [{
         name: "Flow run", lyricsLayout: "prism", lyricsHighlight: "word", lyricsMotion: "punch",
         glowStyle: "flowline", glowStrength: 126, glowThickness: 168,
         lyricsDanceStyle: "punch", motionStrength: 138,
-      },
-      sustain: {
+      }, {
+        name: "Velocity script", lyricsLayout: "wordstream", lyricsHighlight: "word", lyricsMotion: "slide",
+        glowStyle: "comet", glowStrength: 132, glowThickness: 174,
+        lyricsDanceStyle: "snap", motionStrength: 142,
+      }, {
+        name: "Kinetic verse", lyricsLayout: "kinetic", lyricsHighlight: "word", lyricsMotion: "punch",
+        glowStyle: "nebula", glowStrength: 128, glowThickness: 166,
+        lyricsDanceStyle: "punch", motionStrength: 140,
+      }],
+      sustain: [{
         name: "Held note", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
         glowStyle: "aurora", glowStrength: 104, glowThickness: 145,
         backdropOpacity: 52, lyricsDanceStyle: "float", motionStrength: 86,
-      },
+      }, {
+        name: "Vocal ribbon", lyricsLayout: "ribbon", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "eclipse", glowStrength: 100, glowThickness: 138,
+        backdropOpacity: 50, lyricsDanceStyle: "sway", motionStrength: 82,
+      }, {
+        name: "Long exposure", lyricsLayout: "captioncards", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "halo", glowStrength: 96, glowThickness: 132,
+        backdropOpacity: 48, lyricsDanceStyle: "float", motionStrength: 80,
+      }],
     };
     if (section === "steady" || !sectionPatches[section]) return { name: "Main scene", visual: base };
-    const { name, ...patch } = sectionPatches[section];
+    const choices = sectionPatches[section];
+    let index = Math.abs(Math.trunc(sequence)) % choices.length;
+    const previous = { ...base, ...previousVisual };
+    for (let offset = 0; offset < choices.length; offset++) {
+      const candidate = choices[(index + offset) % choices.length];
+      if (candidate.lyricsLayout !== previous.lyricsLayout && candidate.glowStyle !== previous.glowStyle) {
+        index = (index + offset) % choices.length;
+        break;
+      }
+    }
+    const { name, ...patch } = choices[index];
     return { name, visual: { ...base, ...patch } };
   }
 

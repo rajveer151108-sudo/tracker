@@ -5,6 +5,7 @@ const {
   ipcMain,
   screen,
   desktopCapturer,
+  dialog,
   shell,
   safeStorage,
   systemPreferences,
@@ -27,6 +28,7 @@ const { createSpotifyLibrary } = require("./src/main/spotify-library");
 const { createTrackerSync } = require("./src/main/tracker-sync");
 const { createGlowManager } = require("./src/main/glow-manager");
 const { createPlaybackPowerGuard } = require("./src/main/playback-power");
+const { createVaultStore } = require("./src/main/vault-store");
 const { TRACKER_URL } = require("./src/shared/config");
 
 const rootDir = __dirname;
@@ -34,6 +36,7 @@ const settingsStore = createSettingsStore(app);
 const songPresets = createSongPresetsStore(app);
 const lyrics = createLyricsService(settingsStore.get);
 const genre = createGenreService(app);
+const vaultStore = createVaultStore(app);
 
 let mainWindow = null;
 let immersive = false;
@@ -136,6 +139,52 @@ function registerIpc() {
   ipcMain.on("tracker-observe", (_event, track) => trackerSync.observe(track));
   ipcMain.on("playback-active", (_event, active) => playbackPower.setActive(active === true));
 
+  ipcMain.handle("vault-get", () => vaultStore.snapshot());
+  ipcMain.handle("vault-import-audio", async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "Add unreleased music to Vault",
+      properties: ["openFile", "multiSelections"],
+      filters: [
+        { name: "Audio", extensions: ["mp3", "m4a", "wav", "aiff", "aif", "flac", "ogg", "opus"] },
+        { name: "All files", extensions: ["*"] },
+      ],
+    });
+    return result.canceled ? { ok: true, imported: [], library: vaultStore.snapshot() } : vaultStore.addFiles(result.filePaths);
+  });
+  ipcMain.handle("vault-update", (_event, id, patch) => vaultStore.update(id, patch));
+  ipcMain.handle("vault-import-track-image", async (_event, id, kind) => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: kind === "background" ? "Choose track background" : "Choose cover art",
+      properties: ["openFile"],
+      filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png", "webp", "gif", "avif"] }],
+    });
+    return result.canceled ? { ok: false, canceled: true } : vaultStore.setTrackImage(id, result.filePaths[0], kind);
+  });
+  ipcMain.handle("vault-set-background", async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "Choose a Vault background",
+      properties: ["openFile"],
+      filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png", "webp", "gif", "avif"] }],
+    });
+    return result.canceled ? { ok: false, canceled: true } : vaultStore.setBackground(result.filePaths[0]);
+  });
+  ipcMain.handle("vault-clear-background", () => vaultStore.clearBackground());
+  ipcMain.handle("vault-remove", (_event, id) => vaultStore.remove(id));
+  ipcMain.handle("vault-reveal", (_event, id) => {
+    const filePath = vaultStore.fileFor(id);
+    if (!filePath) return { ok: false, error: "Track not found" };
+    shell.showItemInFolder(filePath);
+    return { ok: true };
+  });
+  ipcMain.handle("lyrics-custom-background", async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "Choose a lyrics background",
+      properties: ["openFile"],
+      filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png", "webp", "gif", "avif"] }],
+    });
+    return result.canceled ? { ok: false, canceled: true } : vaultStore.importImage(result.filePaths[0], "background");
+  });
+
   ipcMain.handle("settings-get", settingsStore.get);
   ipcMain.handle("song-preset-get", (_event, key) => songPresets.get(key));
   ipcMain.handle("song-preset-set", (_event, payload) => songPresets.set(payload));
@@ -177,6 +226,7 @@ function registerIpc() {
 app.whenReady().then(() => {
   settingsStore.load();
   songPresets.load();
+  vaultStore.load();
   registerIpc();
   // Paint the full player before asking macOS Keychain to decrypt saved
   // sessions. A freshly rebuilt local app may need one approval; keeping the

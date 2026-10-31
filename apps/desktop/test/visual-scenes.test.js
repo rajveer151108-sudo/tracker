@@ -87,6 +87,17 @@ test("scheduled cadence leads with Constellation and never leaves a whole song v
   assert.equal(poster.visual.glowStyle, "nebula");
 });
 
+test("cadence and long sections rotate through distinct layout and glow combinations", () => {
+  const cadence = Array.from({ length: 15 }, (_, sequence) => directorCadenceScene({ sequence, baseVisual: {} }).visual);
+  assert.equal(new Set(cadence.map((scene) => `${scene.lyricsLayout}:${scene.glowStyle}`)).size, 15);
+  assert.ok(new Set(cadence.map((scene) => scene.lyricsLayout)).size >= 12);
+  const dropVariants = Array.from({ length: 4 }, (_, sequence) => directorSectionScene({
+    section: "drop", genre: "rap", baseVisual: {}, sequence,
+  }).visual);
+  assert.equal(new Set(dropVariants.map((scene) => `${scene.lyricsLayout}:${scene.glowStyle}`)).size, 4);
+  assert.ok(Math.max(...Array.from({ length: 8 }, (_, index) => directorCadenceDelay(index))) <= 19000);
+});
+
 test("multimodal decisions combine structural, vocal and future flow signals", () => {
   const switchDecision = directorDecision({
     reentry: .9, switchUp: .9, structure: .8, energy: .75, bass: .8,

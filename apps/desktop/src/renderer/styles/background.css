@@ -11,6 +11,10 @@
   body[data-view="lyrics"][data-backdrop-style="black"] #stage::after { opacity: 0 !important; animation: none !important; }
   .bd { position: absolute; inset: -25%; background-size: cover; background-position: center;
         filter: blur(56px) saturate(1.45); animation: drift 20s ease-in-out infinite alternate; }
+  .customBd { position: absolute; inset: 0; background-size: cover; background-position: center;
+              filter: saturate(1.05) contrast(1.02); transform: scale(1.012); animation: customBackdropBreath 24s ease-in-out infinite alternate; }
+  .customBd::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 34%, rgba(4,4,8,.2)); }
+  body[data-performance="battery"] .customBd { animation: none; transform: none; }
   body[data-performance="battery"] .bd { filter: blur(42px) saturate(1.35); animation: none; transform: scale(1.35); }
   /* Album tour fills the screen with a square cover. JavaScript chooses focal points from
      the artwork and drives the camera; the cover stays centered while it is analysed. */
@@ -28,6 +32,7 @@
     from { transform: scale(1.3)  rotate(-6deg) translate(-8%, -5%); }
     to   { transform: scale(1.65) rotate(9deg)  translate(8%, 6%); }
   }
+  @keyframes customBackdropBreath { from { transform: scale(1.012); } to { transform: scale(1.075); } }
   #glow { position: absolute; inset: 0; pointer-events: none;
           opacity: calc(.42 + var(--glow-motion-impact) * .12 + var(--glow-motion-energy) * .14 + var(--glow-motion-build) * .1 + var(--glow-motion-drop) * .24 - var(--glow-motion-duck) * .24 + var(--glow-motion-lift) * .06);
           background:
@@ -49,8 +54,10 @@
                         mix-blend-mode: screen; }
   body.view-enter-lyrics #viewTransitionGlow { animation: lyricsPortal .78s cubic-bezier(.16,.78,.2,1) both; }
   body.view-enter-home #viewTransitionGlow { animation: homePortal .58s cubic-bezier(.2,.7,.25,1) both; }
+  body.view-enter-vault #viewTransitionGlow { animation: vaultPortal .68s cubic-bezier(.18,.78,.22,1) both; }
   @keyframes lyricsPortal { 0% { opacity: 0; transform: scale(.42); filter: blur(24px); } 42% { opacity: .74; } 100% { opacity: 0; transform: scale(1.22); filter: blur(4px); } }
   @keyframes homePortal { 0% { opacity: .5; transform: scale(1.1); } 100% { opacity: 0; transform: scale(.72); } }
+  @keyframes vaultPortal { 0% { opacity: .58; transform: scale(.7); filter: sepia(.7) blur(18px); } 100% { opacity: 0; transform: scale(1.08); filter: none; } }
 
   header { position: relative; display: flex; align-items: center; gap: 14px; padding: 20px 22px 8px;
            -webkit-app-region: drag; }
@@ -72,6 +79,7 @@
   #winbtns { display: flex; gap: 8px; flex: none; }
   .wbtn { width: 38px; height: 38px; border-radius: 50%; border: 0; cursor: pointer; font-size: 17px; line-height: 1;
           background: rgba(255,255,255,.08); }
+  .navbtn.active { color: rgb(var(--glow)); background: rgba(var(--glow),.2); box-shadow: inset 0 0 0 1px rgba(var(--glow),.3), 0 0 20px rgba(var(--glow),.12); }
   #closeBtn:hover { background: rgba(255,70,70,.65); }
 
 

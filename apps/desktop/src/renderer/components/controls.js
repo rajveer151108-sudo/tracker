@@ -96,11 +96,12 @@
       search?.select();
       return;
     }
-    if (e.target && e.target.tagName === "INPUT") return;      // don't hijack keys while using a slider
-    if (e.key === " ") { e.preventDefault(); control("playpause"); return; }
+    if (e.target && (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName) || e.target.isContentEditable)) return;
+    if (e.key === " ") { e.preventDefault(); document.body.dataset.view === "vault" ? vaultControl("playpause") : control("playpause"); return; }
     if (e.key === "f" || e.key === "F") { window.tracker.toggleFullscreen(); return; }
     if (e.key === "h" || e.key === "H") { setAppView("home"); return; }
     if (e.key === "y" || e.key === "Y") { setAppView("lyrics"); return; }
+    if (e.key === "v" || e.key === "V") { setAppView("vault"); return; }
     if ((e.key === "q" || e.key === "Q") && document.body.dataset.view === "home") { $("queuePanel").classList.contains("open") ? closeQueuePanel() : openQueuePanel(); return; }
     if ((e.key === "a" || e.key === "A") && document.body.dataset.view === "home") { $("accountPanel").classList.contains("open") ? closeAccountPanel() : openAccountPanel(); return; }
     if (e.key === "t" || e.key === "T") { $("trackerPanel").classList.contains("open") ? closeTracker() : openTracker(); return; }

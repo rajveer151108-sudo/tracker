@@ -33,6 +33,9 @@
     <button id="lyricsBtn" class="wbtn navbtn" title="Lyrics (Y)" aria-label="Open Lyrics">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/></svg>
     </button>
+    <button id="vaultBtn" class="wbtn navbtn" title="Vault (V)" aria-label="Open Vault">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7.5h16V20H4zM3 4h18v3.5H3zM9 11h6"/></svg>
+    </button>
     <button id="trackerBtn" class="wbtn" title="Tracker (T)" aria-label="Open Tracker">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
         <path d="M4 19V10M10 19V5M16 19v-7M22 19V2" />
@@ -70,6 +73,64 @@
           <div class="homeSectionTitle"><span id="homeCollectionsKicker">MUSIC BROWSER</span><h2 id="homeCollectionsTitle">Your music</h2><small id="homeCollectionsMeta">Search songs and playlists, or choose a collection.</small></div>
           <label class="homeSongSearch homeLibrarySearch"><span aria-hidden="true">⌕</span><input id="homeLibrarySearch" type="search" placeholder="Search songs & playlists" autocomplete="off" spellcheck="false" aria-label="Search Spotify songs and playlists" /><kbd>/</kbd></label>
           <div id="arcadeCollections" class="homeCollectionList"><div class="homeLoading">LOADING COLLECTIONS…</div></div>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <main id="vaultScreen" aria-label="Vault unreleased music library" aria-hidden="true">
+    <div id="vaultBackdrop" class="vaultBackdrop" aria-hidden="true"></div>
+    <div class="vaultGrain" aria-hidden="true"></div>
+    <div class="vaultShell">
+      <div class="vaultTopbar">
+        <div class="vaultBrand"><span>PRIVATE AUDIO WORKSPACE // LOCAL</span><h1>Vault</h1><small>Ideas, demos, mixes and masters—kept outside your listening Tracker.</small></div>
+        <div class="vaultTopActions">
+          <button id="vaultBackgroundBtn" type="button">◫ <span>Backdrop</span></button>
+          <button id="vaultClearBackgroundBtn" type="button" title="Use the selected song artwork instead">Reset backdrop</button>
+          <button id="vaultImportBtn" class="primary" type="button">＋ <span>Import audio</span></button>
+        </div>
+      </div>
+      <div class="vaultWorkspace">
+        <aside class="vaultLibrary">
+          <div class="vaultPanelLabel"><span>01</span><b>RECORD BOX</b><small id="vaultCount">0 files</small></div>
+          <label class="vaultSearch"><span>⌕</span><input id="vaultSearch" type="search" placeholder="Search titles, artists, tags…" autocomplete="off" spellcheck="false" /></label>
+          <div class="vaultFilters">
+            <select id="vaultProjectFilter" aria-label="Filter by project"><option value="">All projects</option></select>
+            <select id="vaultStatusFilter" aria-label="Filter by status"><option value="">Any stage</option><option value="idea">Ideas</option><option value="demo">Demos</option><option value="mixing">Mixing</option><option value="master">Masters</option></select>
+          </div>
+          <div id="vaultList" class="vaultList"><div class="vaultEmpty">Your unreleased files will live here.</div></div>
+        </aside>
+
+        <section class="vaultDeck" aria-live="polite">
+          <div class="vaultDeckHeader"><span>02 // SESSION DECK</span><b id="vaultDeckStatus">NO SESSION LOADED</b></div>
+          <div class="vaultArtStage">
+            <div class="vaultArtHalo" aria-hidden="true"></div>
+            <div id="vaultHeroArt" class="vaultHeroArt"><span>V</span></div>
+            <div id="vaultWave" class="vaultWave" aria-hidden="true"></div>
+          </div>
+          <div class="vaultNowCopy"><span id="vaultNowProject">SELECT A RECORD</span><h2 id="vaultNowTitle">Your private listening room</h2><p id="vaultNowArtist">Import an audio file to begin.</p></div>
+          <div class="vaultTransport">
+            <button id="vaultPrevious" type="button" aria-label="Previous track">Ⅰ◀</button>
+            <button id="vaultPlay" class="vaultPlay" type="button" aria-label="Play">▶</button>
+            <button id="vaultNext" type="button" aria-label="Next track">▶Ⅰ</button>
+          </div>
+          <div class="vaultTimeline"><span id="vaultPosition">0:00</span><input id="vaultProgress" type="range" min="0" max="1000" value="0" step="1" aria-label="Vault track position" /><span id="vaultDuration">0:00</span></div>
+          <audio id="vaultAudio" preload="metadata"></audio>
+        </section>
+
+        <aside class="vaultInspector">
+          <div class="vaultPanelLabel"><span>03</span><b>SESSION SHEET</b><small>Saved locally</small></div>
+          <div id="vaultInspectorEmpty" class="vaultInspectorEmpty"><b>Nothing selected</b><span>Choose a file from the record box to edit its identity and artwork.</span></div>
+          <form id="vaultForm" hidden>
+            <label><span>Title</span><input id="vaultTitleInput" name="title" maxlength="180" /></label>
+            <label><span>Artist</span><input id="vaultArtistInput" name="artist" maxlength="140" /></label>
+            <div class="vaultFormPair"><label><span>Project</span><input id="vaultProjectInput" name="project" maxlength="160" /></label><label><span>Version</span><input id="vaultVersionInput" name="version" maxlength="100" /></label></div>
+            <div class="vaultFormPair"><label><span>Stage</span><select id="vaultStatusInput" name="status"><option value="idea">Idea</option><option value="demo">Demo</option><option value="mixing">Mixing</option><option value="master">Master</option></select></label><label><span>Tags</span><input id="vaultTagsInput" name="tags" maxlength="300" placeholder="melodic, feature…" /></label></div>
+            <div class="vaultFormPair compact"><label><span>BPM</span><input id="vaultBpmInput" name="bpm" maxlength="12" inputmode="decimal" /></label><label><span>Key</span><input id="vaultKeyInput" name="key" maxlength="20" /></label></div>
+            <label><span>Notes</span><textarea id="vaultNotesInput" name="notes" maxlength="2000" rows="4" placeholder="Mix notes, credits, next take…"></textarea></label>
+            <div class="vaultAssetButtons"><button id="vaultArtworkBtn" type="button">Add cover</button><button id="vaultTrackBackgroundBtn" type="button">Track backdrop</button></div>
+            <button id="vaultSaveBtn" class="vaultSave" type="submit">Save session sheet</button>
+            <div class="vaultUtilityButtons"><button id="vaultRevealBtn" type="button">Show file</button><button id="vaultRemoveBtn" class="danger" type="button">Remove from Vault</button></div>
+          </form>
         </aside>
       </div>
     </div>
@@ -112,7 +173,7 @@
         <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/></svg>
       </button>
     </div>
-    <div id="hint">Space play/pause &middot; H home &middot; Y lyrics <span id="offs"></span> &middot; F fullscreen &middot; S settings &middot; A account &middot; T tracker</div>
+    <div id="hint">Space play/pause &middot; H home &middot; Y lyrics &middot; V vault <span id="offs"></span> &middot; F fullscreen &middot; S settings &middot; A account &middot; T tracker</div>
   </footer>
 
   <div id="accountPanel" aria-hidden="true">
@@ -184,6 +245,7 @@
 <script src="src/renderer/components/account-panel.js"></script>
 <script src="src/renderer/components/visual-automation.js"></script>
 <script src="src/renderer/components/home.js"></script>
+<script src="src/renderer/components/vault.js"></script>
 <script src="src/renderer/components/tracker-panel.js"></script>
 <script src="src/renderer/components/init.js"></script>
 </body>
