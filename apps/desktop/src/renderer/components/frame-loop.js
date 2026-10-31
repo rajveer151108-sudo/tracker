@@ -145,6 +145,7 @@
     const t = now + offset;
     if ((settings.directorMode || settings.songPresetsEnabled) && typeof updateVisualAutomationPerformance === "function") {
       const directorLineIndex = sourceLines.length ? window.LyricTiming.activeLyricIndex(sourceLines, t) : -1;
+      const lyricContext = window.VisualScenes.lyricDirectorContext(sourceLines, directorLineIndex, t, durSec);
       updateVisualAutomationPerformance({
         energy: motionEnergy,
         vocal: motionVocal,
@@ -153,9 +154,35 @@
         duck: motionDuck,
         drop: dropFlash,
         impact: outLevel,
-        pace: lyricWordPace,
+        pace: Math.max(lyricWordPace, lyricContext.pace),
+        wpm: lyricContext.wpm,
+        density: lyricContext.density,
+        flow: lyricContext.flow,
+        timingConfidence: lyricContext.timingConfidence,
+        vocalGap: lyricContext.vocalGap,
+        nextWpm: lyricContext.nextWpm,
+        nextPace: lyricContext.nextPace,
+        nextDensity: lyricContext.nextDensity,
+        nextGap: lyricContext.nextGap,
+        paceTrend: lyricContext.paceTrend,
+        forecastFlow: lyricContext.forecastFlow,
+        boundaryIn: lyricContext.boundaryIn,
+        hook: lyricContext.hook,
+        progress: lyricContext.progress,
+        structure: structureContrast,
+        timbreShift: structureTimbreShift,
+        switchUp: structureSwitchUp,
+        switchDown: structureSwitchDown,
+        loudnessTrend: audioLoudnessTrend,
+        vocalTrend: audioVocalTrend,
+        beatConfidence: audioBeatConfidence,
+        bpm: audioBpm,
+        bass: audioBassLevel,
+        flux: audioFluxLevel,
+        emotion: lyricMotionEmotion,
+        audioConfidence: settings.beat && beatOn ? .82 + audioBeatConfidence * .18 : 0,
         audioActive: settings.beat && beatOn,
-        hasLyrics: sourceLines.length > 0,
+        hasLyrics: lyricContext.hasLyrics,
         lineIndex: directorLineIndex,
       }, tNow);
     }

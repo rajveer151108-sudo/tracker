@@ -7,6 +7,9 @@
   let motionEnergy = 0, motionVocal = 0, motionLift = 0, motionSyllable = 0, motionPhrase = 0, motionSibilance = 0;
   let energyPeak = 0.08, vocalPeak = 0.08, vocalFloor = 0.015, fluxPeak = 0.025;
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
+  const audioStructureDetector = window.AudioStructure.createAudioStructureDetector();
+  let structureContrast = 0, structureTimbreShift = 0, structureSwitchUp = 0, structureSwitchDown = 0;
+  let audioLoudnessTrend = 0, audioVocalTrend = 0, audioBeatConfidence = 0, audioBpm = 0, audioBassLevel = 0, audioFluxLevel = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
   let lyricWordAttack = 0, lyricWordSustain = 0, lyricTimingConfidence = 0;
   const motionStyleCache = new Map();
@@ -32,6 +35,12 @@
   }
 
   function setBeatStatus(text) { const el = $("status_beat"); if (el) el.textContent = text || ""; }
+
+  function resetAudioStructureAnalysis() {
+    audioStructureDetector.reset(performance.now());
+    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = 0;
+    audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+  }
 
   async function startBeat(requestPermission = false) {
     if (beatOn || beatStarting) return;
@@ -81,6 +90,7 @@
       beatStream = stream;
       tracks[0].addEventListener("ended", () => stopBeat("Audio stopped"));
       beatOn = true;
+      resetAudioStructureAnalysis();
       setBeatStatus("Listening");
     } catch (e) {
       beatOn = false;
@@ -97,6 +107,8 @@
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
     beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null;
     motionEnergy = motionVocal = motionLift = motionSyllable = motionPhrase = motionSibilance = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
+    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+    resetAudioStructureAnalysis();
     window.tracker.sendBeat(applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0, word: 0, pace: 0,
       build: 0, duck: 0, drop: 0, emotion: 0, syllable: 0, phrase: 0, sibilance: 0 }));
     setBeatStatus(msg || "");
@@ -105,7 +117,7 @@
   // live sound level in the settings row, so you can see whether audio is reaching the app
   setInterval(() => {
     if (beatOn && $("settings").classList.contains("open")) {
-      setBeatStatus("Listening \u00B7 voice " + Math.round(motionVocal * 100) + "% \u00B7 energy " + Math.round(motionEnergy * 100) + "% \u00B7 lift " + Math.round(motionLift * 100) + "%");
+      setBeatStatus("Listening \u00B7 voice " + Math.round(motionVocal * 100) + "% \u00B7 energy " + Math.round(motionEnergy * 100) + "% \u00B7 structure " + Math.round(structureContrast * 100) + "%");
     }
   }, 300);
 
@@ -225,7 +237,8 @@
     const norm = peak > 0.04 ? bass / peak : 0;                   // bass relative to that, 0..1
     avgBass = follow(avgBass, norm, 0.45, 0.8, dt);               // slow running average
     const rise = norm - avgBass;                                  // how far above normal right now
-    if (rise > 0.10 && norm > 0.5 && tNow - lastBeat > 160) { pulse = 1; lastBeat = tNow; }
+    let beatHit = false;
+    if (rise > 0.10 && norm > 0.5 && tNow - lastBeat > 160) { pulse = 1; lastBeat = tNow; beatHit = true; }
     pulse *= Math.exp(-dt / 0.16);                                // each hit fades out over ~0.16s
 
     const profile = motionProfile();
@@ -261,6 +274,22 @@
     }
     const centroid = magnitude > 0.01 ? weighted / magnitude : 180;
     const liftTarget = Math.max(0, Math.min(1, (centroid - 450) / 2400)) * vocalTarget;
+    const structure = audioStructureDetector.update({
+      bands: [bass, bandLevel(170, 520, binHz), bandLevel(520, 1800, binHz), bandLevel(1800, 5200, binHz), bandLevel(5200, 10000, binHz)],
+      loudness: energyTarget,
+      vocal: vocalTarget,
+      beat: beatHit,
+    }, tNow, dt);
+    structureContrast = structure.contrast;
+    structureTimbreShift = structure.timbreShift;
+    structureSwitchUp = structure.switchUp;
+    structureSwitchDown = structure.switchDown;
+    audioLoudnessTrend = structure.loudnessTrend;
+    audioVocalTrend = structure.vocalTrend;
+    audioBeatConfidence = structure.beatConfidence;
+    audioBpm = structure.bpm;
+    audioBassLevel = norm;
+    audioFluxLevel = syllableTarget;
     motionEnergy = follow(motionEnergy, energyTarget, 0.045, 0.22, dt);
     motionVocal = follow(motionVocal, vocalTarget, 0.07, 0.28, dt);
     motionLift = follow(motionLift, liftTarget, 0.09, 0.3, dt);
@@ -283,6 +312,10 @@
       dropArmedUntil = 0;
       motionDuck = 0;
     }
+    // Structural contrast catches arrangement and beat switches that do not
+    // contain the old detector's textbook silence-then-bass-drop pattern.
+    if (structureSwitchUp > .35) dropFlash = Math.max(dropFlash, structureSwitchUp * .92);
+    if (structureSwitchDown > .35) motionDuck = Math.max(motionDuck, structureSwitchDown * .9);
     dropFlash *= Math.exp(-dt / 0.28);
 
     const sway = Math.sin(tNow * 0.003 * profile.rate) * profile.sway * motionEnergy;

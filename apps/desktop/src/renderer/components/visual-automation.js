@@ -6,6 +6,7 @@ let visualPresetRequest = 0;
 let visualTransitionTimer = 0;
 let visualBadgeTimer = 0;
 let visualSectionTimer = 0;
+let visualAccentTimer = 0;
 let lastVisualSnapshot = null;
 let pendingVisualPatch = null;
 let automationToggleSnapshot = null;
@@ -81,8 +82,8 @@ function updateVisualAutomationStatus() {
       ? "Off — your normal settings stay in control."
       : visualTrackState?.manualOverride ? "Your manual changes have priority for this song."
       : visualTrackState?.preset ? "A saved song look has priority."
-      : !settings?.beat ? "Directing the song look. Turn on Listen and react for live section changes."
-      : visualTrackState?.directorName ? `Directing: ${visualTrackState.directorName}.`
+      : !settings?.beat ? `Directing from lyric flow${visualTrackState?.directorName ? `: ${visualTrackState.directorName}` : ""}. Turn on Listen and react for full audio analysis.`
+      : visualTrackState?.directorName ? `Directing: ${visualTrackState.directorName}${visualTrackState.decision?.reasons?.length ? ` · ${visualTrackState.decision.reasons.join(" + ")}` : ""}.`
       : "Waiting for the song's genre and lyric pace.";
   }
 }
@@ -109,6 +110,15 @@ function playDirectorSectionTransition(section) {
   document.body.classList.add("director-section-changing");
   clearTimeout(visualSectionTimer);
   visualSectionTimer = setTimeout(() => document.body.classList.remove("director-section-changing"), 760);
+}
+
+function playDirectorAccent(kind = "beat") {
+  document.body.dataset.directorAccent = kind;
+  document.body.classList.remove("director-accent");
+  void document.body.offsetWidth;
+  document.body.classList.add("director-accent");
+  clearTimeout(visualAccentTimer);
+  visualAccentTimer = setTimeout(() => document.body.classList.remove("director-accent"), kind === "structure" ? 620 : 360);
 }
 
 function playCinematicTrackTransition(np, previousNp = null) {
@@ -175,6 +185,9 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.sectionCandidate = "steady";
   state.sectionCandidateSince = performance.now();
   state.sectionChangedAt = performance.now();
+  state.queuedSection = null;
+  state.queuedDecision = null;
+  state.queuedUntil = 0;
   Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
   applyVisualPatch(scene.visual, "director", scene.name);
   updateVisualAutomationStatus();
@@ -183,6 +196,7 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
 function beginVisualTrack(np, key, previousKey) {
   const previousNp = visualTrackState?.np || null;
   if (previousKey) playCinematicTrackTransition(np, previousNp);
+  if (typeof resetAudioStructureAnalysis === "function") resetAudioStructureAnalysis();
   if (activeVisualOverlay) restoreUserVisualBaseline();
   visualTrackState = {
     key,
@@ -205,8 +219,20 @@ function beginVisualTrack(np, key, previousKey) {
     sectionChangedAt: performance.now(),
     lastLyricLine: null,
     queuedSection: null,
+    queuedDecision: null,
     queuedSectionSince: 0,
-    sectionSignal: { energy: 0, vocal: 0, phrase: 0, build: 0, duck: 0, drop: 0, impact: 0, pace: 0 },
+    queuedReadyAt: 0,
+    queuedUntil: 0,
+    decision: null,
+    lastAccentAt: 0,
+    lastStatusAt: 0,
+    sectionSignal: {
+      energy: 0, vocal: 0, phrase: 0, build: 0, duck: 0, drop: 0, impact: 0, pace: 0,
+      wpm: 0, density: 0, flow: 0, timingConfidence: 0, vocalGap: 0, nextWpm: 0, nextPace: 0,
+      nextDensity: 0, nextGap: 0, paceTrend: 0, forecastFlow: 0, boundaryIn: 99, hook: 0,
+      progress: 0, structure: 0, timbreShift: 0, switchUp: 0, switchDown: 0, loudnessTrend: 0,
+      vocalTrend: 0, beatConfidence: 0, bpm: 0, bass: 0, flux: 0, emotion: 0, audioConfidence: 0,
+    },
     lastSectionSampleAt: 0,
     source: "defaults",
   };
@@ -227,6 +253,28 @@ function updateVisualTrackContext(np, context = {}) {
   }
   if (Number.isFinite(context.wordGap)) visualTrackState.wordGap = context.wordGap;
   maybeApplyDirector();
+}
+
+function commitDirectorSection(state, section, decision, nowMs) {
+  const scene = window.VisualScenes.directorSectionScene({
+    section,
+    genre: state.genre || "other",
+    baseVisual: state.directorBase,
+  });
+  state.section = section;
+  state.sectionChangedAt = nowMs;
+  state.sectionCandidate = section;
+  state.sectionCandidateSince = nowMs;
+  state.queuedSection = null;
+  state.queuedDecision = null;
+  state.queuedUntil = 0;
+  state.decision = decision;
+  state.directorName = section === "steady"
+    ? window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name
+    : scene.name;
+  playDirectorSectionTransition(section);
+  applyVisualPatch(scene.visual, "director-section", scene.name);
+  updateVisualAutomationStatus();
 }
 
 function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now()) {
@@ -252,47 +300,75 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     applyDirectorBaseScene(state, state.pendingBaseScene.scene, state.pendingBaseScene.signature);
     return;
   }
-  if (!sample.audioActive) return;
   const signal = state.sectionSignal;
+  const signedKeys = new Set(["loudnessTrend", "vocalTrend", "paceTrend"]);
+  const passthroughKeys = new Set(["wpm", "nextWpm", "bpm", "boundaryIn", "progress"]);
   for (const key of Object.keys(signal)) {
-    const raw = Math.max(0, Math.min(1.5, Number(sample[key]) || 0));
-    const rate = key === "drop" || key === "impact" ? .72 : raw > signal[key] ? .34 : .13;
+    const number = Number(sample[key]) || 0;
+    const raw = passthroughKeys.has(key) ? number
+      : signedKeys.has(key) ? Math.max(-1.5, Math.min(1.5, number))
+      : Math.max(0, Math.min(1.5, number));
+    const rate = key === "drop" || key === "impact" || key === "switchUp" || key === "switchDown" ? .72
+      : raw > signal[key] ? .34 : .16;
     signal[key] += (raw - signal[key]) * rate;
   }
   // A drop is intentionally caught from the raw transient before smoothing;
   // every other section must remain convincing for a short window.
   if ((Number(sample.drop) || 0) > .62) signal.drop = Math.max(signal.drop, Number(sample.drop));
-  const next = window.VisualScenes.directorSection(signal);
+  const structural = Math.max(signal.switchUp, signal.switchDown, signal.structure);
+  if (structural > .45 && nowMs - state.lastAccentAt > 1100) {
+    state.lastAccentAt = nowMs;
+    playDirectorAccent("structure");
+  } else if (signal.impact > .82 && nowMs - state.lastAccentAt > 620) {
+    state.lastAccentAt = nowMs;
+    playDirectorAccent("beat");
+  }
+  const decision = window.VisualScenes.directorDecision(signal, state.section);
+  state.decision = decision;
+  if (nowMs - state.lastStatusAt > 900 && $("settings")?.classList.contains("open")) {
+    state.lastStatusAt = nowMs;
+    updateVisualAutomationStatus();
+  }
+  if (state.queuedSection && nowMs > state.queuedUntil) {
+    state.queuedSection = null;
+    state.queuedDecision = null;
+  }
+  if (safeCut && state.queuedSection && state.queuedSection !== state.section && nowMs >= state.queuedReadyAt) {
+    commitDirectorSection(state, state.queuedSection, state.queuedDecision || decision, nowMs);
+    return;
+  }
+  const next = decision.section;
   if (next !== state.sectionCandidate) {
     state.sectionCandidate = next;
     state.sectionCandidateSince = nowMs;
-    state.queuedSection = null;
   }
   if (next === state.section) return;
   const stableFor = nowMs - state.sectionCandidateSince;
   const timing = window.VisualScenes.directorSectionTiming(next, state.section);
   const sinceChange = nowMs - state.sectionChangedAt;
-  if (stableFor < timing.stableMs || sinceChange < timing.holdMs) return;
+  const requiredStable = timing.stableMs * (1.08 - decision.confidence * .38);
+  const requiredHold = structural > .5 ? Math.min(timing.holdMs, 1500) : timing.holdMs;
+  const structuralCue = structural > .5 && (next === "drop" || next === "quiet");
+  if (structuralCue && state.queuedSection !== next) {
+    state.queuedSection = next;
+    state.queuedDecision = decision;
+    state.queuedSectionSince = nowMs;
+    state.queuedReadyAt = Math.max(nowMs, state.sectionChangedAt + 1000);
+    state.queuedUntil = nowMs + 6500;
+  }
+  if (stableFor < requiredStable || sinceChange < requiredHold) return;
   if (state.queuedSection !== next) {
     state.queuedSection = next;
+    state.queuedDecision = decision;
     state.queuedSectionSince = nowMs;
+    state.queuedReadyAt = nowMs;
+    state.queuedUntil = nowMs + Math.max(4200, Math.min(7000, (Number(signal.boundaryIn) || 0) * 1000 + 1200));
   }
   // With synced lyrics, a qualified scene waits at the wings until the active
   // line ends. Instrumentals have no words to interrupt, so musical transients
   // remain valid cut points there.
   if (!safeCut) return;
-  const scene = window.VisualScenes.directorSectionScene({
-    section: next,
-    genre: state.genre || "other",
-    baseVisual: state.directorBase,
-  });
-  state.section = next;
-  state.sectionChangedAt = nowMs;
-  state.queuedSection = null;
-  state.directorName = next === "steady" ? window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name : scene.name;
-  playDirectorSectionTransition(next);
-  applyVisualPatch(scene.visual, "director-section", scene.name);
-  updateVisualAutomationStatus();
+  commitDirectorSection(state, next, decision, nowMs);
 }
 
 function endVisualTrack() {

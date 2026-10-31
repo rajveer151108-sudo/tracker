@@ -54,7 +54,7 @@
     { key: "cinematicTransitions", label: "Cinematic track transitions", type: "toggle",
       hint: "Choreographs artwork, colour and typography when the actual song changes. Seeking and pausing do not trigger it." },
     { key: "directorMode", label: "Director Mode", type: "toggle", status: true,
-      hint: "Directs the whole song, then detects builds, drops, rapid verses, held notes and quiet breaks. Scene changes wait for a lyric-line ending or a vocal gap. Manual changes win for the current song." },
+      hint: "Scores vocals, loudness, bass, beat confidence, timbre, WPM, flow, emotion and song structure—plus upcoming lyric pace and gaps—then lands scene changes on lyric boundaries. Manual changes win for the current song." },
     { key: "automationNotifications", label: "Show automation notices", type: "toggle",
       hint: "Shows the small top-right card when a saved look or Director scene is applied. Turning this off keeps every visual change silent." },
 

@@ -27,4 +27,11 @@ body.director-section-changing #viewTransitionGlow{animation:directorSectionWash
 @keyframes directorSectionWash{0%,100%{opacity:0;transform:scale(.7)}36%{opacity:.62;transform:scale(1.08)}}
 body[data-director-section="drop"].director-section-changing #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.58),rgba(var(--glow),.44) 22%,transparent 66%)}
 body[data-director-section="quiet"].director-section-changing #viewTransitionGlow{opacity:.28}
+body.director-accent #lines{animation:directorBeatAccent .36s cubic-bezier(.16,.82,.22,1) both}
+body.director-accent #glow{animation:directorAccentGlow .36s ease-out both}
+body[data-director-accent="structure"].director-accent #lines{animation-duration:.62s}
+body[data-director-accent="structure"].director-accent #backdrop{animation:directorStructureAccent .62s ease-out both}
+@keyframes directorBeatAccent{0%,100%{scale:1;filter:none}30%{scale:1.012;filter:brightness(1.1)}}
+@keyframes directorAccentGlow{0%,100%{filter:none}30%{filter:saturate(1.35) brightness(1.2)}}
+@keyframes directorStructureAccent{0%,100%{scale:1;filter:none}38%{scale:1.018;filter:saturate(1.24) contrast(1.08)}}
 @media(prefers-reduced-motion:reduce){body.track-transitioning #trackTransition{animation:trackTransitionFade .65s ease both}body.track-transitioning .trackTransitionCard,body.track-transitioning .trackTransitionArtwork img,body.track-transitioning #stage,body.track-transitioning #homeScreen,body.director-section-changing #lines,body.director-section-changing #backdrop,body.director-section-changing #glow,body.director-section-changing #viewTransitionGlow{animation:none}@keyframes trackTransitionFade{0%,100%{opacity:0}30%,70%{opacity:1}}}

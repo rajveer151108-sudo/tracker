@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-  VISUAL_KEYS, extractPreset, averageWordGap, directorScene, directorSection,
+  VISUAL_KEYS, extractPreset, averageWordGap, lyricDirectorContext, directorScene, directorDecision, directorSection,
   directorSectionTiming, directorCutAllowed, directorSectionScene,
 } = require("../src/shared/visual-scenes");
 
@@ -28,6 +28,25 @@ test("average word gap ignores pauses and malformed timings", () => {
   assert.ok(Math.abs(gap - .25) < .001);
 });
 
+test("lyric context forecasts the next line's flow before it begins", () => {
+  const lines = [
+    { t: 10, end: 13, text: "slow words here" },
+    { t: 13.4, end: 15.4, text: "this next line has a much quicker run of words" },
+  ];
+  const context = lyricDirectorContext(lines, 0, 12, 100);
+  assert.ok(context.nextWpm > context.wpm);
+  assert.ok(context.paceTrend > 0);
+  assert.equal(context.boundaryIn, 1);
+});
+
+test("multimodal decisions combine structural, vocal and future flow signals", () => {
+  const switchDecision = directorDecision({ switchUp: .9, structure: .8, energy: .75, bass: .8 }, "steady");
+  assert.equal(switchDecision.section, "drop");
+  assert.ok(switchDecision.reasons.includes("structure"));
+  const forecastDecision = directorDecision({ pace: .35, nextPace: .95, forecastFlow: .9, density: .7, vocal: .65 }, "steady");
+  assert.ok(["build", "rapid"].includes(forecastDecision.section));
+});
+
 test("section director distinguishes drops, rapid verses, builds and held notes", () => {
   assert.equal(directorSection({ drop: .9, energy: .8 }), "drop");
   assert.equal(directorSection({ pace: .92, vocal: .7, energy: .65 }), "rapid");
@@ -40,8 +59,8 @@ test("director cuts only at lyric boundaries while instrumentals stay music-led"
   assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: false }), false);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: true }), true);
   assert.equal(directorCutAllowed({ hasLyrics: false, lineBoundary: false }), true);
-  assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 0, holdMs: 2400 });
-  assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 2100, holdMs: 3400 });
+  assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 0, holdMs: 1400 });
+  assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 1200, holdMs: 2400 });
 });
 
 test("section scenes keep the song's base direction while changing composition", () => {
