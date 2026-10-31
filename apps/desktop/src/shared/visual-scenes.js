@@ -436,6 +436,24 @@
     return !hasLyrics || lineActive === false || !!lineBoundary || (musicalCut && !!wordBoundary);
   }
 
+  function directorLayoutMinimumDwell(priority = "normal") {
+    if (priority === "beat-switch") return 2800;
+    if (priority === "reentry") return 3400;
+    if (priority === "instrument-lift") return 3800;
+    if (priority === "cadence") return 6500;
+    return 5200;
+  }
+
+  function directorLayoutChangeAllowed({
+    currentLayout = "", nextLayout = "", nowMs = 0, lastLayoutChangeAt = 0,
+    transitionUntil = 0, priority = "normal",
+  } = {}) {
+    if (!nextLayout || nextLayout === currentLayout) return true;
+    if (nowMs < transitionUntil) return false;
+    if (!(lastLayoutChangeAt > 0)) return true;
+    return nowMs - lastLayoutChangeAt >= directorLayoutMinimumDwell(priority);
+  }
+
   function directorSectionScene({ section = "steady", genre = "other", baseVisual = {}, previousVisual = {}, cue = "beat-switch", sequence = 0 } = {}) {
     const base = { ...baseVisual };
     const sectionPatches = {
@@ -537,6 +555,7 @@
     VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
     averageWordGap, lyricLineStats, lyricDirectorContext,
     directorScene, directorCadenceScene, directorCadenceDelay, directorDecision, directorSection,
-    directorSectionTiming, directorCutAllowed, directorSectionScene,
+    directorSectionTiming, directorCutAllowed, directorLayoutMinimumDwell, directorLayoutChangeAllowed,
+    directorSectionScene,
   };
 });

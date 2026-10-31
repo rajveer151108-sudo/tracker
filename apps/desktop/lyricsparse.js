@@ -236,9 +236,12 @@ function parseQRC(xml) {
     const text = words.map((word) => word.rawText).join("").replace(/\s+/g, " ").trim()
       || words.map((word) => word.text).join(" ");
     const compactText = text.toLowerCase().replace(/[^a-z]/g, "");
-    const providerCredit = /^(?:writtenby|lyricsby|composer|producer|musicby|arrangedby)/.test(compactText);
-    const providerTitle = lineStartMs < 1000 && /\((?:explicit|clean|remaster(?:ed)?)\)/i.test(text);
-    if (!text || (lineStartMs < 15000 && providerCredit) || providerTitle) continue;
+    // QQ places credits on the song clock (sometimes tens of seconds into a
+    // long instrumental intro), so their timestamp cannot be used to decide
+    // whether they are lyrics. Title/version rows are consistently at zero.
+    const providerCredit = /^(?:writtenby|lyricsby|composer|producer|musicby|arrangedby|performedby|vocalby)/.test(compactText);
+    const providerTitle = lineStartMs < 1000 && /\([^)]*(?:explicit|clean|remaster(?:ed)?)[^)]*\)/i.test(text);
+    if (!text || providerCredit || providerTitle) continue;
     lines.push({
       t: Math.min(lineStartMs / 1000, words[0].t),
       end: Math.max((lineStartMs + lineDurationMs) / 1000, words.at(-1).end),

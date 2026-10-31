@@ -283,18 +283,19 @@
   body[data-layout="kinetic"] .line[data-slot="0"] .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
   body.lyrics-motion[data-layout="kinetic"] .line[data-slot="0"] { scale: calc(1 + var(--motion-vocal) * .055 + var(--motion-drop) * .08); }
 
-  /* Reference style 01 — a compact depth column. Words translate through the
-     stack at a stable size; blur and opacity create depth without visual jumps. */
+  /* Reference style 01 — a stationary depth morph. Only the current word is
+     readable; outgoing and incoming words dissolve in the same centre slot so
+     nothing travels vertically through the frame. */
   body[data-layout="morphstack"] #stage{perspective:900px;perspective-origin:50% 50%}
-  body[data-layout="morphstack"] .line { left:50%;top:50%;width:min(var(--lyric-box-width),90vw);max-width:90vw;font-size:min(var(--lyric-box-font,min(calc(var(--lyric-size) * .92),13vw,14vh)),var(--lyric-composition-cap,170px));font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:.96;letter-spacing:-.04em;color:rgba(255,255,255,.28);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .24s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .24s; }
-  body[data-layout="morphstack"] .line[data-slot="-2"]{top:25%;opacity:.1;transform:translate(-50%,-50%);filter:blur(8px)}
-  body[data-layout="morphstack"] .line[data-slot="-1"]{top:25%;opacity:.2;transform:translate(-50%,-50%) scale(.72);filter:blur(4.5px)}
+  body[data-layout="morphstack"] .line { left:50%;top:50%;width:min(var(--lyric-box-width),90vw);max-width:90vw;font-size:min(var(--lyric-box-font,min(calc(var(--lyric-size) * .92),13vw,14vh)),var(--lyric-composition-cap,170px));font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:.96;letter-spacing:-.04em;color:rgba(255,255,255,.28);transform-style:preserve-3d;backface-visibility:hidden;transition:opacity var(--word-step-ms,190ms) ease,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter var(--word-step-ms,190ms) ease; }
+  body[data-layout="morphstack"] .line[data-slot="-2"],
+  body[data-layout="morphstack"] .line[data-slot="-1"],
+  body[data-layout="morphstack"] .line[data-slot="1"],
+  body[data-layout="morphstack"] .line[data-slot="2"]{top:50%;opacity:0;transform:translate(-50%,-50%) scale(.78);filter:blur(9px)}
   body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .22em rgba(var(--glow),.42)}
-  body[data-layout="morphstack"] .line[data-slot="1"]{top:75%;opacity:.18;transform:translate(-50%,-50%) scale(.72);filter:blur(4.8px)}
-  body[data-layout="morphstack"] .line[data-slot="2"]{top:75%;opacity:.08;transform:translate(-50%,-50%);filter:blur(9px)}
   body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .07em}
   body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-step-ms,210ms) cubic-bezier(.14,.88,.2,1) both}
-  @keyframes morphStackSwap{0%{opacity:.1;transform:translate(-50%,calc(-50% + 54px));filter:blur(9px) brightness(1.25)}76%{opacity:1;transform:translate(-50%,calc(-50% - 3px));filter:blur(.5px)}100%{opacity:1;transform:translate(-50%,-50%);filter:none}}
+  @keyframes morphStackSwap{0%{opacity:0;transform:translate(-50%,-50%) scale(.74);filter:blur(10px) brightness(1.25)}76%{opacity:1;transform:translate(-50%,-50%) scale(1.015);filter:blur(.5px)}100%{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
   /* Ribbon trail — five timed words travel along one calm S-curve. The path
      supplies continuity while only the centre word asks to be read. */

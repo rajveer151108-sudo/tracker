@@ -74,6 +74,14 @@ test("QRC keeps each word on its absolute song clock", () => {
   assert.equal(result.lines[1].text, "Now go");
 });
 
+test("QRC removes provider title and credit rows even across a long instrumental intro", () => {
+  const result = parseQRC(`<QrcInfos><LyricInfo><Lyric_1 LyricContent="[0,4200]Wish(0,500)You(500,500)Were(1000,500)Here(1500,500)(2011-Remaster)(2000,2200)-Pink Floyd(2200,2000)\n[47550,2000]Written(47550,650)by：(48200,300)Waters(48500,500)/Gilmour(49000,550)\n[95110,2500]So (95110,300)so (95410,300)you (95710,300)think(96010,600)"/></LyricInfo></QrcInfos>`);
+  assert.ok(result);
+  assert.equal(result.lines.length, 1);
+  assert.equal(result.lines[0].text, "So so you think");
+  assert.equal(result.lines[0].t, 95.11);
+});
+
 test("Lyricsfile YAML exposes LRCLIB word timing", () => {
   const lyricsfile = `version: "0.1"
 lines:

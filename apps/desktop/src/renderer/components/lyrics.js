@@ -151,43 +151,44 @@
     const stage = $("stage");
     if (!layer || !stage || document.body.dataset.view !== "lyrics" || !lineEls.length) return false;
     const stageRect = stage.getBoundingClientRect();
-    const fragment = document.createDocumentFragment();
-    let captured = 0;
-    for (const el of lineEls) {
+    const visible = lineEls.flatMap((el) => {
       const style = getComputedStyle(el);
       const opacity = Number(style.opacity);
       const rect = el.getBoundingClientRect();
       if (!(opacity > .025) || rect.width < 1 || rect.height < 1
         || rect.bottom <= stageRect.top || rect.top >= stageRect.bottom
-        || rect.right <= stageRect.left || rect.left >= stageRect.right) continue;
-      const snapshot = document.createElement("div");
-      snapshot.className = "lyric-transition-line";
-      snapshot.textContent = el.textContent;
-      const transparent = style.color === "rgba(0, 0, 0, 0)" || style.color === "transparent";
-      Object.assign(snapshot.style, {
-        left: `${rect.left - stageRect.left}px`,
-        top: `${rect.top - stageRect.top}px`,
-        width: `${rect.width}px`,
-        height: `${rect.height}px`,
-        opacity: String(Math.min(1, opacity)),
-        color: transparent ? "rgba(255,255,255,.96)" : style.color,
-        fontFamily: style.fontFamily,
-        fontSize: style.fontSize,
-        fontStyle: style.fontStyle,
-        fontWeight: style.fontWeight,
-        letterSpacing: style.letterSpacing,
-        lineHeight: style.lineHeight,
-        textAlign: style.textAlign,
-        textShadow: style.textShadow,
-        whiteSpace: style.whiteSpace,
-        overflowWrap: style.overflowWrap,
-      });
-      fragment.appendChild(snapshot);
-      captured++;
-    }
-    if (!captured) return false;
+        || rect.right <= stageRect.left || rect.left >= stageRect.right) return [];
+      const current = el.classList.contains("active") || el.dataset.slot === "0" || el.dataset.side === "current";
+      const centerDistance = Math.abs((rect.top + rect.bottom) / 2 - (stageRect.top + stageRect.bottom) / 2);
+      return [{ el, style, rect, opacity, current, centerDistance }];
+    }).sort((a, b) => Number(b.current) - Number(a.current) || b.opacity - a.opacity || a.centerDistance - b.centerDistance);
+    const chosen = visible[0];
+    if (!chosen) return false;
+    const { el, style, rect, opacity } = chosen;
+    const snapshot = document.createElement("div");
+    snapshot.className = "lyric-transition-line";
+    snapshot.textContent = el.textContent;
+    const transparent = style.color === "rgba(0, 0, 0, 0)" || style.color === "transparent";
+    Object.assign(snapshot.style, {
+      left: `${rect.left - stageRect.left}px`,
+      top: `${rect.top - stageRect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      opacity: String(Math.min(1, opacity)),
+      color: transparent ? "rgba(255,255,255,.96)" : style.color,
+      fontFamily: style.fontFamily,
+      fontSize: style.fontSize,
+      fontStyle: style.fontStyle,
+      fontWeight: style.fontWeight,
+      letterSpacing: style.letterSpacing,
+      lineHeight: style.lineHeight,
+      textAlign: style.textAlign,
+      textShadow: style.textShadow,
+      whiteSpace: style.whiteSpace,
+      overflowWrap: style.overflowWrap,
+    });
     clearTimeout(lyricTransitionFrameTimer);
-    layer.replaceChildren(fragment);
+    layer.replaceChildren(snapshot);
     layer.classList.remove("active");
     void layer.offsetWidth;
     layer.classList.add("active");

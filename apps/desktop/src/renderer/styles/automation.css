@@ -22,8 +22,8 @@ body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:t
 .lyric-transition-line{position:absolute;box-sizing:border-box;margin:0;padding:0;transform:none!important;translate:none!important;scale:1!important;rotate:0deg!important;filter:none!important;background:none!important;-webkit-text-fill-color:currentColor!important}
 body.lyrics-layout-switching #lines{opacity:0!important;filter:blur(9px)!important;animation:none!important;transition:none!important}
 body.lyrics-layout-entering #lines{animation:lyricLayoutReveal .62s cubic-bezier(.16,.82,.22,1) both}
-@keyframes lyricSnapshotOut{0%,24%{opacity:1;filter:none}58%{opacity:.18;filter:blur(5px)}100%{opacity:0;filter:blur(12px)}}
-@keyframes lyricLayoutReveal{0%,27%{opacity:0;filter:blur(10px)}62%{opacity:.82;filter:blur(1.5px)}100%{opacity:1;filter:none}}
+@keyframes lyricSnapshotOut{0%,22%{opacity:1;filter:none}46%,100%{opacity:0;filter:blur(9px)}}
+@keyframes lyricLayoutReveal{0%,44%{opacity:0;filter:blur(9px)}70%{opacity:.84;filter:blur(1px)}100%{opacity:1;filter:none}}
 body.director-section-changing #lines{animation:directorSectionStage .76s cubic-bezier(.18,.76,.22,1) both}
 body.director-section-changing #backdrop{animation:directorBackdropShift .9s ease both}
 body.director-section-changing #glow{animation:directorSectionGlow .76s ease-out both}

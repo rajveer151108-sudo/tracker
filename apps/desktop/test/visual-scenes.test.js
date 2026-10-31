@@ -5,6 +5,7 @@ const {
   VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
   averageWordGap, lyricDirectorContext, directorScene, directorDecision, directorSection,
   directorCadenceScene, directorCadenceDelay, directorSectionTiming, directorCutAllowed, directorSectionScene,
+  directorLayoutMinimumDwell, directorLayoutChangeAllowed,
 } = require("../src/shared/visual-scenes");
 
 test("song presets contain visual settings only", () => {
@@ -186,6 +187,26 @@ test("director keeps style changes on lines but lets real production hits use wo
   assert.equal(directorCutAllowed({ hasLyrics: false, lineBoundary: false }), true);
   assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 120, holdMs: 4500 });
   assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 2200, holdMs: 10000 });
+});
+
+test("director never overlaps layout transitions or machine-guns scene changes", () => {
+  assert.equal(directorLayoutChangeAllowed({
+    currentLayout: "kinetic", nextLayout: "poster", nowMs: 1500,
+    lastLayoutChangeAt: 1000, transitionUntil: 1900, priority: "beat-switch",
+  }), false);
+  assert.equal(directorLayoutChangeAllowed({
+    currentLayout: "kinetic", nextLayout: "poster", nowMs: 3200,
+    lastLayoutChangeAt: 1000, transitionUntil: 1900, priority: "beat-switch",
+  }), false);
+  assert.equal(directorLayoutChangeAllowed({
+    currentLayout: "kinetic", nextLayout: "poster", nowMs: 3900,
+    lastLayoutChangeAt: 1000, transitionUntil: 1900, priority: "beat-switch",
+  }), true);
+  assert.equal(directorLayoutChangeAllowed({
+    currentLayout: "kinetic", nextLayout: "kinetic", nowMs: 1100,
+    lastLayoutChangeAt: 1000, transitionUntil: 1900, priority: "normal",
+  }), true);
+  assert.ok(directorLayoutMinimumDwell("cadence") > directorLayoutMinimumDwell("beat-switch"));
 });
 
 test("section scenes keep the song's base direction while changing composition", () => {

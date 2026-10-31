@@ -116,8 +116,12 @@ function applyVisualPatch(patch, source, name, { badge = true } = {}) {
   const visual = window.VisualScenes.filterVisualPatch(patch, directorLockedVisualKeys);
   if (!Object.keys(visual).length) return;
   pendingVisualPatch = { visual, source };
-  activeVisualOverlay = visual;
-  window.tracker.previewGlow(visual);
+  // Impact cues are intentionally partial (usually light only). Merge them
+  // into the current scene instead of replacing the scene record; otherwise
+  // the next settings event can resurrect the old lyric layout and look like
+  // an unexplained second transition.
+  activeVisualOverlay = { ...(activeVisualOverlay || {}), ...visual };
+  window.tracker.previewGlow(activeVisualOverlay);
   if (visualTrackState) {
     visualTrackState.source = source;
     visualTrackState.manualLocks = [...directorLockedVisualKeys];
@@ -158,6 +162,8 @@ function applyDirectorBeatSwitchEnvironment(state, decision, nowMs) {
 }
 
 function playDirectorSectionTransition(section) {
+  clearTimeout(visualAccentTimer);
+  document.body.classList.remove("director-accent");
   document.body.dataset.directorSection = section || "steady";
   document.body.classList.remove("director-section-changing");
   void document.body.offsetWidth;
@@ -167,6 +173,9 @@ function playDirectorSectionTransition(section) {
 }
 
 function playDirectorAccent(kind = "beat") {
+  if (document.body.classList.contains("lyrics-layout-switching")
+    || document.body.classList.contains("lyrics-layout-entering")
+    || document.body.classList.contains("director-section-changing")) return;
   document.body.dataset.directorAccent = kind;
   document.body.classList.remove("director-accent");
   void document.body.offsetWidth;
@@ -251,6 +260,13 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.rapidEvidence = 0;
   state.sustainEvidence = 0;
   Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
+  if (scene.visual?.lyricsLayout && scene.visual.lyricsLayout !== settings.lyricsLayout) {
+    state.lastLayoutChangeAt = performance.now();
+    state.layoutTransitionUntil = state.lastLayoutChangeAt + 900;
+    clearTimeout(visualSectionTimer);
+    clearTimeout(visualAccentTimer);
+    document.body.classList.remove("director-section-changing", "director-accent");
+  }
   applyVisualPatch(scene.visual, "director", scene.name);
   updateVisualAutomationStatus();
 }
@@ -284,6 +300,8 @@ function resetDirectorMode() {
   state.decision = null;
   state.lastAccentAt = 0;
   state.lastImmediateBeatSwitchAt = 0;
+  state.lastLayoutChangeAt = 0;
+  state.layoutTransitionUntil = 0;
   state.lastSectionSampleAt = 0;
   state.sectionEligibleAt = performance.now() + 4000;
   state.directorSignature = "";
@@ -343,6 +361,8 @@ function beginVisualTrack(np, key, previousKey) {
     decision: null,
     lastAccentAt: 0,
     lastImmediateBeatSwitchAt: 0,
+    lastLayoutChangeAt: 0,
+    layoutTransitionUntil: 0,
     sequenceSeed,
     cadenceIndex: sequenceSeed,
     sceneSequence: sequenceSeed,
@@ -393,6 +413,28 @@ function commitDirectorSection(state, section, decision, nowMs) {
     cue: decision?.priority,
     sequence: state.sceneSequence,
   });
+  const nextLayout = scene.visual?.lyricsLayout || settings.lyricsLayout;
+  const layoutChanged = nextLayout !== settings.lyricsLayout;
+  const priority = decision?.priority || "normal";
+  if (layoutChanged && !window.VisualScenes.directorLayoutChangeAllowed({
+    currentLayout: settings.lyricsLayout,
+    nextLayout,
+    nowMs,
+    lastLayoutChangeAt: state.lastLayoutChangeAt,
+    transitionUntil: state.layoutTransitionUntil,
+    priority,
+  })) {
+    const readyAt = Math.max(
+      state.layoutTransitionUntil || 0,
+      (state.lastLayoutChangeAt || 0) + window.VisualScenes.directorLayoutMinimumDwell(priority),
+    );
+    state.queuedSection = section;
+    state.queuedDecision = decision;
+    state.queuedSectionSince ||= nowMs;
+    state.queuedReadyAt = Math.max(state.queuedReadyAt || 0, readyAt);
+    state.queuedUntil = Math.max(state.queuedUntil || 0, readyAt + 4500);
+    return false;
+  }
   state.sceneSequence += 1;
   state.section = section;
   state.sectionChangedAt = nowMs;
@@ -405,11 +447,21 @@ function commitDirectorSection(state, section, decision, nowMs) {
   state.directorName = section === "steady"
     ? (state.activeSteadyName || window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name)
     : scene.name;
-  playDirectorSectionTransition(section);
+  if (layoutChanged) {
+    state.lastLayoutChangeAt = nowMs;
+    state.layoutTransitionUntil = nowMs + 900;
+    clearTimeout(visualSectionTimer);
+    clearTimeout(visualAccentTimer);
+    document.body.dataset.directorSection = section || "steady";
+    document.body.classList.remove("director-section-changing", "director-accent");
+  } else {
+    playDirectorSectionTransition(section);
+  }
   state.nextCadenceAt = nowMs + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, false);
   const duplicateImpactBadge = nowMs - state.lastImmediateBeatSwitchAt < 6500;
   applyVisualPatch(scene.visual, "director-section", scene.name, { badge: !duplicateImpactBadge });
   updateVisualAutomationStatus();
+  return true;
 }
 
 function commitDirectorCadence(state, nowMs) {
@@ -419,6 +471,23 @@ function commitDirectorCadence(state, nowMs) {
     sequence: state.cadenceIndex,
     signal: state.sectionSignal,
   });
+  const nextLayout = scene.visual?.lyricsLayout || settings.lyricsLayout;
+  const layoutChanged = nextLayout !== settings.lyricsLayout;
+  if (layoutChanged && !window.VisualScenes.directorLayoutChangeAllowed({
+    currentLayout: settings.lyricsLayout,
+    nextLayout,
+    nowMs,
+    lastLayoutChangeAt: state.lastLayoutChangeAt,
+    transitionUntil: state.layoutTransitionUntil,
+    priority: "cadence",
+  })) {
+    state.nextCadenceAt = Math.max(
+      nowMs + 700,
+      state.layoutTransitionUntil || 0,
+      (state.lastLayoutChangeAt || 0) + window.VisualScenes.directorLayoutMinimumDwell("cadence"),
+    );
+    return false;
+  }
   state.cadenceIndex += 1;
   state.activeSteadyVisual = scene.visual;
   state.activeSteadyName = scene.name;
@@ -431,9 +500,19 @@ function commitDirectorCadence(state, nowMs) {
     reasons: scene.reasons,
   };
   state.nextCadenceAt = nowMs + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, false);
-  playDirectorSectionTransition("steady");
+  if (layoutChanged) {
+    state.lastLayoutChangeAt = nowMs;
+    state.layoutTransitionUntil = nowMs + 900;
+    clearTimeout(visualSectionTimer);
+    clearTimeout(visualAccentTimer);
+    document.body.dataset.directorSection = "steady";
+    document.body.classList.remove("director-section-changing", "director-accent");
+  } else {
+    playDirectorSectionTransition("steady");
+  }
   applyVisualPatch(scene.visual, "director-cadence", scene.name);
   updateVisualAutomationStatus();
+  return true;
 }
 
 function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now()) {

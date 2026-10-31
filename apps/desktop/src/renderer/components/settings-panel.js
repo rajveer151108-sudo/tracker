@@ -241,7 +241,7 @@
     const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
     if (layoutChanged) {
       if (typeof captureLyricTransitionFrame === "function") captureLyricTransitionFrame();
-      document.body.classList.remove("lyrics-layout-entering");
+      document.body.classList.remove("lyrics-layout-entering", "director-section-changing", "director-accent");
       document.body.classList.add("lyrics-layout-switching");
     }
     document.body.dataset.layout = settings.lyricsLayout;
