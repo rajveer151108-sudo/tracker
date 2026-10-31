@@ -131,13 +131,13 @@
     rnb: {
       name: "Velvet depth", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
       lyricsFont: "round", lyricsSize: 92, backdropStyle: "album", backdropOpacity: 54,
-      glowStyle: "comet", glowStrength: 105, glowThickness: 135,
+      glowStyle: "aurora", glowStrength: 105, glowThickness: 135,
       lyricsDanceStyle: "float", motionStrength: 92,
     },
     pop: {
       name: "Editorial lift", lyricsLayout: "buildstack", lyricsHighlight: "word", lyricsMotion: "slide",
       lyricsFont: "sans", lyricsSize: 78, backdropStyle: "canvas", backdropOpacity: 58,
-      glowStyle: "frame", glowStrength: 105, glowThickness: 120,
+      glowStyle: "horizon", glowStrength: 105, glowThickness: 120,
       lyricsDanceStyle: "bounce", motionStrength: 108,
     },
     rock: {
@@ -149,19 +149,19 @@
     electronic: {
       name: "Neon velocity", lyricsLayout: "kinetic", lyricsHighlight: "word", lyricsMotion: "punch",
       lyricsFont: "sans", lyricsSize: 96, backdropStyle: "canvas", backdropOpacity: 64,
-      glowStyle: "flowline", glowStrength: 135, glowThickness: 170,
+      glowStyle: "prism", glowStrength: 135, glowThickness: 170,
       lyricsDanceStyle: "snap", motionStrength: 142,
     },
     jazz: {
       name: "Midnight cards", lyricsLayout: "captioncards", lyricsHighlight: "whole", lyricsMotion: "glide",
       lyricsFont: "serif", lyricsSize: 66, backdropStyle: "album", backdropOpacity: 46,
-      glowStyle: "steady", glowStrength: 82, glowThickness: 100,
+      glowStyle: "halo", glowStrength: 82, glowThickness: 100,
       lyricsDanceStyle: "sway", motionStrength: 74,
     },
     other: {
       name: "Afterglow adaptive", lyricsLayout: "morphstack", lyricsHighlight: "word", lyricsMotion: "slide",
       lyricsFont: "round", lyricsSize: 82, backdropStyle: "album", backdropOpacity: 56,
-      glowStyle: "comet", glowStrength: 100, glowThickness: 125,
+      glowStyle: "aurora", glowStrength: 100, glowThickness: 125,
       lyricsDanceStyle: "subtle", motionStrength: 96,
     },
   });
@@ -188,7 +188,8 @@
   function directorDecision(signal = {}, current = "steady") {
     const keys = ["energy", "vocal", "phrase", "build", "duck", "drop", "impact", "pace", "density", "flow",
       "timingConfidence", "vocalGap", "nextPace", "nextDensity", "nextGap", "paceTrend", "forecastFlow", "hook", "structure",
-      "timbreShift", "switchUp", "switchDown", "lowActivity", "quietHold", "reentry", "beatConfidence", "bass", "flux",
+      "timbreShift", "timbreEvidence", "loudnessEvidence", "switchUp", "switchDown", "productionSwitch",
+      "switchConfidence", "lowActivity", "quietHold", "quietConfidence", "reentry", "beatConfidence", "bass", "flux",
       "emotion", "lineActive", "wordSustain", "vocalSustain", "flowHold", "drumChange", "harmonyChange",
       "productionAgreement", "tonality", "onsetDensity"];
     const s = Object.fromEntries(keys.map((key) => [key, bounded(signal[key])]));
@@ -206,35 +207,35 @@
     const boundaryIn = Math.max(0, Number(signal.boundaryIn) || 0);
     const forecastNear = Math.max(.25, Math.min(1, (4.5 - boundaryIn) / 3.5));
     const progress = Math.max(0, Math.min(1, Number(signal.progress) || 0));
-    const quietEvidence = Math.max(
-      Math.min(1, s.lowActivity) * Math.min(1, s.quietHold),
-      Math.min(1, s.switchDown * .72 + s.quietHold * .38),
-      Math.min(1, s.duck) * Math.min(1, s.quietHold + .15),
-    );
+    const quietEvidence = Math.min(1, s.quietConfidence)
+      * Math.min(1, s.lowActivity * .62 + s.quietHold * .58);
     const arrangementReturn = s.reentry > .4 && (s.onsetDensity > .12 || s.productionAgreement > .25);
-    const verifiedProductionSwitch = s.productionAgreement > .32
-      && (s.drumChange > .28 || s.harmonyChange > .32)
-      && (s.timbreShift > .26 || s.structure > .3 || s.switchUp > .42);
+    const verifiedProductionSwitch = s.productionSwitch > .34 && s.switchConfidence > .38
+      && s.productionAgreement > .3
+      && (s.drumChange > .2 || s.harmonyChange > .28
+        || (s.timbreEvidence > .48 && s.loudnessEvidence > .48))
+      && (s.timbreEvidence > .28 || s.timbreShift > .3 || s.structure > .32);
     const productionSwitch = verifiedProductionSwitch
-      ? Math.min(1, s.productionAgreement * .72 + s.drumChange * .2 + s.harmonyChange * .2)
+      ? Math.min(1, s.switchConfidence * .48 + s.productionAgreement * .38
+        + s.drumChange * .12 + s.harmonyChange * .12 + s.loudnessEvidence * .12)
       : 0;
     const structuralLift = Math.max(
       arrangementReturn ? s.reentry : 0,
-      verifiedProductionSwitch ? s.switchUp : 0,
+      verifiedProductionSwitch ? Math.max(s.productionSwitch, s.switchUp, s.switchDown) : 0,
       Math.min(1, s.drop * Math.max(.45, s.structure) * (.45 + productionSwitch * .55)),
     );
     const actualFlow = Math.min(1, s.flowHold);
     const heldVocal = Math.max(s.vocalSustain, Math.min(s.wordSustain, s.phrase, s.vocal));
     const scores = {
       steady: .92 + s.energy * .08 + s.vocal * .08 - Math.max(s.reentry, s.switchUp, s.drop * s.structure) * .58,
-      quiet: .1 + audio * (quietEvidence * 1.48 + s.quietHold * .42 + falling * .24 + vocalFalling * .08)
+      quiet: .08 + audio * (quietEvidence * 1.72 + s.quietHold * .22 + falling * .12)
         + (audio < .2 && s.nextGap > 1.8 ? Math.min(.5, (s.nextGap - 1.8) * .18) : 0),
       build: .12 + audio * (s.build * 1.28 + rising * .7 + s.timbreShift * .2 + s.beatConfidence * .1 + s.energy * .22)
         + vocalRising * .24 + forecastNear * (Math.max(0, s.paceTrend) * .5
           + Math.max(0, futurePace - pace) * 1.3 + futurePace * .3)
         + s.hook * .16,
       drop: .08 + audio * ((arrangementReturn ? s.reentry : 0) * 2.05 + s.drop * .82
-        + (verifiedProductionSwitch ? s.switchUp : 0) * 1.05 + productionSwitch * 1.18
+        + (verifiedProductionSwitch ? s.productionSwitch : 0) * 1.28 + productionSwitch * 1.2
         + structuralLift * s.structure * .38 + structuralLift * s.timbreShift * .28
         + structuralLift * rising * .34 - s.duck * .14),
       rapid: .1 + actualFlow * 1.24 + pace * .42 + s.density * .3 + s.flow * .38 + s.vocal * .12
@@ -246,9 +247,9 @@
     // Semantic gates prevent an ordinary sentence ending from becoming a
     // "Quiet break" or "Held note", and keep a fast upcoming line from being
     // labelled a Flow run before the performance actually sustains that pace.
-    if (s.quietHold < .28 && s.switchDown < .72) scores.quiet = Math.min(scores.quiet, .82);
-    if (actualFlow < .28) scores.rapid = Math.min(scores.rapid, .86 + actualFlow * .12);
-    if (s.lineActive < .5 || s.wordSustain < .28 || heldVocal < .3) scores.sustain = Math.min(scores.sustain, .82);
+    if (s.quietHold < .62 || s.quietConfidence < .5) scores.quiet = Math.min(scores.quiet, .78);
+    if (actualFlow < .42) scores.rapid = Math.min(scores.rapid, .82 + actualFlow * .1);
+    if (s.lineActive < .5 || s.wordSustain < .5 || s.vocalSustain < .48 || heldVocal < .52) scores.sustain = Math.min(scores.sustain, .78);
     if (!arrangementReturn && !verifiedProductionSwitch) scores.drop = Math.min(scores.drop, .82);
     if (progress > .965) scores.steady += .18;
     if (Object.hasOwn(scores, current)) scores[current] += .14;
@@ -261,8 +262,9 @@
         ? ["arrangement return", "drum re-entry"]
         : s.drumChange > .38 && s.harmonyChange > .38 ? ["drum pattern change", "harmonic shift"]
         : s.harmonyChange > .38 ? ["harmonic shift", "production change"]
-        : ["drum pattern change", "timbre shift"],
-      quiet: s.quietHold > .55 ? ["sustained low energy", "instrumental space"] : ["arrangement softened", "low energy"],
+        : s.drumChange > .3 ? ["drum pattern change", "timbre shift"]
+        : ["production pivot", "loudness shift"],
+      quiet: ["sustained arrangement space", "reduced drum activity"],
       rapid: [wpm >= 120 ? `${Math.round(wpm)} WPM` : "dense delivery", "sustained flow"],
       sustain: ["held vocal", "long word sustain"],
       build: Math.max(0, futurePace - pace) > .22
@@ -286,10 +288,14 @@
   }
 
   function directorSectionTiming(next = "steady", current = "steady") {
-    const stable = { drop: 0, build: 1100, rapid: 1400, sustain: 1250, quiet: 1150, steady: 1700 };
+    const stable = { drop: 120, build: 1500, rapid: 2100, sustain: 1900, quiet: 2200, steady: 2200 };
     return {
       stableMs: Number.isFinite(stable[next]) ? stable[next] : stable.steady,
-      holdMs: current === "drop" ? 9000 : next === "drop" ? 2800 : 6000,
+      holdMs: current === "drop" ? 10000
+        : next === "quiet" ? 8500
+        : next === "drop" ? 4500
+        : next === "steady" ? 6500
+        : 7500,
     };
   }
 
@@ -302,18 +308,18 @@
     const sectionPatches = {
       quiet: {
         name: "Quiet break", lyricsLayout: "morphstack", lyricsMotion: "glide", lyricsSize: 78,
-        glowStyle: "steady", glowStrength: 70, glowThickness: 88,
+        glowStyle: "halo", glowStrength: 72, glowThickness: 110,
         backdropOpacity: 42, lyricsDanceStyle: "subtle", motionStrength: 68,
       },
       build: {
         name: "Pressure rising", lyricsLayout: "buildstack", lyricsMotion: "slide", lyricsSize: 82,
-        glowStyle: "frame", glowStrength: 112, glowThickness: 128,
+        glowStyle: "horizon", glowStrength: 116, glowThickness: 142,
         backdropOpacity: 58, lyricsDanceStyle: "bounce", motionStrength: 112,
       },
       drop: {
         name: cue === "reentry" ? "Arrangement return" : cue === "beat-switch" ? "Beat switch" : "Production drop",
         lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch", lyricsSize: 86,
-        glowStyle: "flowline", glowStrength: 145, glowThickness: 190,
+        glowStyle: "prism", glowStrength: 165, glowThickness: 210,
         backdropOpacity: 68, lyricsDanceStyle: genre === "rock" ? "shake" : "snap", motionStrength: 148,
       },
       rapid: {
@@ -323,7 +329,7 @@
       },
       sustain: {
         name: "Held note", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide", lyricsSize: 96,
-        glowStyle: "comet", glowStrength: 100, glowThickness: 130,
+        glowStyle: "aurora", glowStrength: 104, glowThickness: 145,
         backdropOpacity: 52, lyricsDanceStyle: "float", motionStrength: 86,
       },
     };

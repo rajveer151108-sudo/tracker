@@ -2,6 +2,7 @@
   const glowbox = document.getElementById("glowbox");
   const ringwrap = document.getElementById("ringwrap");
   const spin = document.getElementById("spin");
+  const atmosphere = document.getElementById("atmosphere");
   const frame = document.getElementById("frame");
   const frameSpark = frame.querySelector(".spark");
   const frameFlow = frame.querySelector(".flow");
@@ -19,7 +20,10 @@
   function layout() {
     ringwrap.style.display = style === "rotate" || style === "comet" ? "block" : "none";
     const frameStyle = style === "frame" || style === "flowline";
+    const atmosphereStyle = ["aurora", "halo", "prism", "horizon"].includes(style);
     frame.style.display = frameStyle ? "block" : "none";
+    atmosphere.style.display = atmosphereStyle ? "block" : "none";
+    edge.dataset.mode = style;
     frame.dataset.mode = style;
     spin.className = style === "rotate" || style === "comet" ? style : "";
     ringwrap.style.setProperty("--rb", Math.round(22 * thick) + "px");
@@ -88,7 +92,8 @@
 
     // soft inner glow (weaker when the moving light is on, so it stands out)
     const edgeLine = style === "flowline";
-    const soft = style === "steady" ? 1 : style === "frame" ? 0.18 : edgeLine ? 0 : 0.38;
+    const atmospheric = ["aurora", "halo", "prism", "horizon"].includes(style);
+    const soft = style === "steady" ? 1 : style === "frame" ? 0.18 : edgeLine ? 0 : atmospheric ? .1 : 0.38;
     const phraseGlow = Math.max(word * vocal, phrase * .48 + syllable * .34 + sibilance * .14);
     const a1 = Math.max(0, Math.min(1, (0.28 + 0.2 * energy + 0.16 * vocal + 0.18 * beat + 0.1 * lift +
       0.16 * build + 0.52 * drop + 0.2 * emotion + 0.12 * phraseGlow - 0.32 * duck) * strength * soft)).toFixed(2);
@@ -103,6 +108,19 @@
     const shadow = "inset 0 0 " + b1 + "px " + s1 + "px rgba(" + A + ", " + a1 + "), " +
                    "inset 0 0 " + b2 + "px " + s2 + "px rgba(" + B + ", " + a2 + ")";
     if (shadow !== lastShadow) { lastShadow = shadow; glowbox.style.boxShadow = shadow; }
+
+    if (atmospheric) {
+      const atmosphereOpacity = Math.max(.2, Math.min(1, (.38 + energy * .18 + vocal * .1 + beat * .16
+        + build * .22 + drop * .48 + emotion * .12 - duck * .18) * Math.min(1.35, strength)));
+      atmosphere.style.setProperty("--atmo-a", A);
+      atmosphere.style.setProperty("--atmo-b", B);
+      atmosphere.style.setProperty("--atmo-o", atmosphereOpacity.toFixed(3));
+      atmosphere.style.setProperty("--atmo-width", Math.max(5, (8 + thick * 10 + drop * 10 + build * 4)).toFixed(1) + "px");
+      atmosphere.style.setProperty("--atmo-line", Math.max(1, (1.4 + thick * 1.4 + beat * 1.1)).toFixed(1) + "px");
+      atmosphere.style.setProperty("--atmo-blur", Math.round(18 + thick * 13 + vocal * 8) + "px");
+      atmosphere.style.setProperty("--atmo-bloom", Math.round(45 + thick * 38 + energy * 20 + drop * 42) + "px");
+      atmosphere.style.setProperty("--atmo-speed", Math.max(2.6, 8.5 - energy * 2 - pace * 1.6 - drop * 2.2) + "s");
+    }
 
     if (style === "rotate" || style === "comet") {
       const grad = style === "comet"

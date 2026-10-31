@@ -13,6 +13,45 @@
   #spin { position: absolute; left: 50%; top: 50%; width: 125vmax; height: 125vmax; margin: -62.5vmax 0 0 -62.5vmax; }
   #spin.rotate { animation: spin 9s linear infinite; }
   #spin.comet { animation: spin 5s linear infinite; }
+  #atmosphere { display: none; position: absolute; inset: 0; box-sizing: border-box; opacity: var(--atmo-o, .65); }
+  #atmosphere::before, #atmosphere::after { content: ""; position: absolute; pointer-events: none; }
+
+  /* Aurora: slow curtains that live at the outer edge and breathe with vocals. */
+  #edge[data-mode="aurora"] #atmosphere { display: block; overflow: hidden;
+    background:
+      radial-gradient(ellipse 58% 22% at 15% -4%, rgba(var(--atmo-a),.95), transparent 72%),
+      radial-gradient(ellipse 62% 23% at 86% 103%, rgba(var(--atmo-b),.88), transparent 74%),
+      radial-gradient(ellipse 20% 64% at -5% 56%, rgba(var(--atmo-b),.58), transparent 76%),
+      radial-gradient(ellipse 18% 58% at 104% 38%, rgba(var(--atmo-a),.52), transparent 76%);
+    filter: blur(var(--atmo-blur, 28px)) saturate(1.28); animation: auroraDrift var(--atmo-speed, 8s) ease-in-out infinite alternate; }
+  #edge[data-mode="aurora"] #atmosphere::before { inset: -12% -18%; opacity: .52;
+    background: conic-gradient(from 18deg at 50% 50%, transparent 0 36%, rgba(var(--atmo-a),.42) 43%, transparent 50% 72%, rgba(var(--atmo-b),.38) 80%, transparent 87%);
+    animation: auroraTurn calc(var(--atmo-speed, 8s) * 2.4) linear infinite; }
+
+  /* Halo: concentric, almost-circular edge light for held and quieter moments. */
+  #edge[data-mode="halo"] #atmosphere { display: block; inset: 3.5%; border-radius: 42%;
+    border: max(1px,var(--atmo-line,3px)) solid rgba(var(--atmo-a),.34);
+    box-shadow: 0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.42), inset 0 0 var(--atmo-bloom,80px) rgba(var(--atmo-b),.32);
+    animation: haloBreathe var(--atmo-speed, 7s) ease-in-out infinite; }
+  #edge[data-mode="halo"] #atmosphere::before { inset: 5%; border-radius: 44%; border: 1px solid rgba(var(--atmo-b),.48);
+    box-shadow: 0 0 calc(var(--atmo-bloom,80px) * .55) rgba(var(--atmo-b),.38); }
+
+  /* Prism: a faceted border with opposing colour planes, reserved for hits. */
+  #edge[data-mode="prism"] #atmosphere { display: block; padding: var(--atmo-width,18px);
+    background: conic-gradient(from var(--prism-turn,0deg), rgba(var(--atmo-a),.98), transparent 13%, rgba(255,255,255,.64) 21%, rgba(var(--atmo-b),.96) 34%, transparent 48%, rgba(var(--atmo-a),.9) 63%, transparent 77%, rgba(var(--atmo-b),.92));
+    -webkit-mask: linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+    background-size: 180% 180%; filter: drop-shadow(0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.66));
+    animation: prismShift var(--atmo-speed, 5s) linear infinite; }
+  #edge[data-mode="prism"] #atmosphere::after { inset: 0; box-shadow: inset 0 0 calc(var(--atmo-bloom,80px) * .72) rgba(var(--atmo-b),.38); }
+
+  /* Horizon: two long cinematic beams that rise and fall instead of orbiting. */
+  #edge[data-mode="horizon"] #atmosphere { display: block; overflow: hidden; }
+  #edge[data-mode="horizon"] #atmosphere::before,
+  #edge[data-mode="horizon"] #atmosphere::after { left: -8%; width: 116%; height: var(--atmo-width,18px);
+    background: linear-gradient(90deg,transparent,rgba(var(--atmo-a),.82) 24%,rgba(255,255,255,.72) 50%,rgba(var(--atmo-b),.86) 76%,transparent);
+    filter: blur(calc(var(--atmo-line,3px) * .65)); box-shadow: 0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.58); }
+  #edge[data-mode="horizon"] #atmosphere::before { top: 3%; animation: horizonTop var(--atmo-speed, 6s) ease-in-out infinite alternate; }
+  #edge[data-mode="horizon"] #atmosphere::after { bottom: 3%; transform: scaleX(-1); animation: horizonBottom var(--atmo-speed, 6s) ease-in-out infinite alternate; }
   #frame { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   #frame path { fill: none; stroke: rgba(var(--frame-a), var(--frame-o, .6)); stroke-width: var(--frame-w, 3px); vector-effect: non-scaling-stroke;
                 filter: drop-shadow(0 0 var(--frame-b, 18px) rgba(var(--frame-a), .95)); }
@@ -27,3 +66,9 @@
   #frame[data-mode="flowline"] .flowHalo { opacity: var(--flow-halo-o, .55); stroke-width: calc(var(--frame-w, 10px) * 1.8); filter: drop-shadow(0 0 calc(var(--frame-w, 10px) * .7) rgba(var(--frame-a),.72)) drop-shadow(0 0 calc(var(--frame-w, 10px) * 1.15) rgba(var(--frame-bc),.52)); }
   #frame[data-mode="flowline"] .flow { opacity: var(--streak-o, .98); stroke-width: var(--frame-w, 10px); filter: drop-shadow(0 0 calc(var(--frame-w, 10px) * .28) rgba(255,255,255,.3)); }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes auroraDrift { 0%{transform:scale(1) translate3d(-1%,1%,0);filter:blur(var(--atmo-blur,28px)) saturate(1.12)} 100%{transform:scale(1.05) translate3d(1.5%,-1%,0);filter:blur(var(--atmo-blur,28px)) saturate(1.52)} }
+  @keyframes auroraTurn { to { transform:rotate(360deg) scale(1.04); } }
+  @keyframes haloBreathe { 0%,100%{transform:scale(.985);filter:saturate(.9) brightness(.82)} 50%{transform:scale(1.015);filter:saturate(1.28) brightness(1.12)} }
+  @keyframes prismShift { 0%{background-position:0 0;filter:drop-shadow(0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.58))} 50%{background-position:100% 100%;filter:drop-shadow(0 0 calc(var(--atmo-bloom,80px) * 1.15) rgba(var(--atmo-b),.74))} 100%{background-position:0 0;filter:drop-shadow(0 0 var(--atmo-bloom,80px) rgba(var(--atmo-a),.58))} }
+  @keyframes horizonTop { from{transform:translateY(-30%) scaleX(.82);opacity:.62} to{transform:translateY(130%) scaleX(1);opacity:1} }
+  @keyframes horizonBottom { from{transform:translateY(30%) scaleX(-.82);opacity:.58} to{transform:translateY(-130%) scaleX(-1);opacity:1} }

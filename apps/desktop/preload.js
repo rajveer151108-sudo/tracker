@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld("tracker", {
   disconnectTracker: () => ipcRenderer.invoke("tracker-disconnect"),
   trackerSyncStatus: () => ipcRenderer.invoke("tracker-sync-status"),
   observeForTracker: (track) => ipcRenderer.send("tracker-observe", track),
+  setPlaybackActive: (active) => ipcRenderer.send("playback-active", active === true),
   onTrackerSyncStatus: (cb) => ipcRenderer.on("tracker-sync-status", (_e, status) => cb(status)),
   minimize: () => ipcRenderer.send("win-minimize"),
   quit: () => ipcRenderer.send("win-close"),

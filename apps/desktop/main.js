@@ -8,6 +8,7 @@ const {
   shell,
   safeStorage,
   systemPreferences,
+  powerSaveBlocker,
 } = require("electron");
 
 // Electron 45's Core Audio Tap path does not reliably connect loopback audio
@@ -25,6 +26,7 @@ const { createGenreService } = require("./src/main/genre-service");
 const { createSpotifyLibrary } = require("./src/main/spotify-library");
 const { createTrackerSync } = require("./src/main/tracker-sync");
 const { createGlowManager } = require("./src/main/glow-manager");
+const { createPlaybackPowerGuard } = require("./src/main/playback-power");
 const { TRACKER_URL } = require("./src/shared/config");
 
 const rootDir = __dirname;
@@ -35,6 +37,7 @@ const genre = createGenreService(app);
 
 let mainWindow = null;
 let immersive = false;
+const playbackPower = createPlaybackPowerGuard(powerSaveBlocker);
 
 const spotifyDesktop = createSpotifyDesktop({ app, getWindow: () => mainWindow });
 const spotifyLibrary = createSpotifyLibrary({
@@ -91,6 +94,8 @@ function createWindow(loadContent = true) {
     }
   });
   if (loadContent) mainWindow.loadFile(path.join(rootDir, "index.html"));
+  mainWindow.on("closed", playbackPower.dispose);
+  mainWindow.webContents.on("render-process-gone", playbackPower.dispose);
   glow.setMainWindow(mainWindow);
 }
 
@@ -129,6 +134,7 @@ function registerIpc() {
   ipcMain.handle("tracker-disconnect", trackerSync.disconnect);
   ipcMain.handle("tracker-sync-status", trackerSync.status);
   ipcMain.on("tracker-observe", (_event, track) => trackerSync.observe(track));
+  ipcMain.on("playback-active", (_event, active) => playbackPower.setActive(active === true));
 
   ipcMain.handle("settings-get", settingsStore.get);
   ipcMain.handle("song-preset-get", (_event, key) => songPresets.get(key));
@@ -186,3 +192,4 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => app.quit());
+app.on("before-quit", playbackPower.dispose);

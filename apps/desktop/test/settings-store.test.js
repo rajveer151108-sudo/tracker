@@ -113,6 +113,21 @@ test("the tempo-driven flow streak persists", () => {
   }
 });
 
+test("the new cinematic glow styles persist", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    for (const glowStyle of ["aurora", "halo", "prism", "horizon"]) {
+      store.update({ glowStyle });
+      assert.equal(store.get().glowStyle, glowStyle);
+    }
+    assert.equal(createSettingsStore({ getPath: () => userData }).load().glowStyle, "horizon");
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
 test("retired experimental edge lines migrate to the flow streak", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {

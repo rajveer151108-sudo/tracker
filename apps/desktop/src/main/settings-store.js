@@ -67,7 +67,7 @@ const ENUMS = {
   lyricsFont: ["sans", "serif", "round"],
   backdropStyle: ["blur", "album", "canvas", "black"],
   backdropTourFocus: ["smart", "center", "corners"],
-  glowStyle: ["steady", "rotate", "comet", "frame", "flowline"],
+  glowStyle: ["steady", "rotate", "comet", "frame", "flowline", "aurora", "halo", "prism", "horizon"],
   glowScope: ["everywhere", "tracker"],
   glowDisplays: ["all", "main"],
   lyricsDanceStyle: ["auto", "float", "punch", "sway", "shake", "bounce", "snap", "subtle"],

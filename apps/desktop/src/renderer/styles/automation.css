@@ -37,6 +37,10 @@ body[data-director-accent="drop"].director-accent #lines{animation:directorDropA
 body[data-director-accent="drop"].director-accent #glow{animation:directorDropAccentGlow .86s cubic-bezier(.12,.82,.2,1) both}
 body[data-director-accent="drop"].director-accent #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.76),rgba(var(--glow),.62) 18%,rgba(var(--glow),.18) 42%,transparent 68%);animation:directorDropAccentWash .86s cubic-bezier(.12,.82,.2,1) both}
 body[data-director-accent="drop"].director-accent #backdrop{animation:directorDropAccentBackdrop .86s cubic-bezier(.12,.82,.2,1) both}
+body[data-director-accent="production"].director-accent #lines{animation:none}
+body[data-director-accent="production"].director-accent #glow{animation:directorDropAccentGlow .86s cubic-bezier(.12,.82,.2,1) both}
+body[data-director-accent="production"].director-accent #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.76),rgba(var(--glow),.62) 18%,rgba(var(--glow),.18) 42%,transparent 68%);animation:directorDropAccentWash .86s cubic-bezier(.12,.82,.2,1) both}
+body[data-director-accent="production"].director-accent #backdrop{animation:directorDropAccentBackdrop .86s cubic-bezier(.12,.82,.2,1) both}
 @keyframes directorBeatAccent{0%,100%{scale:1;filter:none}30%{scale:1.012;filter:brightness(1.1)}}
 @keyframes directorAccentGlow{0%,100%{filter:none}30%{filter:saturate(1.35) brightness(1.2)}}
 @keyframes directorStructureAccent{0%,100%{scale:1;filter:none}38%{scale:1.018;filter:saturate(1.24) contrast(1.08)}}

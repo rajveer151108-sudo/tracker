@@ -11,6 +11,7 @@
   let activeIdx = -2;
   let prevActive = -1;
   let posSec = 0, syncAt = performance.now(), playing = false, durSec = 0, seeking = false;
+  let playbackAwake = false;
   let offset = 0;            // user lyric shift, seconds
 
   function parseLrc(text) {
@@ -465,6 +466,10 @@
           syncAt = clock.atMs;
         }
         playing = np.state === "playing";
+        if (playbackAwake !== playing) {
+          playbackAwake = playing;
+          window.tracker.setPlaybackActive(playing);
+        }
         // Keep the chosen edge treatment visible at a calm idle while a track
         // is paused. Motion inputs naturally decay, then wake with playback.
         sendActive(true);
@@ -477,6 +482,10 @@
       } else {
         window.tracker.observeForTracker(null);
         playing = false;
+        if (playbackAwake) {
+          playbackAwake = false;
+          window.tracker.setPlaybackActive(false);
+        }
         sendActive(false);
         if (trackId !== null) lyricsGeneration++;
         trackId = null; clearLyrics();

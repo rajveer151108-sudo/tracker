@@ -64,13 +64,14 @@ test("multimodal decisions combine structural, vocal and future flow signals", (
 
 test("section director distinguishes drops, rapid verses, builds and held notes", () => {
   assert.equal(directorSection({
-    drop: .9, structure: .8, switchUp: .85, energy: .8, productionAgreement: .72,
-    drumChange: .7, harmonyChange: .62, timbreShift: .74,
+    drop: .9, structure: .8, switchUp: .85, productionSwitch: .92, switchConfidence: .78,
+    energy: .8, productionAgreement: .72, drumChange: .7, harmonyChange: .62,
+    timbreShift: .74, timbreEvidence: .76, loudnessEvidence: .7,
   }), "drop");
   assert.equal(directorSection({ pace: .92, density: .8, flow: .85, flowHold: .9, vocal: .7, energy: .65 }), "rapid");
   assert.equal(directorSection({ build: .7, energy: .62 }), "build");
   assert.equal(directorSection({ phrase: .85, vocal: .8, wordSustain: .88, vocalSustain: .82, lineActive: 1, pace: .2 }), "sustain");
-  assert.equal(directorSection({ duck: .8, lowActivity: .9, quietHold: .8, energy: .28 }), "quiet");
+  assert.equal(directorSection({ duck: .8, lowActivity: .9, quietHold: .8, quietConfidence: .86, energy: .28 }), "quiet");
 });
 
 test("beat-switch decisions require multiple production layers", () => {
@@ -84,7 +85,8 @@ test("beat-switch decisions require multiple production layers", () => {
   assert.notEqual(drumFill.section, "drop");
   const fullSwitch = directorDecision({
     drumChange: .78, harmonyChange: .72, timbreShift: .7, structure: .75,
-    productionAgreement: .76, switchUp: .86, drop: .7, onsetDensity: .8,
+    timbreEvidence: .74, loudnessEvidence: .68, productionAgreement: .76,
+    productionSwitch: .92, switchConfidence: .82, switchUp: .86, drop: .7, onsetDensity: .8,
   });
   assert.equal(fullSwitch.section, "drop");
   assert.equal(fullSwitch.priority, "beat-switch");
@@ -107,8 +109,8 @@ test("director cuts only at lyric boundaries while instrumentals stay music-led"
   assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: true }), true);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: false, lineBoundary: false }), true);
   assert.equal(directorCutAllowed({ hasLyrics: false, lineBoundary: false }), true);
-  assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 0, holdMs: 2800 });
-  assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 1700, holdMs: 9000 });
+  assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 120, holdMs: 4500 });
+  assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 2200, holdMs: 10000 });
 });
 
 test("section scenes keep the song's base direction while changing composition", () => {
@@ -121,5 +123,12 @@ test("section scenes keep the song's base direction while changing composition",
   assert.equal(scene.visual.backdropStyle, "black");
   assert.equal(scene.visual.lyricsFont, "round");
   assert.equal(scene.visual.lyricsLayout, "kinetic");
-  assert.equal(scene.visual.glowStyle, "flowline");
+  assert.equal(scene.visual.glowStyle, "prism");
+});
+
+test("every Director function has its own glow language", () => {
+  const styles = ["quiet", "build", "drop", "rapid", "sustain"]
+    .map((section) => directorSectionScene({ section, genre: "rap", baseVisual: {} }).visual.glowStyle);
+  assert.deepEqual(styles, ["halo", "horizon", "prism", "flowline", "aurora"]);
+  assert.equal(new Set(styles).size, styles.length);
 });
