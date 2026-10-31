@@ -254,14 +254,14 @@
   }
 
   /* Creative layouts are spatial compositions rather than reskins of the scrolling list. */
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) #lines {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) #lines {
     inset: 0; padding: 0; transform: none; transition: opacity .25s ease; z-index: 1;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line {
     position: absolute; margin: 0; padding: 0; filter: none; transform-origin: center; text-align: center;
   }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
-  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-arrive {
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
+  body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-arrive {
     animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
@@ -291,6 +291,23 @@
   body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .07em}
   body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-step-ms,210ms) cubic-bezier(.14,.88,.2,1) both}
   @keyframes morphStackSwap{0%{opacity:.1;transform:translate(-50%,calc(-50% + 54px));filter:blur(9px) brightness(1.25)}76%{opacity:1;transform:translate(-50%,calc(-50% - 3px));filter:blur(.5px)}100%{opacity:1;transform:translate(-50%,-50%);filter:none}}
+
+  /* An invisible eight-faced prism. Every timed word occupies one physical
+     face; advancing the lyric rotates the next face squarely toward us. */
+  body[data-layout="prism"] #stage{--prism-depth:190px;perspective:820px;perspective-origin:50% 50%}
+  body[data-layout="prism"] #lines{transform-style:preserve-3d}
+  body[data-layout="prism"] .line{left:50%;top:50%;width:max-content;max-width:84%;font-size:calc(var(--lyric-size) * 1.12);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:900;line-height:.92;letter-spacing:-.055em;color:rgba(255,255,255,.2);transform-origin:50% 50%;transform-style:preserve-3d;backface-visibility:hidden;transition:transform var(--word-step-ms,210ms) cubic-bezier(.16,.82,.2,1),opacity .24s ease,filter .24s ease,color .2s ease,text-shadow .2s ease}
+  body[data-layout="prism"] .line[data-slot="-3"]{opacity:.025;transform:translate(-50%,-50%) rotateX(118deg) translateZ(var(--prism-depth));filter:blur(8px)}
+  body[data-layout="prism"] .line[data-slot="-2"]{opacity:.12;transform:translate(-50%,-50%) rotateX(82deg) translateZ(var(--prism-depth));filter:blur(4.5px)}
+  body[data-layout="prism"] .line[data-slot="-1"]{opacity:.38;transform:translate(-50%,-50%) rotateX(43deg) translateZ(var(--prism-depth));filter:blur(1.4px)}
+  body[data-layout="prism"] .line[data-slot="0"]{z-index:3;opacity:1;transform:translate(-50%,-50%) rotateX(0deg) translateZ(var(--prism-depth));filter:none;color:#fff;text-shadow:0 0 .18em rgba(255,255,255,.2),0 0 .46em rgba(var(--glow),.5)}
+  body[data-layout="prism"] .line[data-slot="1"]{opacity:.38;transform:translate(-50%,-50%) rotateX(-43deg) translateZ(var(--prism-depth));filter:blur(1.4px)}
+  body[data-layout="prism"] .line[data-slot="2"]{opacity:.12;transform:translate(-50%,-50%) rotateX(-82deg) translateZ(var(--prism-depth));filter:blur(4.5px)}
+  body[data-layout="prism"] .line[data-slot="3"]{opacity:.025;transform:translate(-50%,-50%) rotateX(-118deg) translateZ(var(--prism-depth));filter:blur(8px)}
+  body[data-layout="prism"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .06em}
+  body.lyrics-motion[data-layout="prism"] .line[data-slot="0"]{scale:calc(1 + var(--motion-vocal) * .035 + var(--motion-drop) * .055)}
+  body[data-layout="prism"] .line.creative-arrive{animation:none}
+  @media(max-height:720px){body[data-layout="prism"] #stage{--prism-depth:150px}body[data-layout="prism"] .line{font-size:calc(var(--lyric-size) * .96)}}
 
   /* Reference style 02 — a word-by-word editorial stack. Each word keeps its
      own typeface while the whole column rises one clean slot at a time. */

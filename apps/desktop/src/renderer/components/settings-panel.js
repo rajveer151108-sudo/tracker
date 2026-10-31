@@ -19,7 +19,7 @@
     { key: "lyricsLayout", label: "Layout", type: "choice",
       hint: "Classic views, both lyric transitions from your newest reference, and Afterglow's creative layouts.",
       options: [["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"], ["wordstream", "Word stream"],
-        ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["buildstack", "Phrase builder"],
+        ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["prism", "Prism roll"], ["buildstack", "Phrase builder"],
         ["constellation", "Constellation"], ["captioncards", "Caption cards"], ["poster", "Poster cutout"]] },
     { key: "phraseAccents", label: "Phrase builder accents", type: "choice",
       hint: "Optional editorial contrast for Phrase builder. Cards highlights selected words; Editorial also adds a restrained type tilt.",
@@ -38,7 +38,8 @@
       hint: "If a song has no synced lyrics, spread the plain lyrics over the song. Use \u2190 \u2192 to nudge." },
     { key: "lyricsAlign", label: "Position", type: "choice", options: [["center", "Center"], ["left", "Left"]] },
     { key: "lyricsFont", label: "Font", type: "choice", options: [["sans", "Sans"], ["serif", "Serif"], ["round", "Rounded"]] },
-    { key: "lyricsSize", label: "Size", type: "range", min: 18, max: 110, step: 2, unit: "px" },
+    { key: "lyricsSize", label: "Size", type: "range", min: 18, max: 160, step: 2, unit: "px",
+      hint: "Cinematic word modes can now grow to 160px; long lines still stay inside the stage." },
     { key: "lyricsBlur", label: "Blur lines that aren't playing", type: "toggle" },
 
     { type: "heading", label: "Background" },

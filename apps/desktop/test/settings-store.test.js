@@ -47,7 +47,7 @@ test("the lyrics backdrop can persist a full blackout style", () => {
 test("creative lyric layouts and broken frame glow persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
-    for (const lyricsLayout of ["kinetic", "morphstack", "buildstack", "constellation", "captioncards", "poster"]) {
+    for (const lyricsLayout of ["kinetic", "morphstack", "prism", "buildstack", "constellation", "captioncards", "poster"]) {
       const store = createSettingsStore({ getPath: () => userData });
       store.load();
       store.update({ lyricsLayout, glowStyle: "frame" });
@@ -70,15 +70,15 @@ test("the retired line phrase builder migrates to the word stack version", () =>
   }
 });
 
-test("phrase builder editorial accents and larger lyric sizes persist", () => {
+test("phrase builder editorial accents and cinematic lyric sizes persist", () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
   try {
     const store = createSettingsStore({ getPath: () => userData });
     store.load();
-    store.update({ phraseAccents: "cards", lyricsSize: 104, glowThickness: 360 });
+    store.update({ phraseAccents: "cards", lyricsSize: 148, glowThickness: 360 });
     const settings = createSettingsStore({ getPath: () => userData }).load();
     assert.equal(settings.phraseAccents, "cards");
-    assert.equal(settings.lyricsSize, 104);
+    assert.equal(settings.lyricsSize, 148);
     assert.equal(settings.glowThickness, 360);
   } finally {
     fs.rmSync(userData, { recursive: true, force: true });

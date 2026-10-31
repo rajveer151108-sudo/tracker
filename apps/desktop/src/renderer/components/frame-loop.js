@@ -97,7 +97,7 @@
         el.classList.remove("constellation-current");
         const visible = layout === "buildstack"
           ? relative <= 0 && relative >= -4
-          : Math.abs(relative) <= (layout === "morphstack" ? 2 : layout === "kinetic" ? 1 : 0);
+          : Math.abs(relative) <= (layout === "prism" ? 3 : layout === "morphstack" ? 2 : layout === "kinetic" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }
     });
