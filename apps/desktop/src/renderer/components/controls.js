@@ -106,10 +106,11 @@
     if (e.key === "t" || e.key === "T") { $("trackerPanel").classList.contains("open") ? closeTracker() : openTracker(); return; }
     if (e.key === "s" || e.key === "S") { $("settings").classList.contains("open") ? closeSettings() : openSettings(); return; }
     if (e.key === "g" || e.key === "G") { window.tracker.setSettings({ glow: !settings.glow }); return; }
-    if (e.key === "ArrowLeft") offset -= 0.25;
-    else if (e.key === "ArrowRight") offset += 0.25;
+    const lyricNudge = e.shiftKey ? .25 : .05;
+    if (e.key === "ArrowLeft") setLyricOffset(offset - lyricNudge);
+    else if (e.key === "ArrowRight") setLyricOffset(offset + lyricNudge);
     else return;
-    $("offs").textContent = offset === 0 ? "" : "(" + (offset > 0 ? "+" : "") + offset.toFixed(2) + "s)";
+    e.preventDefault();
   });
 
 

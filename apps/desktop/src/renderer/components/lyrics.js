@@ -14,6 +14,14 @@
   let playbackAwake = false;
   let offset = 0;            // user lyric shift, seconds
 
+  function setLyricOffset(next = 0) {
+    offset = Math.max(-5, Math.min(5, Math.round((Number(next) || 0) * 100) / 100));
+    const label = $("offs");
+    if (label) label.textContent = offset === 0 ? "" : "(" + (offset > 0 ? "+" : "") + offset.toFixed(2) + "s)";
+    activeIdx = -2;
+    return offset;
+  }
+
   function parseLrc(text) {
     const out = [];
     let speakerHint = "";
@@ -455,6 +463,7 @@
     const gid = currentTrackKey(np);
     const generation = ++lyricsGeneration;
     trackId = gid;
+    setLyricOffset(0);
     lastInfo = { id: np.id, title: np.title, artist: np.artist, album: np.album, durationSec: np.durationMs / 1000 };
     clearLyrics();
     document.body.dataset.genre = ""; $("genre").textContent = "";
@@ -499,6 +508,7 @@
     if (pollInFlight) return;
     pollInFlight = true;
     try {
+      const observationStartedAt = performance.now();
       const np = await window.tracker.nowPlaying();
       if (np.state === "playing" || np.state === "paused") {
         const nextTrackId = currentTrackKey(np);
@@ -521,6 +531,7 @@
             localPlaying: playing,
             observedPosition: np.positionSec,
             observedAtMs: observedAt,
+            observationStartedAtMs: observationStartedAt,
             nextPlaying: np.state === "playing",
             force: trackChanged,
           });

@@ -25,7 +25,36 @@ test("moderate drift is corrected gradually", () => {
     nextPlaying: true,
   });
   assert.equal(clock.snapped, false);
-  assert.equal(clock.position, 21.08);
+  assert.equal(clock.position, 21.112);
+});
+
+test("a delayed Spotify response is compared at the instant it arrives", () => {
+  const clock = reconcilePlaybackClock({
+    localPosition: 20,
+    localAtMs: 1000,
+    localPlaying: true,
+    observedPosition: 20.9,
+    observationStartedAtMs: 1800,
+    observedAtMs: 2000,
+    nextPlaying: true,
+  });
+  assert.equal(clock.sampleAgeMs, 100);
+  assert.equal(clock.position, 21);
+  assert.equal(clock.drift, 0);
+});
+
+test("paused samples are never advanced by transport latency", () => {
+  const clock = reconcilePlaybackClock({
+    localPosition: 21,
+    localAtMs: 1000,
+    localPlaying: false,
+    observedPosition: 21,
+    observationStartedAtMs: 1600,
+    observedAtMs: 2000,
+    nextPlaying: false,
+  });
+  assert.equal(clock.sampleAgeMs, 0);
+  assert.equal(clock.position, 21);
 });
 
 test("seeks and play-state changes snap immediately", () => {

@@ -36,7 +36,7 @@
     { key: "lyricsFit", label: "Auto-fit lyric box", type: "toggle",
       hint: "Word-focused modes grow short words and shrink long ones to fill the invisible lyric box. Constellation stays compact so its full star map remains readable." },
     { key: "lyricsEstimate", label: "Estimate timing for unsynced songs", type: "toggle",
-      hint: "If a song has no synced lyrics, spread the plain lyrics over the song. Use \u2190 \u2192 to nudge." },
+      hint: "If a song has no synced lyrics, spread the plain lyrics over the song. Use \u2190 \u2192 for precise 0.05s nudges, or hold Shift for 0.25s." },
     { key: "lyricsAlign", label: "Position", type: "choice", options: [["center", "Center"], ["left", "Left"]] },
     { key: "lyricsFont", label: "Font", type: "choice", options: [["sans", "Sans"], ["serif", "Serif"], ["round", "Rounded"]] },
     { key: "lyricsSize", label: "Lyric box", type: "range", min: 18, max: 160, step: 2, unit: "px",
