@@ -66,11 +66,13 @@
   body.immersive[data-layout="stack"] .line { font-size: calc(var(--lyric-size) * 1.35); }
   body[data-layout="wordstack"] .line {
     padding: .18em 0;
-    font-size: calc(var(--lyric-size) * 1.15);
+    width: min(var(--lyric-box-width), 90vw);
+    max-width: 90vw;
+    font-size: var(--lyric-box-font, calc(var(--lyric-size) * 1.15));
     line-height: 1.05;
     filter: none !important;
   }
-  body.immersive[data-layout="wordstack"] .line { font-size: calc(var(--lyric-size) * 1.8); }
+  body.immersive[data-layout="wordstack"] .line { font-size: var(--lyric-box-font, calc(var(--lyric-size) * 1.8)); }
   body[data-layout="wordstack"] .w { padding: .08em .04em .18em; margin: -.08em -.04em -.18em; }
 
   /* flash layout: the current line is huge and pops in; the lines either side are small and faint */
@@ -90,13 +92,13 @@
 
   /* word stream: one timed word per row, snapping through fast verses like kinetic type */
   body[data-layout="wordstream"] #lines { transition-property: transform, opacity; transition-duration: var(--word-step-ms, 160ms), .25s; }
-  body[data-layout="wordstream"] .line { padding: .22em 0 .3em; font-size: calc(var(--lyric-size) * .9); opacity: .08;
+  body[data-layout="wordstream"] .line { padding: .22em 0 .3em; width:min(var(--lyric-box-width),90vw);max-width:90vw;font-size:var(--lyric-box-font,calc(var(--lyric-size) * .9));opacity: .08;
                                          line-height: 1.12; overflow: visible; filter: blur(3px); transform: scale(.72);
                                          transition: color var(--word-step-ms, 160ms), filter var(--word-step-ms, 160ms),
                                                      opacity var(--word-step-ms, 160ms), transform var(--word-step-ms, 160ms); }
   body[data-layout="wordstream"] .line[data-d="1"] { opacity: .28; filter: blur(1.5px); transform: scale(.82); }
   body[data-layout="wordstream"] .line[data-d="0"] { opacity: 1; filter: none; transform: scale(1); }
-  body.immersive[data-layout="wordstream"] .line[data-d="0"] { font-size: calc(var(--lyric-size) * 2.6); }
+  body.immersive[data-layout="wordstream"] .line[data-d="0"] { font-size: var(--lyric-box-font, calc(var(--lyric-size) * 2.6)); }
   body[data-layout="wordstream"] .w { padding: .08em .04em .2em; margin: -.08em -.04em -.2em; }
 
   @keyframes wordHit {
@@ -271,8 +273,8 @@
 
   /* 01 — a clean impact composition. The active word owns the frame; its
      neighbours are distant depth cues, not a second layer of readable text. */
-  body[data-layout="kinetic"] .line { left: 50%; top: 50%; width: max-content; max-width: 82%; color: rgba(255,255,255,.16);
-    font-family: ui-rounded,"SF Pro Rounded",system-ui,sans-serif; font-size: min(calc(var(--lyric-size) * .76), 10vw, 13vh); font-weight: 900; line-height: .94; letter-spacing: -.045em;
+  body[data-layout="kinetic"] .line { left: 50%; top: 50%; width: min(var(--lyric-box-width),90vw); max-width: 90vw; color: rgba(255,255,255,.16);
+    font-family: ui-rounded,"SF Pro Rounded",system-ui,sans-serif; font-size: var(--lyric-box-font,min(calc(var(--lyric-size) * .76), 10vw, 13vh)); font-weight: 900; line-height: .94; letter-spacing: -.045em;
     transition: top var(--word-step-ms,180ms) cubic-bezier(.2,.8,.2,1), opacity .22s, transform .26s cubic-bezier(.16,.86,.22,1), filter .22s; }
   body[data-layout="kinetic"] .line[data-slot="-1"] { top: 19%; opacity: .11; transform: translate(-50%,-50%) scale(.58); filter: blur(3.5px); }
   body[data-layout="kinetic"] .line[data-slot="0"] { top: 50%; opacity: 1; transform: translate(-50%,-50%) scale(1.08); color: #fff; filter: none; text-shadow: 0 0 14px rgba(var(--glow),.52), 0 .08em .7em rgba(var(--glow),.35); }
@@ -283,7 +285,7 @@
   /* Reference style 01 — a compact depth column. Words translate through the
      stack at a stable size; blur and opacity create depth without visual jumps. */
   body[data-layout="morphstack"] #stage{perspective:900px;perspective-origin:50% 50%}
-  body[data-layout="morphstack"] .line { left:50%;top:50%;width:max-content;max-width:82%;font-size:min(calc(var(--lyric-size) * .92),13vw,14vh);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:.96;letter-spacing:-.04em;color:rgba(255,255,255,.28);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .24s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .24s; }
+  body[data-layout="morphstack"] .line { left:50%;top:50%;width:min(var(--lyric-box-width),90vw);max-width:90vw;font-size:var(--lyric-box-font,min(calc(var(--lyric-size) * .92),13vw,14vh));font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:.96;letter-spacing:-.04em;color:rgba(255,255,255,.28);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .24s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .24s; }
   body[data-layout="morphstack"] .line[data-slot="-2"]{top:25%;opacity:.1;transform:translate(-50%,-50%);filter:blur(8px)}
   body[data-layout="morphstack"] .line[data-slot="-1"]{top:25%;opacity:.2;transform:translate(-50%,-50%) scale(.72);filter:blur(4.5px)}
   body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .22em rgba(var(--glow),.42)}
@@ -297,7 +299,7 @@
      face; advancing the lyric rotates the next face squarely toward us. */
   body[data-layout="prism"] #stage{--prism-depth:190px;perspective:820px;perspective-origin:50% 50%}
   body[data-layout="prism"] #lines{transform-style:preserve-3d}
-  body[data-layout="prism"] .line{left:50%;top:50%;width:max-content;max-width:84%;font-size:min(calc(var(--lyric-size) * 1.12),14vw,18vh);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:900;line-height:.92;letter-spacing:-.055em;color:rgba(255,255,255,.2);transform-origin:50% 50%;transform-style:preserve-3d;backface-visibility:hidden;transition:transform var(--word-step-ms,210ms) cubic-bezier(.16,.82,.2,1),opacity .24s ease,filter .24s ease,color .2s ease,text-shadow .2s ease}
+  body[data-layout="prism"] .line{left:50%;top:50%;width:max-content;max-width:min(var(--lyric-box-width),74vw);font-size:var(--lyric-box-font,min(calc(var(--lyric-size) * 1.12),14vw,18vh));font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:900;line-height:.92;letter-spacing:-.055em;color:rgba(255,255,255,.2);transform-origin:50% 50%;transform-style:preserve-3d;backface-visibility:hidden;transition:transform var(--word-step-ms,210ms) cubic-bezier(.16,.82,.2,1),opacity .24s ease,filter .24s ease,color .2s ease,text-shadow .2s ease}
   body[data-layout="prism"] .line.creative-hidden{display:none}
   body[data-layout="prism"] .line[data-slot="-3"]{opacity:.025;transform:translate(-50%,-50%) rotateX(118deg) translateZ(var(--prism-depth));filter:blur(8px)}
   body[data-layout="prism"] .line[data-slot="-2"]{opacity:.12;transform:translate(-50%,-50%) rotateX(82deg) translateZ(var(--prism-depth));filter:blur(4.5px)}
@@ -309,11 +311,11 @@
   body[data-layout="prism"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .06em}
   body.lyrics-motion[data-layout="prism"] .line[data-slot="0"]{scale:calc(1 + var(--motion-vocal) * .035 + var(--motion-drop) * .055)}
   body[data-layout="prism"] .line.creative-arrive{animation:none}
-  @media(max-height:720px){body[data-layout="prism"] #stage{--prism-depth:150px}body[data-layout="prism"] .line{font-size:calc(var(--lyric-size) * .96)}}
+  @media(max-height:720px){body[data-layout="prism"] #stage{--prism-depth:150px}body[data-layout="prism"] .line{font-size:var(--lyric-box-font,calc(var(--lyric-size) * .96))}}
 
   /* Reference style 02 — a word-by-word editorial stack. Each word keeps its
      own typeface while the whole column rises one clean slot at a time. */
-  body[data-layout="buildstack"] .line{left:50%;top:72%;width:min(72%,980px);font-size:min(calc(var(--lyric-size) * .72),9vw,11vh);line-height:.96;font-weight:820;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),opacity .3s,transform var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),filter .3s}
+  body[data-layout="buildstack"] .line{left:50%;top:72%;width:min(var(--lyric-box-width),88vw);max-width:88vw;font-size:var(--lyric-box-font,min(calc(var(--lyric-size) * .72),9vw,11vh));line-height:.96;font-weight:820;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),opacity .3s,transform var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),filter .3s}
   body[data-layout="buildstack"] .line[data-slot="0"]{top:76%;z-index:5;opacity:1;transform:translate(-50%,-50%);filter:none}
   body[data-layout="buildstack"] .line[data-slot="-1"]{top:57%;z-index:4;opacity:.66;transform:translate(-50%,-50%) scale(.9);filter:blur(.3px)}
   body[data-layout="buildstack"] .line[data-slot="-2"]{top:38%;z-index:3;opacity:.34;transform:translate(-50%,-50%) scale(.8);filter:blur(1px)}
@@ -346,7 +348,7 @@
   #constellationMap .constellation-star { fill: rgb(var(--glow)); opacity: .74; transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 3px rgba(var(--glow),.62)); }
   #constellationMap .constellation-star.current { fill:#fff;opacity:1;animation:constellationPulse 1.15s ease-in-out infinite;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px rgba(var(--glow),.7)); }
   body[data-layout="constellation"] #constellationMap { display: block; }
-  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 21%; white-space: normal; overflow-wrap: break-word; font-size: calc(var(--lyric-size) * var(--node-font-scale,.4)); line-height: 1.05; font-weight: 650; letter-spacing: .015em; color: rgba(255,255,255,.4); opacity: .56; transform: translate(-50%,-50%); transition: opacity .22s, color .22s, text-shadow .22s, filter .22s, transform .22s; }
+  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 21%; white-space: normal; overflow-wrap: break-word; font-size: clamp(13px, calc(var(--lyric-size) * var(--node-font-scale,.4)), min(30px,2.2vw,3.6vh)); line-height: 1.05; font-weight: 650; letter-spacing: .015em; color: rgba(255,255,255,.4); opacity: .56; transform: translate(-50%,-50%); transition: opacity .22s, color .22s, text-shadow .22s, filter .22s, transform .22s; }
   body[data-layout="constellation"] .line.constellation-current { z-index: 2; opacity: 1; color: #fff; filter:brightness(1.18);transform: translate(-50%,-50%) scale(1.26);font-weight:840; letter-spacing: -.015em; text-shadow:0 0 3px #fff,0 0 8px rgba(var(--glow),.68); }
   body[data-layout="constellation"] .line.constellation-current .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
   @keyframes constellationPulse { 50% { transform:scale(1.28);opacity:.86; } }

@@ -39,6 +39,7 @@
         quietHold: 0, quietMinimum: 1, quietArmedUntil: 0, quietSuppressedUntil: 0,
         lastReentryAt: -Infinity, quietConfidence: 0, reentry: 0,
         switchUp: 0, switchDown: 0, productionSwitch: 0, switchConfidence: 0,
+        arrangementLift: 0, liftHold: 0, lastLiftAt: nowMs,
         peakTimbre: 0, peakLoudness: 0, peakDrum: 0, peakHarmony: 0,
         pivotArmedUntil: 0, pivotArmedConfidence: 0, pivotReturnHold: 0,
         lastBeatAt: 0, beatInterval: 0, beatConfidence: 0,
@@ -159,6 +160,18 @@
       // together. Hold the low-energy state long enough to arm one deliberate
       // re-entry cue, then release it on the first convincing recovery.
       const warmedUp = state.elapsed > 14;
+      const layerSupport = Math.max(drumChange, harmonyChange, Math.min(timbreEvidence, loudnessEvidence));
+      const newLayerCandidate = warmedUp && direction > .025 && rawPresence > .38
+        && timbreEvidence > .26 && loudnessEvidence > .2 && layerSupport > .22
+        && (!hasProductionFeatures || productionAgreement > .12 || drumChange > .16 || harmonyChange > .18);
+      state.liftHold = newLayerCandidate
+        ? Math.min(1, state.liftHold + dt)
+        : Math.max(0, state.liftHold - dt * 2.2);
+      if (state.liftHold > .24 && nowMs - state.lastLiftAt > 12000) {
+        state.arrangementLift = 1;
+        state.lastLiftAt = nowMs;
+        state.liftHold = 0;
+      }
       const onsetReduction = state.longDrums[3] < .05
         ? drums[3] < .13
         : state.shortDrums[3] < state.longDrums[3] * .7;
@@ -278,6 +291,7 @@
       state.productionSwitch *= Math.exp(-dt / .82);
       state.switchConfidence *= Math.exp(-dt / 1.05);
       state.reentry *= Math.exp(-dt / .9);
+      state.arrangementLift *= Math.exp(-dt / 1.15);
 
       const bpm = state.beatInterval > 0 ? 60000 / state.beatInterval : 0;
       return {
@@ -298,6 +312,7 @@
         quietHold: clamp01(state.quietHold / 3.4),
         quietConfidence: state.quietConfidence,
         reentry: state.reentry,
+        arrangementLift: state.arrangementLift,
         drumChange,
         harmonyChange,
         productionAgreement,

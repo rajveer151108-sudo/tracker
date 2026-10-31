@@ -32,14 +32,14 @@
       hint: "Adds semantic emojis to expressive lyric lines and words without changing the lyric text." },
     { key: "lyricsKeywords", label: "Highlight keywords", type: "toggle",
       hint: "Gives words like love, fire, ice, and money a visual accent in Word stream." },
-    { key: "lyricsFit", label: "Make short lines bigger", type: "toggle",
-      hint: "Flash and Word stream layouts grow short lines to fill the screen." },
+    { key: "lyricsFit", label: "Auto-fit lyric box", type: "toggle",
+      hint: "Word-focused modes grow short words and shrink long ones to fill the invisible lyric box. Constellation stays compact so its full star map remains readable." },
     { key: "lyricsEstimate", label: "Estimate timing for unsynced songs", type: "toggle",
       hint: "If a song has no synced lyrics, spread the plain lyrics over the song. Use \u2190 \u2192 to nudge." },
     { key: "lyricsAlign", label: "Position", type: "choice", options: [["center", "Center"], ["left", "Left"]] },
     { key: "lyricsFont", label: "Font", type: "choice", options: [["sans", "Sans"], ["serif", "Serif"], ["round", "Rounded"]] },
-    { key: "lyricsSize", label: "Size", type: "range", min: 18, max: 160, step: 2, unit: "px",
-      hint: "Cinematic word modes can now grow to 160px; long lines still stay inside the stage." },
+    { key: "lyricsSize", label: "Lyric box", type: "range", min: 18, max: 160, step: 2, unit: "px",
+      hint: "Sets the invisible lyric box. Short words grow to fill it; long words shrink automatically so they never spill out." },
     { key: "lyricsBlur", label: "Blur lines that aren't playing", type: "toggle" },
 
     { type: "heading", label: "Scenes & automation" },
@@ -54,7 +54,7 @@
     { key: "cinematicTransitions", label: "Cinematic track transitions", type: "toggle",
       hint: "Choreographs artwork, colour and typography when the actual song changes. Seeking and pausing do not trigger it." },
     { key: "directorMode", label: "Director Mode", type: "toggle", status: true,
-      hint: "Scores vocals, loudness, bass, drum pattern, harmonic colour, beat confidence, timbre, WPM, flow, emotion and song structure—plus upcoming lyric pace and gaps—then lands scene changes on lyric boundaries. A manual change locks only that control while Director keeps running everything else." },
+      hint: "Scores vocals, loudness, bass, instruments, drum pattern, harmonic colour, beat confidence, timbre, WPM, flow, emotion and upcoming lyrics. Normal scenes land between lines; verified production pivots can cut on the next word, and a cadence timer keeps the look evolving. A manual change locks only that control." },
     { key: "automationNotifications", label: "Show automation notices", type: "toggle",
       hint: "Shows the small top-right card when a saved look or Director scene is applied. Turning this off keeps every visual change silent." },
 
@@ -222,6 +222,8 @@
     document.body.dataset.glowStyle = settings.glowStyle || "steady";
     appliedLyricsLayout = settings.lyricsLayout;
     root.style.setProperty("--lyric-size", settings.lyricsSize + "px");
+    root.style.setProperty("--lyric-box-control", String(settings.lyricsSize));
+    if (typeof refreshLyricBoxSizing === "function") refreshLyricBoxSizing();
     applyFeel();
     if (layoutChanged) {
       rebuildLyricsLayout();

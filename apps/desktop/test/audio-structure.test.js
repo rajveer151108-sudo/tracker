@@ -113,6 +113,28 @@ test("a vocal entrance without a production-layer change is not a beat switch", 
   assert.ok(result.switchUp < .08);
 });
 
+test("a sustained new instrumental layer creates an arrangement lift without faking a full switch", () => {
+  const detector = createAudioStructureDetector();
+  const base = {
+    bands: [.28, .24, .22, .17, .09], loudness: .55, rawLoudness: .048, vocal: .4,
+    chroma: [.4, 0, 0, 0, .3, 0, 0, .3, 0, 0, 0, 0], tonality: .72,
+    drums: { kick: .3, snare: .25, hat: .22, onset: .26 }, beat: true,
+  };
+  feed(detector, 15, base);
+  let strongest = null;
+  for (let index = 0; index < 20; index++) {
+    const result = detector.update({
+      ...base,
+      bands: [.42, .25, .16, .11, .06], loudness: .72, rawLoudness: .068,
+      chroma: [.32, 0, 0, .16, .25, 0, 0, .27, 0, 0, 0, 0],
+      drums: { kick: .42, snare: .3, hat: .34, onset: .45 },
+    }, 15000 + index * 50, .05);
+    if (!strongest || result.arrangementLift > strongest.arrangementLift) strongest = result;
+  }
+  assert.ok(strongest.arrangementLift > .7);
+  assert.ok(strongest.productionSwitch < .1);
+});
+
 test("drums, harmony and timbre agreeing create one production switch", () => {
   const detector = createAudioStructureDetector();
   feed(detector, 15, {

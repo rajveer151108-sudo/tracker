@@ -177,6 +177,7 @@
         switchDown: structureSwitchDown,
         productionSwitch: structureProductionSwitch,
         switchConfidence: structureSwitchConfidence,
+        arrangementLift: structureArrangementLift,
         timbreEvidence: structureTimbreEvidence,
         loudnessEvidence: structureLoudnessEvidence,
         lowActivity: structureLowActivity,
@@ -199,6 +200,7 @@
         audioActive: settings.beat && beatOn,
         hasLyrics: lyricContext.hasLyrics,
         lineIndex: directorLineIndex,
+        wordIndex: lyricContext.wordIndex,
       }, tNow);
     }
     if (tNow - lastUiT >= 100) {
@@ -345,6 +347,6 @@
     root.style.setProperty("--line-emotion", lineEmotion.toFixed(3));
   }
 
-  window.addEventListener("resize", () => { activeIdx = -2; });
+  window.addEventListener("resize", () => { activeIdx = -2; refreshLyricBoxSizing(); });
 
 

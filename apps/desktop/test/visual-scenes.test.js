@@ -4,7 +4,7 @@ const test = require("node:test");
 const {
   VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
   averageWordGap, lyricDirectorContext, directorScene, directorDecision, directorSection,
-  directorSectionTiming, directorCutAllowed, directorSectionScene,
+  directorCadenceScene, directorCadenceDelay, directorSectionTiming, directorCutAllowed, directorSectionScene,
 } = require("../src/shared/visual-scenes");
 
 test("song presets contain visual settings only", () => {
@@ -51,6 +51,36 @@ test("lyric context forecasts the next line's flow before it begins", () => {
   assert.equal(context.boundaryIn, 1);
 });
 
+test("lyric context exposes exact and estimated word boundaries for mid-verse production cuts", () => {
+  const exact = lyricDirectorContext([{
+    t: 10, end: 12, text: "one two three", words: [
+      { text: "one", t: 10, end: 10.5 }, { text: "two", t: 10.5, end: 11.1 }, { text: "three", t: 11.1, end: 12 },
+    ],
+  }], 0, 10.7, 100);
+  assert.equal(exact.wordIndex, 1);
+  const estimated = lyricDirectorContext([{ t: 20, end: 24, text: "one two three four" }], 0, 23.2, 100);
+  assert.equal(estimated.wordIndex, 3);
+});
+
+test("scheduled cadence leads with Constellation and never leaves a whole song visually static", () => {
+  const scene = directorCadenceScene({
+    sequence: 0,
+    baseVisual: { backdropStyle: "album", lyricsFont: "round" },
+    signal: { pace: .45, density: .55 },
+  });
+  assert.equal(scene.visual.lyricsLayout, "constellation");
+  assert.equal(scene.visual.glowStyle, "comet");
+  assert.equal(Object.hasOwn(scene.visual, "lyricsSize"), false);
+  assert.equal(Object.hasOwn(directorScene({ genre: "rap", wordGap: .2 }).visual, "lyricsSize"), false);
+  for (const section of ["quiet", "build", "drop", "rapid", "sustain"]) {
+    assert.equal(Object.hasOwn(directorSectionScene({ section, baseVisual: {} }).visual, "lyricsSize"), false);
+  }
+  assert.equal(scene.visual.backdropStyle, "album");
+  assert.ok(scene.reasons.includes("normal-paced verse"));
+  assert.ok(directorCadenceDelay(0, true) <= 21000);
+  assert.ok(Math.max(...Array.from({ length: 8 }, (_, index) => directorCadenceDelay(index))) <= 31500);
+});
+
 test("multimodal decisions combine structural, vocal and future flow signals", () => {
   const switchDecision = directorDecision({
     reentry: .9, switchUp: .9, structure: .8, energy: .75, bass: .8,
@@ -72,6 +102,10 @@ test("section director distinguishes drops, rapid verses, builds and held notes"
   assert.equal(directorSection({ build: .7, energy: .62 }), "build");
   assert.equal(directorSection({ phrase: .85, vocal: .8, wordSustain: .88, vocalSustain: .82, lineActive: 1, pace: .2 }), "sustain");
   assert.equal(directorSection({ duck: .8, lowActivity: .9, quietHold: .8, quietConfidence: .86, energy: .28 }), "quiet");
+  const layer = directorDecision({ arrangementLift: .9, timbreShift: .55, energy: .68, loudnessTrend: .3 });
+  assert.equal(layer.section, "build");
+  assert.equal(layer.priority, "instrument-lift");
+  assert.ok(layer.reasons.includes("new instrumental layer"));
 });
 
 test("beat-switch decisions require multiple production layers", () => {
@@ -104,8 +138,11 @@ test("sentence endings and forecasts do not invent held notes, quiet breaks, or 
   assert.notEqual(forecastOnly.section, "rapid");
 });
 
-test("director cuts only at lyric boundaries while instrumentals stay music-led", () => {
+test("director keeps style changes on lines but lets real production hits use word boundaries", () => {
   assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, lineBoundary: false }), false);
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true }), false);
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true, priority: "beat-switch" }), true);
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: true, wordBoundary: true, priority: "instrument-lift" }), true);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: true }), true);
   assert.equal(directorCutAllowed({ hasLyrics: true, lineActive: false, lineBoundary: false }), true);
   assert.equal(directorCutAllowed({ hasLyrics: false, lineBoundary: false }), true);

@@ -129,14 +129,14 @@ const DIRECTOR_ENVIRONMENT_KEYS = new Set([
   "glowOverride", "glowColorA", "glowColorB", "glowDance",
 ]);
 
-// Production hits are allowed to change light immediately; typography and lyric
-// composition still wait for a line boundary. This keeps a beat switch on-time
-// without ever replacing or reflowing words halfway through a line.
+// Production hits change light immediately. Their lyric composition follows on
+// the next timed word boundary; ordinary stylistic direction still waits for a
+// line ending, so the fast path never chops through a word.
 function applyDirectorBeatSwitchEnvironment(state, decision, nowMs) {
   const scene = window.VisualScenes.directorSectionScene({
     section: "drop",
     genre: state.genre || "other",
-    baseVisual: state.directorBase,
+    baseVisual: state.activeSteadyVisual || state.directorBase,
     cue: "beat-switch",
   });
   const environment = Object.fromEntries(Object.entries(scene.visual)
@@ -225,6 +225,8 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.directorSignature = signature;
   state.directorName = scene.name;
   state.directorBase = scene.visual;
+  state.activeSteadyVisual = scene.visual;
+  state.activeSteadyName = scene.name;
   state.pendingBaseScene = null;
   state.section = "steady";
   state.sectionCandidate = "steady";
@@ -234,6 +236,8 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.queuedDecision = null;
   state.queuedUntil = 0;
   state.lastEvidenceAt = 0;
+  state.cadenceIndex = 0;
+  state.nextCadenceAt = performance.now() + window.VisualScenes.directorCadenceDelay(0, true);
   state.rapidEvidence = 0;
   state.sustainEvidence = 0;
   Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
@@ -259,6 +263,8 @@ function beginVisualTrack(np, key, previousKey) {
     directorName: "",
     directorSignature: "",
     directorBase: null,
+    activeSteadyVisual: null,
+    activeSteadyName: "",
     pendingBaseScene: null,
     contextSettled: false,
     section: "steady",
@@ -267,6 +273,7 @@ function beginVisualTrack(np, key, previousKey) {
     sectionChangedAt: performance.now(),
     sectionEligibleAt: performance.now() + 14000,
     lastLyricLine: null,
+    lastLyricWord: null,
     queuedSection: null,
     queuedDecision: null,
     queuedSectionSince: 0,
@@ -275,6 +282,8 @@ function beginVisualTrack(np, key, previousKey) {
     decision: null,
     lastAccentAt: 0,
     lastImmediateBeatSwitchAt: 0,
+    cadenceIndex: 0,
+    nextCadenceAt: Infinity,
     lastStatusAt: 0,
     lastEvidenceAt: 0,
     rapidEvidence: 0,
@@ -288,7 +297,7 @@ function beginVisualTrack(np, key, previousKey) {
       lowActivity: 0, quietHold: 0, quietConfidence: 0, reentry: 0, vocalTrend: 0, beatConfidence: 0, bpm: 0,
       bass: 0, flux: 0, emotion: 0, audioConfidence: 0, lineActive: 0, wordSustain: 0,
       vocalSustain: 0, flowHold: 0, drumChange: 0, harmonyChange: 0,
-      productionAgreement: 0, tonality: 0, onsetDensity: 0,
+      productionAgreement: 0, tonality: 0, onsetDensity: 0, arrangementLift: 0,
     },
     lastSectionSampleAt: 0,
     source: "defaults",
@@ -316,7 +325,7 @@ function commitDirectorSection(state, section, decision, nowMs) {
   const scene = window.VisualScenes.directorSectionScene({
     section,
     genre: state.genre || "other",
-    baseVisual: state.directorBase,
+    baseVisual: state.activeSteadyVisual || state.directorBase,
     cue: decision?.priority,
   });
   state.section = section;
@@ -328,11 +337,35 @@ function commitDirectorSection(state, section, decision, nowMs) {
   state.queuedUntil = 0;
   state.decision = decision;
   state.directorName = section === "steady"
-    ? window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name
+    ? (state.activeSteadyName || window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name)
     : scene.name;
   playDirectorSectionTransition(section);
+  state.nextCadenceAt = nowMs + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, false);
   const duplicateImpactBadge = nowMs - state.lastImmediateBeatSwitchAt < 6500;
   applyVisualPatch(scene.visual, "director-section", scene.name, { badge: !duplicateImpactBadge });
+  updateVisualAutomationStatus();
+}
+
+function commitDirectorCadence(state, nowMs) {
+  const scene = window.VisualScenes.directorCadenceScene({
+    baseVisual: state.directorBase,
+    sequence: state.cadenceIndex,
+    signal: state.sectionSignal,
+  });
+  state.cadenceIndex += 1;
+  state.activeSteadyVisual = scene.visual;
+  state.activeSteadyName = scene.name;
+  state.sectionChangedAt = nowMs;
+  state.directorName = scene.name;
+  state.decision = {
+    section: "steady",
+    priority: "cadence",
+    confidence: 1,
+    reasons: scene.reasons,
+  };
+  state.nextCadenceAt = nowMs + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, false);
+  playDirectorSectionTransition("steady");
+  applyVisualPatch(scene.visual, "director-cadence", scene.name);
   updateVisualAutomationStatus();
 }
 
@@ -340,17 +373,29 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   const state = visualTrackState;
   if (!state || !playing) return;
   const lineIndex = Number.isInteger(sample.lineIndex) ? sample.lineIndex : -1;
+  const wordIndex = Number.isInteger(sample.wordIndex) ? sample.wordIndex : -1;
   if (nowMs - state.lastSectionSampleAt < 90) return;
   const lineBoundary = state.lastLyricLine !== null && lineIndex !== state.lastLyricLine
     && (lineIndex >= 0 || state.lastLyricLine >= 0);
+  const wordBoundary = state.lastLyricWord !== null
+    && `${lineIndex}:${wordIndex}` !== state.lastLyricWord
+    && lineIndex >= 0 && wordIndex >= 0;
   state.lastLyricLine = lineIndex;
+  state.lastLyricWord = `${lineIndex}:${wordIndex}`;
   state.lastSectionSampleAt = nowMs;
-  const safeCut = window.VisualScenes.directorCutAllowed({
+  const safeLineCut = window.VisualScenes.directorCutAllowed({
     hasLyrics: sample.hasLyrics,
     lineActive: sample.lineActive !== 0,
     lineBoundary,
   });
-  if (state.pendingPreset && settings?.songPresetsEnabled && safeCut) {
+  const cutAllowedFor = (priority = "normal") => window.VisualScenes.directorCutAllowed({
+    hasLyrics: sample.hasLyrics,
+    lineActive: sample.lineActive !== 0,
+    lineBoundary,
+    wordBoundary,
+    priority,
+  });
+  if (state.pendingPreset && settings?.songPresetsEnabled && safeLineCut) {
     const preset = state.pendingPreset;
     state.pendingPreset = null;
     applyVisualPatch(preset.visual, "preset", preset.title || state.np.title || "Saved look");
@@ -410,8 +455,19 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     || (rawReentry > .5 && (Number(sample.onsetDensity) || 0) > .2));
   if (nowMs < state.sectionEligibleAt) return;
   if (beatSwitchHit && nowMs - state.lastImmediateBeatSwitchAt > 9000) {
-    const immediateDecision = window.VisualScenes.directorDecision(signal, state.section);
+    const scoredDecision = window.VisualScenes.directorDecision(signal, state.section);
+    const immediateDecision = {
+      ...scoredDecision,
+      section: "drop",
+      priority: "beat-switch",
+      reasons: scoredDecision.reasons?.length ? scoredDecision.reasons : ["production pivot", "layer agreement"],
+    };
     applyDirectorBeatSwitchEnvironment(state, immediateDecision, nowMs);
+    state.queuedSection = "drop";
+    state.queuedDecision = immediateDecision;
+    state.queuedSectionSince = nowMs;
+    state.queuedReadyAt = nowMs;
+    state.queuedUntil = nowMs + 6500;
     state.lastAccentAt = nowMs;
   } else if (beatSwitchHit && nowMs - state.lastAccentAt > 520) {
     state.lastAccentAt = nowMs;
@@ -433,14 +489,20 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     state.queuedSection = null;
     state.queuedDecision = null;
   }
-  const protectedQueue = ["reentry", "beat-switch"].includes(state.queuedDecision?.priority);
+  const protectedQueue = ["reentry", "beat-switch", "instrument-lift"].includes(state.queuedDecision?.priority);
   if (state.queuedSection && decision.section !== state.queuedSection && !protectedQueue
     && nowMs - state.queuedSectionSince > 450) {
     state.queuedSection = null;
     state.queuedDecision = null;
   }
-  if (safeCut && state.queuedSection && state.queuedSection !== state.section && nowMs >= state.queuedReadyAt) {
+  if (state.queuedSection && state.queuedSection !== state.section && nowMs >= state.queuedReadyAt
+    && cutAllowedFor(state.queuedDecision?.priority)) {
     commitDirectorSection(state, state.queuedSection, state.queuedDecision || decision, nowMs);
+    return;
+  }
+  if (nowMs >= state.nextCadenceAt && state.section === "steady" && decision.section === "steady"
+    && !state.queuedSection && safeLineCut) {
+    commitDirectorCadence(state, nowMs);
     return;
   }
   const next = decision.section;
@@ -453,15 +515,17 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   const timing = window.VisualScenes.directorSectionTiming(next, state.section);
   const sinceChange = nowMs - state.sectionChangedAt;
   const requiredStable = timing.stableMs * (1.08 - decision.confidence * .38);
-  const structuralCue = next === "drop" && ["reentry", "beat-switch"].includes(decision.priority);
+  const structuralCue = (next === "drop" && ["reentry", "beat-switch"].includes(decision.priority))
+    || (next === "build" && decision.priority === "instrument-lift");
   const requiredHold = decision.priority === "beat-switch" ? Math.min(timing.holdMs, 900)
     : decision.priority === "reentry" ? Math.min(timing.holdMs, 2400)
+    : decision.priority === "instrument-lift" ? Math.min(timing.holdMs, 1800)
     : timing.holdMs;
   if (structuralCue && state.queuedSection !== next) {
     state.queuedSection = next;
     state.queuedDecision = decision;
     state.queuedSectionSince = nowMs;
-    state.queuedReadyAt = ["reentry", "beat-switch"].includes(decision.priority)
+    state.queuedReadyAt = ["reentry", "beat-switch", "instrument-lift"].includes(decision.priority)
       ? nowMs
       : Math.max(nowMs, state.sectionChangedAt + 900);
     state.queuedUntil = nowMs + 6500;
@@ -469,7 +533,8 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
   // The line boundary is a one-frame event. When a remembered arrangement
   // return lands exactly there, commit it now instead of missing the boundary
   // and waiting for the next line.
-  if (safeCut && structuralCue && state.queuedSection === next && nowMs >= state.queuedReadyAt) {
+  if (structuralCue && state.queuedSection === next && nowMs >= state.queuedReadyAt
+    && cutAllowedFor(decision.priority)) {
     commitDirectorSection(state, next, decision, nowMs);
     return;
   }
@@ -481,10 +546,10 @@ function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now(
     state.queuedReadyAt = nowMs;
     state.queuedUntil = nowMs + Math.max(4200, Math.min(7000, (Number(signal.boundaryIn) || 0) * 1000 + 1200));
   }
-  // With synced lyrics, a qualified scene waits at the wings until the active
-  // line ends. Instrumentals have no words to interrupt, so musical transients
-  // remain valid cut points there.
-  if (!safeCut) return;
+  // Ordinary scenes wait at the wings until the line ends. Verified production
+  // and instrument-layer cues may use a word boundary; instrumentals remain
+  // fully music-led because there are no lyrics to interrupt.
+  if (!cutAllowedFor(decision.priority)) return;
   commitDirectorSection(state, next, decision, nowMs);
 }
 

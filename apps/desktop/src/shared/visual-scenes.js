@@ -76,6 +76,25 @@
     };
   }
 
+  function lyricWordIndex(line, nextLine, time) {
+    if (!line) return -1;
+    const timed = Array.isArray(line.words) ? line.words.filter((word) => Number.isFinite(Number(word?.t))) : [];
+    if (timed.length) {
+      let index = -1;
+      for (let i = 0; i < timed.length; i++) {
+        if (Number(timed[i].t) <= time + .025) index = i;
+        else break;
+      }
+      return index;
+    }
+    const words = String(line.text || "").trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return -1;
+    const stats = lyricLineStats(line, nextLine);
+    const start = Number(line.t) || 0;
+    const progress = Math.max(0, Math.min(.9999, (time - start) / Math.max(.35, stats.duration)));
+    return Math.min(words.length - 1, Math.floor(progress * words.length));
+  }
+
   function lyricDirectorContext(lines = [], activeIndex = -1, time = 0, duration = 0) {
     const input = Array.isArray(lines) ? lines : [];
     let currentIndex = Number.isInteger(activeIndex) ? activeIndex : -1;
@@ -101,6 +120,7 @@
     return {
       hasLyrics: input.length > 0,
       lineIndex: currentIndex,
+      wordIndex: lyricWordIndex(current, input[currentIndex + 1], time),
       lineActive: currentIndex >= 0 ? 1 : 0,
       vocalGap: currentIndex < 0 ? 1 : 0,
       wpm: currentStats.wpm,
@@ -124,43 +144,43 @@
   const SCENES = Object.freeze({
     rap: {
       name: "Flow chamber", lyricsLayout: "prism", lyricsHighlight: "word", lyricsMotion: "punch",
-      lyricsFont: "round", lyricsSize: 94, backdropStyle: "black", backdropOpacity: 100,
+      lyricsFont: "round", backdropStyle: "black", backdropOpacity: 100,
       glowStyle: "flowline", glowStrength: 120, glowThickness: 180,
       lyricsDanceStyle: "punch", motionStrength: 135,
     },
     rnb: {
       name: "Velvet depth", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
-      lyricsFont: "round", lyricsSize: 92, backdropStyle: "album", backdropOpacity: 54,
+      lyricsFont: "round", backdropStyle: "album", backdropOpacity: 54,
       glowStyle: "aurora", glowStrength: 105, glowThickness: 135,
       lyricsDanceStyle: "float", motionStrength: 92,
     },
     pop: {
       name: "Editorial lift", lyricsLayout: "buildstack", lyricsHighlight: "word", lyricsMotion: "slide",
-      lyricsFont: "sans", lyricsSize: 78, backdropStyle: "canvas", backdropOpacity: 58,
+      lyricsFont: "sans", backdropStyle: "canvas", backdropOpacity: 58,
       glowStyle: "horizon", glowStrength: 105, glowThickness: 120,
       lyricsDanceStyle: "bounce", motionStrength: 108,
     },
     rock: {
       name: "Cutout stage", lyricsLayout: "poster", lyricsHighlight: "word", lyricsMotion: "punch",
-      lyricsFont: "sans", lyricsSize: 76, backdropStyle: "album", backdropOpacity: 62,
+      lyricsFont: "sans", backdropStyle: "album", backdropOpacity: 62,
       glowStyle: "frame", glowStrength: 125, glowThickness: 145,
       lyricsDanceStyle: "shake", motionStrength: 126,
     },
     electronic: {
       name: "Neon velocity", lyricsLayout: "kinetic", lyricsHighlight: "word", lyricsMotion: "punch",
-      lyricsFont: "sans", lyricsSize: 96, backdropStyle: "canvas", backdropOpacity: 64,
+      lyricsFont: "sans", backdropStyle: "canvas", backdropOpacity: 64,
       glowStyle: "prism", glowStrength: 135, glowThickness: 170,
       lyricsDanceStyle: "snap", motionStrength: 142,
     },
     jazz: {
       name: "Midnight cards", lyricsLayout: "captioncards", lyricsHighlight: "whole", lyricsMotion: "glide",
-      lyricsFont: "serif", lyricsSize: 66, backdropStyle: "album", backdropOpacity: 46,
+      lyricsFont: "serif", backdropStyle: "album", backdropOpacity: 46,
       glowStyle: "halo", glowStrength: 82, glowThickness: 100,
       lyricsDanceStyle: "sway", motionStrength: 74,
     },
     other: {
       name: "Afterglow adaptive", lyricsLayout: "morphstack", lyricsHighlight: "word", lyricsMotion: "slide",
-      lyricsFont: "round", lyricsSize: 82, backdropStyle: "album", backdropOpacity: 56,
+      lyricsFont: "round", backdropStyle: "album", backdropOpacity: 56,
       glowStyle: "aurora", glowStrength: 100, glowThickness: 125,
       lyricsDanceStyle: "subtle", motionStrength: 96,
     },
@@ -177,11 +197,69 @@
         lyricsLayout: "prism",
         lyricsHighlight: "word",
         lyricsMotion: "punch",
-        lyricsSize: Math.max(92, scene.lyricsSize || 0),
       });
     }
     const { name, ...visual } = scene;
     return { name, visual };
+  }
+
+  const CADENCE_VARIANTS = Object.freeze([
+    {
+      name: "Starlit verse", lyricsLayout: "constellation", lyricsHighlight: "whole", lyricsMotion: "glide",
+      glowStyle: "comet", glowStrength: 104, glowThickness: 128,
+      backdropOpacity: 52, lyricsDanceStyle: "sway", motionStrength: 82,
+    },
+    {
+      name: "Film captions", lyricsLayout: "captioncards", lyricsHighlight: "word", lyricsMotion: "glide",
+      glowStyle: "halo", glowStrength: 88, glowThickness: 108,
+      backdropOpacity: 48, lyricsDanceStyle: "subtle", motionStrength: 74,
+    },
+    {
+      name: "Type ascent", lyricsLayout: "buildstack", lyricsHighlight: "word", lyricsMotion: "slide",
+      glowStyle: "horizon", glowStrength: 112, glowThickness: 138,
+      backdropOpacity: 58, lyricsDanceStyle: "bounce", motionStrength: 108,
+    },
+    {
+      name: "Orbit verse", lyricsLayout: "constellation", lyricsHighlight: "whole", lyricsMotion: "glide",
+      glowStyle: "rotate", glowStrength: 112, glowThickness: 150,
+      backdropOpacity: 56, lyricsDanceStyle: "float", motionStrength: 88,
+    },
+    {
+      name: "Cover-story cut", lyricsLayout: "poster", lyricsHighlight: "word", lyricsMotion: "punch",
+      glowStyle: "frame", glowStrength: 116, glowThickness: 142,
+      backdropOpacity: 62, lyricsDanceStyle: "punch", motionStrength: 116,
+    },
+    {
+      name: "Velvet words", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
+      glowStyle: "aurora", glowStrength: 102, glowThickness: 136,
+      backdropOpacity: 50, lyricsDanceStyle: "float", motionStrength: 84,
+    },
+  ]);
+
+  function directorCadenceScene({ baseVisual = {}, sequence = 0, signal = {} } = {}) {
+    const pace = Math.max(0, Number(signal.pace) || 0);
+    const density = Math.max(0, Number(signal.density) || 0);
+    const futurePace = Math.max(0, Number(signal.nextPace) || 0, Number(signal.forecastFlow) || 0);
+    const normalVerse = pace >= .12 && pace <= .72 && density <= .82;
+    let index = Math.abs(Math.trunc(sequence)) % CADENCE_VARIANTS.length;
+    if (normalVerse && sequence % 3 === 0) index = sequence % 2 === 0 ? 0 : 3;
+    if (futurePace > pace + .28 && index === 1) index = 2;
+    const { name, ...patch } = CADENCE_VARIANTS[index];
+    return {
+      name,
+      visual: { ...baseVisual, ...patch },
+      reasons: normalVerse && [0, 3].includes(index)
+        ? ["normal-paced verse", "scheduled scene evolution"]
+        : futurePace > pace + .28 ? ["faster phrase ahead", "scheduled scene evolution"]
+        : ["scene cadence", "visual variety"],
+    };
+  }
+
+  function directorCadenceDelay(sequence = 0, first = false) {
+    const firstPattern = [18000, 21000, 19500];
+    const pattern = [26000, 30000, 24000, 28500, 25500, 31500];
+    const values = first ? firstPattern : pattern;
+    return values[Math.abs(Math.trunc(sequence)) % values.length];
   }
 
   const bounded = (value) => Math.max(0, Math.min(1.5, Number(value) || 0));
@@ -191,7 +269,7 @@
       "timbreShift", "timbreEvidence", "loudnessEvidence", "switchUp", "switchDown", "productionSwitch",
       "switchConfidence", "lowActivity", "quietHold", "quietConfidence", "reentry", "beatConfidence", "bass", "flux",
       "emotion", "lineActive", "wordSustain", "vocalSustain", "flowHold", "drumChange", "harmonyChange",
-      "productionAgreement", "tonality", "onsetDensity"];
+      "productionAgreement", "tonality", "onsetDensity", "arrangementLift"];
     const s = Object.fromEntries(keys.map((key) => [key, bounded(signal[key])]));
     const audio = bounded(signal.audioConfidence == null ? 1 : signal.audioConfidence);
     const wpm = Math.max(0, Number(signal.wpm) || 0);
@@ -230,7 +308,8 @@
       steady: .92 + s.energy * .08 + s.vocal * .08 - Math.max(s.reentry, s.switchUp, s.drop * s.structure) * .58,
       quiet: .08 + audio * (quietEvidence * 1.72 + s.quietHold * .22 + falling * .12)
         + (audio < .2 && s.nextGap > 1.8 ? Math.min(.5, (s.nextGap - 1.8) * .18) : 0),
-      build: .12 + audio * (s.build * 1.28 + rising * .7 + s.timbreShift * .2 + s.beatConfidence * .1 + s.energy * .22)
+      build: .12 + audio * (s.build * 1.28 + rising * .7 + s.timbreShift * .2 + s.beatConfidence * .1 + s.energy * .22
+        + s.arrangementLift * 1.7)
         + vocalRising * .24 + forecastNear * (Math.max(0, s.paceTrend) * .5
           + Math.max(0, futurePace - pace) * 1.3 + futurePace * .3)
         + s.hook * .16,
@@ -267,8 +346,9 @@
       quiet: ["sustained arrangement space", "reduced drum activity"],
       rapid: [wpm >= 120 ? `${Math.round(wpm)} WPM` : "dense delivery", "sustained flow"],
       sustain: ["held vocal", "long word sustain"],
-      build: Math.max(0, futurePace - pace) > .22
-        ? ["faster phrase ahead", "rising intensity"] : ["rising intensity", "arrangement lift"],
+      build: s.arrangementLift > .34 ? ["new instrumental layer", "rising intensity"]
+        : Math.max(0, futurePace - pace) > .22
+          ? ["faster phrase ahead", "rising intensity"] : ["rising intensity", "arrangement lift"],
       steady: ["stable arrangement"],
     };
     return {
@@ -279,6 +359,7 @@
       reasons: sectionReasons[section] || sectionReasons.steady,
       priority: section === "drop" && verifiedProductionSwitch ? "beat-switch"
         : arrangementReturn ? "reentry"
+        : section === "build" && s.arrangementLift > .34 ? "instrument-lift"
         : structuralLift > .68 && ["drop", "quiet"].includes(section) ? "structural" : "normal",
     };
   }
@@ -299,36 +380,37 @@
     };
   }
 
-  function directorCutAllowed({ hasLyrics = false, lineActive = true, lineBoundary = false } = {}) {
-    return !hasLyrics || lineActive === false || !!lineBoundary;
+  function directorCutAllowed({ hasLyrics = false, lineActive = true, lineBoundary = false, wordBoundary = false, priority = "normal" } = {}) {
+    const musicalCut = priority === "beat-switch" || priority === "instrument-lift" || priority === "reentry";
+    return !hasLyrics || lineActive === false || !!lineBoundary || (musicalCut && !!wordBoundary);
   }
 
   function directorSectionScene({ section = "steady", genre = "other", baseVisual = {}, cue = "beat-switch" } = {}) {
     const base = { ...baseVisual };
     const sectionPatches = {
       quiet: {
-        name: "Quiet break", lyricsLayout: "morphstack", lyricsMotion: "glide", lyricsSize: 78,
+        name: "Quiet break", lyricsLayout: "morphstack", lyricsMotion: "glide",
         glowStyle: "halo", glowStrength: 72, glowThickness: 110,
         backdropOpacity: 42, lyricsDanceStyle: "subtle", motionStrength: 68,
       },
       build: {
-        name: "Pressure rising", lyricsLayout: "buildstack", lyricsMotion: "slide", lyricsSize: 82,
+        name: "Pressure rising", lyricsLayout: "buildstack", lyricsMotion: "slide",
         glowStyle: "horizon", glowStrength: 116, glowThickness: 142,
         backdropOpacity: 58, lyricsDanceStyle: "bounce", motionStrength: 112,
       },
       drop: {
         name: cue === "reentry" ? "Arrangement return" : cue === "beat-switch" ? "Beat switch" : "Production drop",
-        lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch", lyricsSize: 86,
+        lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch",
         glowStyle: "prism", glowStrength: 165, glowThickness: 210,
         backdropOpacity: 68, lyricsDanceStyle: genre === "rock" ? "shake" : "snap", motionStrength: 148,
       },
       rapid: {
-        name: "Flow run", lyricsLayout: "prism", lyricsHighlight: "word", lyricsMotion: "punch", lyricsSize: 98,
+        name: "Flow run", lyricsLayout: "prism", lyricsHighlight: "word", lyricsMotion: "punch",
         glowStyle: "flowline", glowStrength: 126, glowThickness: 168,
         lyricsDanceStyle: "punch", motionStrength: 138,
       },
       sustain: {
-        name: "Held note", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide", lyricsSize: 96,
+        name: "Held note", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
         glowStyle: "aurora", glowStrength: 104, glowThickness: 145,
         backdropOpacity: 52, lyricsDanceStyle: "float", motionStrength: 86,
       },
@@ -341,7 +423,7 @@
   return {
     VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
     averageWordGap, lyricLineStats, lyricDirectorContext,
-    directorScene, directorDecision, directorSection,
+    directorScene, directorCadenceScene, directorCadenceDelay, directorDecision, directorSection,
     directorSectionTiming, directorCutAllowed, directorSectionScene,
   };
 });

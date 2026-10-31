@@ -247,6 +247,35 @@
       return div;
     });
     activeIdx = -2;
+    refreshLyricBoxSizing();
+  }
+
+  const BOX_FIT_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack"]);
+  function refreshLyricBoxSizing() {
+    if (!window.LyricBox || !lineEls.length) return;
+    const stage = $("stage");
+    if (!stage?.clientWidth || !stage?.clientHeight) return;
+    const immersiveNow = document.body.classList.contains("immersive");
+    const metrics = window.LyricBox.lyricBoxMetrics(
+      settings.lyricsSize,
+      stage.clientWidth,
+      stage.clientHeight,
+      immersiveNow,
+    );
+    root.style.setProperty("--lyric-box-width", metrics.width.toFixed(1) + "px");
+    root.style.setProperty("--lyric-box-height", metrics.height.toFixed(1) + "px");
+    const boxLayout = settings.lyricsFit && BOX_FIT_LAYOUTS.has(settings.lyricsLayout);
+    lineEls.forEach((el) => {
+      if (!boxLayout) return el.style.removeProperty("--lyric-box-font");
+      const fitMetrics = settings.lyricsLayout === "prism"
+        ? { ...metrics, width: metrics.width * .74 }
+        : metrics;
+      const fontSize = window.LyricBox.fitTextToLyricBox(el.dataset.lyric || el.textContent, fitMetrics, {
+        max: immersiveNow ? 460 : 420,
+        lineHeight: settings.lyricsLayout === "wordstream" ? 1.12 : .96,
+      });
+      el.style.setProperty("--lyric-box-font", fontSize.toFixed(1) + "px");
+    });
   }
 
   // ---- fit a line into an invisible box that is proportional to the screen ----
@@ -264,11 +293,13 @@
     const stage = $("stage");
     const immersiveNow = document.body.classList.contains("immersive");
     const cubeNow = settings.lyricsLayout === "wordstream" && settings.lyricsMotion === "cube";
-    const boxW = stage.clientWidth * (cubeNow ? (immersiveNow ? 0.84 : 0.82) : (immersiveNow ? 0.95 : 0.9));
-    const boxH = stage.clientHeight * 0.62;
-    const base = parseFloat(getComputedStyle(el).fontSize);
-    // how much this line may grow, by number of words
-    const boost = words >= 7 ? 1 : words >= 5 ? 1.25 : words >= 3 ? 1.8 : words === 2 ? 2.6 : 4.5;
+    const metrics = window.LyricBox.lyricBoxMetrics(settings.lyricsSize, stage.clientWidth, stage.clientHeight, immersiveNow);
+    const boxW = metrics.width;
+    const boxH = metrics.height;
+    const target = window.LyricBox.fitTextToLyricBox(text, metrics, {
+      max: immersiveNow ? 460 : 420,
+      lineHeight: 1.12,
+    });
     el.style.maxWidth = boxW + "px";
     if (cubeNow || document.body.classList.contains("center")) {
       el.style.marginLeft = "auto";
@@ -278,7 +309,7 @@
       el.style.fontSize = s + "px";
       return el.scrollWidth <= el.clientWidth + 1 && el.offsetHeight <= boxH;
     };
-    let lo = base * 0.6, hi = base * boost, chosen;
+    let lo = Math.min(18, target), hi = target, chosen;
     if (fits(hi)) chosen = hi;
     else {
       for (let i = 0; i < 9; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }

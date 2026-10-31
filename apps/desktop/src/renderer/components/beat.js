@@ -10,7 +10,7 @@
   let motionShort = 0, motionLong = 0, motionBuild = 0, motionDuck = 0, dropFlash = 0, dropArmedUntil = 0;
   const audioStructureDetector = window.AudioStructure.createAudioStructureDetector();
   let structureContrast = 0, structureTimbreShift = 0, structureSwitchUp = 0, structureSwitchDown = 0;
-  let structureProductionSwitch = 0, structureSwitchConfidence = 0;
+  let structureProductionSwitch = 0, structureSwitchConfidence = 0, structureArrangementLift = 0;
   let structureTimbreEvidence = 0, structureLoudnessEvidence = 0;
   let structureLowActivity = 0, structureQuietHold = 0, structureQuietConfidence = 0, structureReentry = 0;
   let audioLoudnessTrend = 0, audioVocalTrend = 0, audioBeatConfidence = 0, audioBpm = 0, audioBassLevel = 0, audioFluxLevel = 0;
@@ -44,7 +44,7 @@
   function resetAudioStructureAnalysis() {
     audioStructureDetector.reset(performance.now());
     structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = 0;
-    structureProductionSwitch = structureSwitchConfidence = structureTimbreEvidence = structureLoudnessEvidence = 0;
+    structureProductionSwitch = structureSwitchConfidence = structureArrangementLift = structureTimbreEvidence = structureLoudnessEvidence = 0;
     structureLowActivity = structureQuietHold = structureQuietConfidence = structureReentry = 0;
     audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
     audioDrumChange = audioHarmonyChange = audioProductionAgreement = audioTonality = audioOnsetDensity = 0;
@@ -119,7 +119,7 @@
     try { if (audioCtx) audioCtx.close(); } catch (e) {}
     beatStream = null; audioCtx = null; analyser = null; freq = null; wave = null; previousSpectrum = null; productionSpectrum = null;
     motionEnergy = motionVocal = motionLift = motionSyllable = motionPhrase = motionSibilance = motionShort = motionLong = motionBuild = motionDuck = dropFlash = pulse = outLevel = 0;
-    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = structureProductionSwitch = structureSwitchConfidence = structureTimbreEvidence = structureLoudnessEvidence = structureLowActivity = structureQuietHold = structureQuietConfidence = structureReentry = audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
+    structureContrast = structureTimbreShift = structureSwitchUp = structureSwitchDown = structureProductionSwitch = structureSwitchConfidence = structureArrangementLift = structureTimbreEvidence = structureLoudnessEvidence = structureLowActivity = structureQuietHold = structureQuietConfidence = structureReentry = audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
     audioDrumChange = audioHarmonyChange = audioProductionAgreement = audioTonality = audioOnsetDensity = 0;
     resetAudioStructureAnalysis();
     window.tracker.sendBeat(applyMusicMotion({ impact: 0, energy: 0, vocal: 0, lift: 0, word: 0, pace: 0,
@@ -353,6 +353,7 @@
     structureSwitchDown = structure.switchDown;
     structureProductionSwitch = structure.productionSwitch;
     structureSwitchConfidence = structure.switchConfidence;
+    structureArrangementLift = structure.arrangementLift;
     structureTimbreEvidence = structure.timbreEvidence;
     structureLoudnessEvidence = structure.loudnessEvidence;
     structureLowActivity = structure.lowActivity;

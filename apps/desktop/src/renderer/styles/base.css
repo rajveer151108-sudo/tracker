@@ -1,7 +1,8 @@
 :root { --glow: 29, 185, 84; --pulse: 0; --motion-energy: 0; --motion-vocal: 0; --motion-lift: 0;
         --motion-build: 0; --motion-duck: 0; --motion-drop: 0; --motion-emotion: 0; --motion-sway: 0;
         --motion-shake: 0; --motion-syllable: 0; --motion-phrase: 0; --motion-sibilance: 0;
-        --motion-word: 0; --word-life: 0; --line-emotion: 0; --lyric-size: 30px; }
+        --motion-word: 0; --word-life: 0; --line-emotion: 0; --lyric-size: 30px;
+        --lyric-box-control: 30; --lyric-box-width: 34vw; --lyric-box-height: 17vh; }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body { font-family: -apple-system, system-ui, sans-serif; background: #08080b; color: #fff;
