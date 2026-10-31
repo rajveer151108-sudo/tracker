@@ -2,7 +2,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-  VISUAL_KEYS, extractPreset, averageWordGap, directorScene, directorSection, directorSectionScene,
+  VISUAL_KEYS, extractPreset, averageWordGap, directorScene, directorSection,
+  directorSectionTiming, directorCutAllowed, directorSectionScene,
 } = require("../src/shared/visual-scenes");
 
 test("song presets contain visual settings only", () => {
@@ -33,6 +34,14 @@ test("section director distinguishes drops, rapid verses, builds and held notes"
   assert.equal(directorSection({ build: .7, energy: .62 }), "build");
   assert.equal(directorSection({ phrase: .85, vocal: .8, pace: .2 }), "sustain");
   assert.equal(directorSection({ duck: .8, energy: .28 }), "quiet");
+});
+
+test("director cuts only at lyric boundaries while instrumentals stay music-led", () => {
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: false }), false);
+  assert.equal(directorCutAllowed({ hasLyrics: true, lineBoundary: true }), true);
+  assert.equal(directorCutAllowed({ hasLyrics: false, lineBoundary: false }), true);
+  assert.deepEqual(directorSectionTiming("drop", "steady"), { stableMs: 0, holdMs: 2400 });
+  assert.deepEqual(directorSectionTiming("steady", "drop"), { stableMs: 2100, holdMs: 3400 });
 });
 
 test("section scenes keep the song's base direction while changing composition", () => {

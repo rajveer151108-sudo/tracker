@@ -9,6 +9,8 @@ let visualSectionTimer = 0;
 let lastVisualSnapshot = null;
 let pendingVisualPatch = null;
 let automationToggleSnapshot = null;
+let userVisualBaseline = null;
+let activeVisualOverlay = null;
 
 function visualSongKey(np) {
   return String(np?.uri || np?.id || currentTrackKey(np) || "").normalize("NFKC").trim().toLowerCase();
@@ -23,6 +25,7 @@ function sameVisualValue(a, b) {
 }
 
 function showVisualSceneBadge(kicker, title) {
+  if (!settings?.automationNotifications) return;
   const badge = $("visualSceneBadge");
   if (!badge) return;
   badge.querySelector("small").textContent = kicker || "VISUAL SCENE";
@@ -32,6 +35,34 @@ function showVisualSceneBadge(kicker, title) {
   badge.classList.add("show");
   clearTimeout(visualBadgeTimer);
   visualBadgeTimer = setTimeout(() => badge.classList.remove("show"), 2600);
+}
+
+// Automation is a temporary layer over the user's real settings. Keeping it
+// local prevents a Director scene from silently becoming the next song's
+// default, while still letting a manual settings change take control at once.
+function prepareVisualAutomationSettings(nextSettings = {}) {
+  const incomingVisual = window.VisualScenes.extractPreset(nextSettings);
+  const visualChanged = userVisualBaseline && Object.keys(incomingVisual)
+    .some((key) => !sameVisualValue(incomingVisual[key], userVisualBaseline[key]));
+  userVisualBaseline = incomingVisual;
+  if (visualChanged) {
+    activeVisualOverlay = null;
+    pendingVisualPatch = null;
+    window.tracker.previewGlow(null);
+  }
+  return activeVisualOverlay && !visualChanged
+    ? { ...nextSettings, ...activeVisualOverlay }
+    : nextSettings;
+}
+
+function restoreUserVisualBaseline() {
+  if (!userVisualBaseline || !settings) return;
+  const visual = { ...userVisualBaseline };
+  activeVisualOverlay = null;
+  window.tracker.previewGlow(null);
+  pendingVisualPatch = { visual, source: "restore" };
+  settings = { ...settings, ...visual };
+  applySettings();
 }
 
 function updateVisualAutomationStatus() {
@@ -48,8 +79,9 @@ function updateVisualAutomationStatus() {
   if (directorStatus) {
     directorStatus.textContent = !settings?.directorMode
       ? "Off — your normal settings stay in control."
-      : visualTrackState?.preset ? "A saved song look has priority."
       : visualTrackState?.manualOverride ? "Your manual changes have priority for this song."
+      : visualTrackState?.preset ? "A saved song look has priority."
+      : !settings?.beat ? "Directing the song look. Turn on Listen and react for live section changes."
       : visualTrackState?.directorName ? `Directing: ${visualTrackState.directorName}.`
       : "Waiting for the song's genre and lyric pace.";
   }
@@ -59,8 +91,11 @@ function applyVisualPatch(patch, source, name) {
   const visual = window.VisualScenes.extractPreset(patch);
   if (!Object.keys(visual).length) return;
   pendingVisualPatch = { visual, source };
+  activeVisualOverlay = visual;
+  window.tracker.previewGlow(visual);
   if (visualTrackState) visualTrackState.source = source;
-  window.tracker.setSettings(visual);
+  settings = { ...settings, ...visual };
+  applySettings();
   if (name) showVisualSceneBadge(
     source === "preset" ? "SAVED SONG LOOK" : source === "director-section" ? "DIRECTOR // SECTION" : "DIRECTOR MODE",
     name,
@@ -76,11 +111,14 @@ function playDirectorSectionTransition(section) {
   visualSectionTimer = setTimeout(() => document.body.classList.remove("director-section-changing"), 760);
 }
 
-function playCinematicTrackTransition(np) {
+function playCinematicTrackTransition(np, previousNp = null) {
   if (!settings?.cinematicTransitions || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const layer = $("trackTransition");
   if (!layer) return;
+  const fromArt = $("trackTransitionFromArt");
   const art = $("trackTransitionArt");
+  fromArt.src = previousNp?.artwork || "";
+  fromArt.style.display = previousNp?.artwork ? "" : "none";
   art.src = np.artwork || "";
   art.style.display = np.artwork ? "" : "none";
   $("trackTransitionTitle").textContent = np.title || "New track";
@@ -89,7 +127,7 @@ function playCinematicTrackTransition(np) {
   void layer.offsetWidth;
   document.body.classList.add("track-transitioning");
   clearTimeout(visualTransitionTimer);
-  visualTransitionTimer = setTimeout(() => document.body.classList.remove("track-transitioning"), 1450);
+  visualTransitionTimer = setTimeout(() => document.body.classList.remove("track-transitioning"), 1750);
 }
 
 async function loadPresetForVisualTrack() {
@@ -107,7 +145,7 @@ async function loadPresetForVisualTrack() {
   if (preset?.visual) {
     state.manualOverride = false;
     state.directorName = "";
-    applyVisualPatch(preset.visual, "preset", preset.title || state.np.title || "Saved look");
+    state.pendingPreset = preset;
   } else {
     maybeApplyDirector();
   }
@@ -123,9 +161,16 @@ function maybeApplyDirector() {
   const scene = window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap });
   const signature = JSON.stringify(scene);
   if (signature === state.directorSignature) return;
+  if (!state.contextSettled) return;
+  state.pendingBaseScene = { scene, signature };
+}
+
+function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene)) {
+  if (!state || visualTrackState !== state) return;
   state.directorSignature = signature;
   state.directorName = scene.name;
   state.directorBase = scene.visual;
+  state.pendingBaseScene = null;
   state.section = "steady";
   state.sectionCandidate = "steady";
   state.sectionCandidateSince = performance.now();
@@ -136,7 +181,9 @@ function maybeApplyDirector() {
 }
 
 function beginVisualTrack(np, key, previousKey) {
-  if (previousKey) playCinematicTrackTransition(np);
+  const previousNp = visualTrackState?.np || null;
+  if (previousKey) playCinematicTrackTransition(np, previousNp);
+  if (activeVisualOverlay) restoreUserVisualBaseline();
   visualTrackState = {
     key,
     presetKey: visualSongKey(np),
@@ -145,33 +192,67 @@ function beginVisualTrack(np, key, previousKey) {
     wordGap: NaN,
     presetStatus: "none",
     preset: null,
+    pendingPreset: null,
     manualOverride: false,
     directorName: "",
     directorSignature: "",
     directorBase: null,
+    pendingBaseScene: null,
+    contextSettled: false,
     section: "steady",
     sectionCandidate: "steady",
     sectionCandidateSince: performance.now(),
     sectionChangedAt: performance.now(),
+    lastLyricLine: null,
+    queuedSection: null,
+    queuedSectionSince: 0,
     sectionSignal: { energy: 0, vocal: 0, phrase: 0, build: 0, duck: 0, drop: 0, impact: 0, pace: 0 },
     lastSectionSampleAt: 0,
     source: "defaults",
   };
+  const state = visualTrackState;
+  setTimeout(() => {
+    if (visualTrackState !== state) return;
+    state.contextSettled = true;
+    maybeApplyDirector();
+  }, 900);
   loadPresetForVisualTrack();
 }
 
 function updateVisualTrackContext(np, context = {}) {
   if (!visualTrackState || currentTrackKey(np) !== visualTrackState.key) return;
-  if (typeof context.genre === "string") visualTrackState.genre = context.genre;
+  if (typeof context.genre === "string") {
+    visualTrackState.genre = context.genre;
+    visualTrackState.contextSettled = true;
+  }
   if (Number.isFinite(context.wordGap)) visualTrackState.wordGap = context.wordGap;
   maybeApplyDirector();
 }
 
-function updateDirectorPerformance(sample = {}, nowMs = performance.now()) {
+function updateVisualAutomationPerformance(sample = {}, nowMs = performance.now()) {
   const state = visualTrackState;
-  if (!state || !settings?.directorMode || state.preset || state.manualOverride || !state.directorBase || !playing) return;
+  if (!state || !playing) return;
+  const lineIndex = Number.isInteger(sample.lineIndex) ? sample.lineIndex : -1;
   if (nowMs - state.lastSectionSampleAt < 180) return;
+  const lineBoundary = state.lastLyricLine !== null && lineIndex !== state.lastLyricLine
+    && (lineIndex >= 0 || state.lastLyricLine >= 0);
+  state.lastLyricLine = lineIndex;
   state.lastSectionSampleAt = nowMs;
+  const safeCut = window.VisualScenes.directorCutAllowed({ hasLyrics: sample.hasLyrics, lineBoundary });
+  if (state.pendingPreset && settings?.songPresetsEnabled && !state.manualOverride && safeCut) {
+    const preset = state.pendingPreset;
+    state.pendingPreset = null;
+    applyVisualPatch(preset.visual, "preset", preset.title || state.np.title || "Saved look");
+    updateVisualAutomationStatus();
+    return;
+  }
+  if (!settings?.directorMode || state.preset || state.manualOverride
+    || (!state.directorBase && !state.pendingBaseScene)) return;
+  if (state.pendingBaseScene && (!sample.hasLyrics || lineBoundary)) {
+    applyDirectorBaseScene(state, state.pendingBaseScene.scene, state.pendingBaseScene.signature);
+    return;
+  }
+  if (!sample.audioActive) return;
   const signal = state.sectionSignal;
   for (const key of Object.keys(signal)) {
     const raw = Math.max(0, Math.min(1.5, Number(sample[key]) || 0));
@@ -185,13 +266,21 @@ function updateDirectorPerformance(sample = {}, nowMs = performance.now()) {
   if (next !== state.sectionCandidate) {
     state.sectionCandidate = next;
     state.sectionCandidateSince = nowMs;
+    state.queuedSection = null;
   }
   if (next === state.section) return;
   const stableFor = nowMs - state.sectionCandidateSince;
-  const required = next === "drop" ? 0 : next === "build" ? 850 : next === "rapid" ? 1050 : next === "sustain" ? 1250 : next === "quiet" ? 1450 : 2100;
+  const timing = window.VisualScenes.directorSectionTiming(next, state.section);
   const sinceChange = nowMs - state.sectionChangedAt;
-  const hold = next === "drop" ? 2400 : state.section === "drop" ? 3400 : 5200;
-  if (stableFor < required || sinceChange < hold) return;
+  if (stableFor < timing.stableMs || sinceChange < timing.holdMs) return;
+  if (state.queuedSection !== next) {
+    state.queuedSection = next;
+    state.queuedSectionSince = nowMs;
+  }
+  // With synced lyrics, a qualified scene waits at the wings until the active
+  // line ends. Instrumentals have no words to interrupt, so musical transients
+  // remain valid cut points there.
+  if (!safeCut) return;
   const scene = window.VisualScenes.directorSectionScene({
     section: next,
     genre: state.genre || "other",
@@ -199,6 +288,7 @@ function updateDirectorPerformance(sample = {}, nowMs = performance.now()) {
   });
   state.section = next;
   state.sectionChangedAt = nowMs;
+  state.queuedSection = null;
   state.directorName = next === "steady" ? window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name : scene.name;
   playDirectorSectionTransition(next);
   applyVisualPatch(scene.visual, "director-section", scene.name);
@@ -209,6 +299,7 @@ function endVisualTrack() {
   visualPresetRequest++;
   visualTrackState = null;
   delete document.body.dataset.directorSection;
+  if (activeVisualOverlay) restoreUserVisualBaseline();
   updateVisualAutomationStatus();
 }
 
@@ -223,6 +314,7 @@ async function saveCurrentSongPreset() {
   }).catch((error) => ({ ok: false, error: error?.message }));
   if (!result?.ok) return showToast((result?.error || "COULD NOT SAVE THIS LOOK").toUpperCase());
   visualTrackState.preset = result.preset;
+  visualTrackState.pendingPreset = null;
   visualTrackState.presetStatus = "loaded";
   visualTrackState.manualOverride = false;
   visualTrackState.directorName = "";
@@ -236,6 +328,7 @@ async function forgetCurrentSongPreset() {
   const result = await window.tracker.songPresetRemove(visualTrackState.presetKey).catch(() => null);
   if (!result?.ok) return showToast("COULD NOT FORGET THIS LOOK");
   visualTrackState.preset = null;
+  visualTrackState.pendingPreset = null;
   visualTrackState.presetStatus = "none";
   visualTrackState.directorSignature = "";
   showToast(result.removed ? "SAVED SONG LOOK REMOVED" : "THIS SONG HAD NO SAVED LOOK");
@@ -244,6 +337,7 @@ async function forgetCurrentSongPreset() {
 }
 
 function onVisualAutomationSettingsApplied() {
+  if (!settings?.automationNotifications) $("visualSceneBadge")?.classList.remove("show");
   const current = visualSnapshot();
   if (lastVisualSnapshot) {
     const changed = Object.keys(current).filter((key) => !sameVisualValue(current[key], lastVisualSnapshot[key]));
@@ -255,6 +349,8 @@ function onVisualAutomationSettingsApplied() {
       visualTrackState.source = "manual";
       visualTrackState.directorName = "";
       visualTrackState.directorBase = null;
+      visualTrackState.pendingPreset = null;
+      activeVisualOverlay = null;
     }
   }
   lastVisualSnapshot = current;
@@ -263,20 +359,25 @@ function onVisualAutomationSettingsApplied() {
     songPresetsEnabled: !!settings.songPresetsEnabled,
     directorMode: !!settings.directorMode,
   };
-  if (automationToggleSnapshot && visualTrackState) {
-    if (!automationToggleSnapshot.songPresetsEnabled && toggles.songPresetsEnabled) loadPresetForVisualTrack();
-    else if (automationToggleSnapshot.songPresetsEnabled && !toggles.songPresetsEnabled) {
+  const previousToggles = automationToggleSnapshot;
+  automationToggleSnapshot = toggles;
+  if (previousToggles && visualTrackState) {
+    if (!previousToggles.songPresetsEnabled && toggles.songPresetsEnabled) loadPresetForVisualTrack();
+    else if (previousToggles.songPresetsEnabled && !toggles.songPresetsEnabled) {
       visualTrackState.preset = null;
+      visualTrackState.pendingPreset = null;
       visualTrackState.presetStatus = "disabled";
       visualTrackState.directorSignature = "";
-      maybeApplyDirector();
+      if (toggles.directorMode) maybeApplyDirector();
+      else restoreUserVisualBaseline();
     }
-    if (!automationToggleSnapshot.directorMode && toggles.directorMode) {
+    if (!previousToggles.directorMode && toggles.directorMode) {
       visualTrackState.manualOverride = false;
       visualTrackState.directorSignature = "";
       maybeApplyDirector();
+    } else if (previousToggles.directorMode && !toggles.directorMode && !visualTrackState.preset) {
+      restoreUserVisualBaseline();
     }
   }
-  automationToggleSnapshot = toggles;
   updateVisualAutomationStatus();
 }

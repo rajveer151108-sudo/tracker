@@ -18,7 +18,17 @@ function createSongPresetsStore(app) {
     loaded = true;
     try {
       const saved = JSON.parse(fs.readFileSync(file(), "utf8"));
-      if (saved && typeof saved.presets === "object" && !Array.isArray(saved.presets)) presets = saved.presets;
+      if (saved && typeof saved.presets === "object" && !Array.isArray(saved.presets)) {
+        presets = Object.fromEntries(Object.entries(saved.presets).flatMap(([key, preset]) => {
+          if (!preset || typeof preset !== "object") return [];
+          const visual = extractPreset(preset.visual || {});
+          if (!Object.keys(visual).length) return [];
+          return [[key, {
+            title: cleanText(preset.title), artist: cleanText(preset.artist), album: cleanText(preset.album),
+            savedAt: Math.max(0, Number(preset.savedAt) || 0), visual,
+          }]];
+        }));
+      }
     } catch {
       presets = {};
     }
@@ -26,10 +36,15 @@ function createSongPresetsStore(app) {
   }
 
   function saveFile() {
+    const target = file();
+    const temporary = target + ".tmp";
     try {
-      fs.writeFileSync(file(), JSON.stringify({ version: 1, presets }, null, 2));
+      fs.writeFileSync(temporary, JSON.stringify({ version: 2, presets }, null, 2));
+      fs.renameSync(temporary, target);
+      return true;
     } catch {
-      // Presets are optional; keep the in-memory copy when storage is unavailable.
+      try { fs.unlinkSync(temporary); } catch {}
+      return false;
     }
   }
 
@@ -50,6 +65,7 @@ function createSongPresetsStore(app) {
     if (!key) return { ok: false, error: "A playing song is required" };
     const visual = extractPreset(payload.visual || {});
     if (!Object.keys(visual).length) return { ok: false, error: "No visual settings were supplied" };
+    const previous = presets[key];
     presets[key] = {
       title: cleanText(payload.title),
       artist: cleanText(payload.artist),
@@ -62,7 +78,11 @@ function createSongPresetsStore(app) {
       entries.sort((a, b) => Number(b[1]?.savedAt || 0) - Number(a[1]?.savedAt || 0));
       presets = Object.fromEntries(entries.slice(0, MAX_PRESETS));
     }
-    saveFile();
+    if (!saveFile()) {
+      if (previous) presets[key] = previous;
+      else delete presets[key];
+      return { ok: false, error: "The song look could not be written to disk" };
+    }
     return { ok: true, preset: get(key) };
   }
 
@@ -70,8 +90,12 @@ function createSongPresetsStore(app) {
     load();
     const key = keyFor(keyValue);
     if (!key || !presets[key]) return { ok: true, removed: false };
+    const previous = presets[key];
     delete presets[key];
-    saveFile();
+    if (!saveFile()) {
+      presets[key] = previous;
+      return { ok: false, removed: false, error: "The song look could not be written to disk" };
+    }
     return { ok: true, removed: true };
   }
 

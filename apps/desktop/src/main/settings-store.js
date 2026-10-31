@@ -21,6 +21,7 @@ const DEFAULTS = {
   songPresetsEnabled: true,
   cinematicTransitions: true,
   directorMode: false,
+  automationNotifications: true,
   backdrop: true,
   backdropStyle: "blur",
   backdropTourFocus: "smart",

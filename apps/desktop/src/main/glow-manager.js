@@ -4,6 +4,7 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
   let mainWindow = null;
   let overlays = [];
   let displayTimer = null;
+  let settingsPreview = null;
   const state = { color: "29, 185, 84", color2: "29, 185, 84", active: false, focused: true, speed: 9 };
 
   const hexToRgb = (hex) => {
@@ -20,7 +21,7 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
   }
 
   function push() {
-    const settings = getSettings();
+    const settings = settingsPreview ? { ...getSettings(), ...settingsPreview } : getSettings();
     const scopeOk = settings.glowScope === "everywhere" || state.focused;
     const on = settings.glow && state.active && scopeOk;
     const color = settings.glowOverride ? hexToRgb(settings.glowColorA) : state.color;
@@ -120,12 +121,17 @@ function createGlowManager({ app, BrowserWindow, screen, getSettings, rootDir })
   }
 
   function beat(value) {
-    const settings = getSettings();
+    const settings = settingsPreview ? { ...getSettings(), ...settingsPreview } : getSettings();
     const scopeOk = settings.glowScope === "everywhere" || state.focused;
     if (settings.glow && state.active && scopeOk) send("beat", value);
   }
 
-  return { setMainWindow, createOverlays, watchDisplays, refresh: push, update, beat, destroy };
+  function preview(patch) {
+    settingsPreview = patch && typeof patch === "object" ? { ...patch } : null;
+    push();
+  }
+
+  return { setMainWindow, createOverlays, watchDisplays, refresh: push, update, preview, beat, destroy };
 }
 
 module.exports = { createGlowManager };

@@ -3,8 +3,8 @@
   // =====================================================================
   (async function init() {
     buildSettingsPanel();
-    settings = await window.tracker.getSettings();
-    window.tracker.onSettings((s) => { settings = s; applySettings(); });
+    settings = prepareVisualAutomationSettings(await window.tracker.getSettings());
+    window.tracker.onSettings((s) => { settings = prepareVisualAutomationSettings(s); applySettings(); });
     applySettings();
     initHome();
     $("playpause").innerHTML = ICON_PLAY;

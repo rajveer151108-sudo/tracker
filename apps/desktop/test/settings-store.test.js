@@ -90,11 +90,12 @@ test("visual automation features can be enabled and disabled independently", () 
   try {
     const store = createSettingsStore({ getPath: () => userData });
     store.load();
-    store.update({ songPresetsEnabled: false, cinematicTransitions: false, directorMode: true });
+    store.update({ songPresetsEnabled: false, cinematicTransitions: false, directorMode: true, automationNotifications: false });
     const settings = createSettingsStore({ getPath: () => userData }).load();
     assert.equal(settings.songPresetsEnabled, false);
     assert.equal(settings.cinematicTransitions, false);
     assert.equal(settings.directorMode, true);
+    assert.equal(settings.automationNotifications, false);
   } finally {
     fs.rmSync(userData, { recursive: true, force: true });
   }

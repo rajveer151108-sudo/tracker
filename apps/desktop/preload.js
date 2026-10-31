@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("tracker", {
   songPresetRemove: (key) => ipcRenderer.invoke("song-preset-remove", key),
   onAuthRestored: (cb) => ipcRenderer.on("auth-restored", () => cb()),
   sendGlow: (p) => ipcRenderer.send("glow-update", p),
+  previewGlow: (p) => ipcRenderer.send("glow-preview", p),
   sendBeat: (v) => ipcRenderer.send("beat", v),
   toggleFullscreen: () => ipcRenderer.send("fullscreen-toggle"),
   playUri: (uri, ctx) => ipcRenderer.invoke("play-uri", uri, ctx),

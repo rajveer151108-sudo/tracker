@@ -6,7 +6,9 @@
   body.immersive.awake header, body.immersive.awake #controls { opacity: 1; pointer-events: auto; }
   body.immersive #hint, body.immersive #time { display: none; }
   body.immersive:not(.awake) { cursor: none; }
-  body.immersive .line { font-size: calc(var(--lyric-size) * 1.6); }
+  /* Creative layouts own their scale. Applying the generic fullscreen boost to
+     them makes their additional transforms compound into viewport-sized type. */
+  body.immersive[data-layout="scroll"] .line { font-size: calc(var(--lyric-size) * 1.6); }
   body.immersive #lines { padding: 0 8%; }
   body.immersive footer { padding-bottom: 10px; }
 

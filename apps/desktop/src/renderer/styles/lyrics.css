@@ -271,10 +271,10 @@
 
   /* 01 — the video's stacked kinetic-word composition. */
   body[data-layout="kinetic"] .line { left: 50%; top: 50%; width: max-content; max-width: 72%; color: rgba(255,242,198,.38);
-    font-family: ui-serif, "New York", Georgia, serif; font-size: calc(var(--lyric-size) * .72); letter-spacing: .015em;
+    font-family: ui-serif, "New York", Georgia, serif; font-size: min(calc(var(--lyric-size) * .72), 9vw, 16vh); letter-spacing: .015em;
     transition: top var(--word-step-ms,180ms) cubic-bezier(.2,.8,.2,1), opacity .22s, transform .26s cubic-bezier(.16,.86,.22,1), filter .22s; }
   body[data-layout="kinetic"] .line[data-slot="-1"] { top: 29%; opacity: .3; transform: translate(-50%,-50%) scale(.7); filter: blur(.2px); }
-  body[data-layout="kinetic"] .line[data-slot="0"] { top: 50%; opacity: 1; transform: translate(-50%,-50%) scale(1.65); color: #fff8db; text-shadow: 0 0 14px rgba(var(--glow),.52), 0 .08em .7em rgba(var(--glow),.35); }
+  body[data-layout="kinetic"] .line[data-slot="0"] { top: 50%; opacity: 1; transform: translate(-50%,-50%) scale(1.38); color: #fff8db; text-shadow: 0 0 14px rgba(var(--glow),.52), 0 .08em .7em rgba(var(--glow),.35); }
   body[data-layout="kinetic"] .line[data-slot="1"] { top: 72%; opacity: .34; transform: translate(-50%,-50%) scale(.74); }
   body[data-layout="kinetic"] .line[data-slot="0"] .w { color: #fff8db; -webkit-text-fill-color: #fff8db; background: none; }
   body.lyrics-motion[data-layout="kinetic"] .line[data-slot="0"] { scale: calc(1 + var(--motion-vocal) * .055 + var(--motion-drop) * .08); }
@@ -282,7 +282,7 @@
   /* Reference style 01 — a compact depth column. Words translate through the
      stack at a stable size; blur and opacity create depth without visual jumps. */
   body[data-layout="morphstack"] #stage{perspective:900px;perspective-origin:50% 50%}
-  body[data-layout="morphstack"] .line { left:50%;top:50%;width:max-content;max-width:78%;font-size:calc(var(--lyric-size) * 1.02);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:1;letter-spacing:-.04em;color:rgba(255,255,255,.38);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .24s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .24s; }
+  body[data-layout="morphstack"] .line { left:50%;top:50%;width:max-content;max-width:78%;font-size:min(calc(var(--lyric-size) * 1.02),14vw,18vh);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:850;line-height:1;letter-spacing:-.04em;color:rgba(255,255,255,.38);transform-style:preserve-3d;backface-visibility:hidden;transition:top var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),opacity .24s,transform var(--word-step-ms,190ms) cubic-bezier(.16,.84,.22,1),filter .24s; }
   body[data-layout="morphstack"] .line[data-slot="-2"]{top:25%;opacity:.1;transform:translate(-50%,-50%);filter:blur(8px)}
   body[data-layout="morphstack"] .line[data-slot="-1"]{top:37%;opacity:.38;transform:translate(-50%,-50%);filter:blur(3.4px)}
   body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .22em rgba(var(--glow),.42)}
@@ -296,7 +296,7 @@
      face; advancing the lyric rotates the next face squarely toward us. */
   body[data-layout="prism"] #stage{--prism-depth:190px;perspective:820px;perspective-origin:50% 50%}
   body[data-layout="prism"] #lines{transform-style:preserve-3d}
-  body[data-layout="prism"] .line{left:50%;top:50%;width:max-content;max-width:84%;font-size:calc(var(--lyric-size) * 1.12);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:900;line-height:.92;letter-spacing:-.055em;color:rgba(255,255,255,.2);transform-origin:50% 50%;transform-style:preserve-3d;backface-visibility:hidden;transition:transform var(--word-step-ms,210ms) cubic-bezier(.16,.82,.2,1),opacity .24s ease,filter .24s ease,color .2s ease,text-shadow .2s ease}
+  body[data-layout="prism"] .line{left:50%;top:50%;width:max-content;max-width:84%;font-size:min(calc(var(--lyric-size) * 1.12),14vw,18vh);font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:900;line-height:.92;letter-spacing:-.055em;color:rgba(255,255,255,.2);transform-origin:50% 50%;transform-style:preserve-3d;backface-visibility:hidden;transition:transform var(--word-step-ms,210ms) cubic-bezier(.16,.82,.2,1),opacity .24s ease,filter .24s ease,color .2s ease,text-shadow .2s ease}
   body[data-layout="prism"] .line.creative-hidden{display:none}
   body[data-layout="prism"] .line[data-slot="-3"]{opacity:.025;transform:translate(-50%,-50%) rotateX(118deg) translateZ(var(--prism-depth));filter:blur(8px)}
   body[data-layout="prism"] .line[data-slot="-2"]{opacity:.12;transform:translate(-50%,-50%) rotateX(82deg) translateZ(var(--prism-depth));filter:blur(4.5px)}
@@ -312,7 +312,7 @@
 
   /* Reference style 02 — a word-by-word editorial stack. Each word keeps its
      own typeface while the whole column rises one clean slot at a time. */
-  body[data-layout="buildstack"] .line{left:50%;top:68%;width:min(64%,900px);font-size:calc(var(--lyric-size) * .78);line-height:1;font-weight:820;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),opacity .3s,transform var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),filter .3s}
+  body[data-layout="buildstack"] .line{left:50%;top:68%;width:min(64%,900px);font-size:min(calc(var(--lyric-size) * .78),10vw,13vh);line-height:1;font-weight:820;letter-spacing:-.035em;opacity:0;transform:translate(-50%,-50%);text-align:center;color:#fff;transition:top var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),opacity .3s,transform var(--word-step-ms,210ms) cubic-bezier(.18,.78,.22,1),filter .3s}
   body[data-layout="buildstack"] .line[data-slot="0"]{top:68%;z-index:5;opacity:1;transform:translate(-50%,-50%);filter:none}
   body[data-layout="buildstack"] .line[data-slot="-1"]{top:56%;z-index:4;opacity:.72;transform:translate(-50%,-50%);filter:blur(.2px)}
   body[data-layout="buildstack"] .line[data-slot="-2"]{top:44%;z-index:3;opacity:.44;transform:translate(-50%,-50%);filter:blur(.8px)}

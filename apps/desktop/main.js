@@ -142,6 +142,7 @@ function registerIpc() {
   });
 
   ipcMain.on("glow-update", (_event, patch) => glow.update(patch));
+  ipcMain.on("glow-preview", (_event, patch) => glow.preview(patch));
   ipcMain.on("beat", (_event, value) => {
     if (typeof value === "number") glow.beat(value);
     else if (value && typeof value === "object") {

@@ -2,23 +2,29 @@
 #trackTransition:before,#trackTransition:after{content:"";position:absolute;inset:-25%;background:conic-gradient(from 80deg,transparent,rgba(var(--glow),.22),transparent 24%,transparent 68%,rgba(255,255,255,.08),transparent);filter:blur(34px);transform:scale(.7) rotate(-18deg)}
 #trackTransition:after{transform:scale(.75) rotate(125deg);opacity:.58}
 .trackTransitionCard{position:relative;z-index:1;display:grid;grid-template-columns:minmax(96px,15vw) minmax(0,1fr);align-items:center;gap:clamp(18px,3vw,42px);width:min(76vw,860px);padding:clamp(18px,3vw,38px);border:1px solid rgba(255,255,255,.14);border-radius:28px;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.035));box-shadow:0 40px 120px rgba(0,0,0,.5),inset 0 0 50px rgba(var(--glow),.08);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
-#trackTransitionArt{width:min(15vw,180px);aspect-ratio:1;object-fit:cover;border-radius:18px;box-shadow:0 22px 55px rgba(0,0,0,.48),0 0 40px rgba(var(--glow),.24)}
+.trackTransitionArtwork{position:relative;width:min(15vw,180px);aspect-ratio:1;perspective:700px}.trackTransitionArtwork img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:18px;box-shadow:0 22px 55px rgba(0,0,0,.48),0 0 40px rgba(var(--glow),.24);backface-visibility:hidden}#trackTransitionFromArt{z-index:1}#trackTransitionArt{z-index:2;opacity:0}
 .trackTransitionCopy{min-width:0}.trackTransitionCopy small{display:block;margin-bottom:9px;font-size:11px;font-weight:800;letter-spacing:.23em;color:rgba(255,255,255,.5)}.trackTransitionCopy strong{display:block;overflow:hidden;text-overflow:ellipsis;font-size:clamp(28px,5vw,66px);line-height:.95;letter-spacing:-.055em;white-space:nowrap}.trackTransitionCopy span{display:block;margin-top:12px;overflow:hidden;text-overflow:ellipsis;font-size:clamp(13px,1.6vw,20px);opacity:.62;white-space:nowrap}
-body.track-transitioning #trackTransition{visibility:visible;animation:trackTransitionLayer 1.4s cubic-bezier(.16,.82,.2,1) both}
-body.track-transitioning .trackTransitionCard{animation:trackTransitionCard 1.4s cubic-bezier(.16,.82,.2,1) both}
-body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:trackSceneDepart .82s cubic-bezier(.2,.72,.25,1) both}
-@keyframes trackTransitionLayer{0%{opacity:0;clip-path:inset(50% 0 50%)}18%,68%{opacity:1;clip-path:inset(0)}100%{opacity:0;clip-path:inset(0)}}
-@keyframes trackTransitionCard{0%{opacity:0;transform:translateY(70px) scale(.82);filter:blur(18px)}24%,66%{opacity:1;transform:none;filter:none}100%{opacity:0;transform:translateY(-46px) scale(1.06);filter:blur(10px)}}
+body.track-transitioning #trackTransition{visibility:visible;animation:trackTransitionLayer 1.7s cubic-bezier(.16,.82,.2,1) both}
+body.track-transitioning .trackTransitionCard{animation:trackTransitionCard 1.7s cubic-bezier(.16,.82,.2,1) both}
+body.track-transitioning #trackTransitionFromArt{animation:trackArtOut 1.7s cubic-bezier(.2,.72,.25,1) both}
+body.track-transitioning #trackTransitionArt{animation:trackArtIn 1.7s cubic-bezier(.18,.82,.22,1) both}
+body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:trackSceneDepart 1.05s cubic-bezier(.2,.72,.25,1) both}
+@keyframes trackTransitionLayer{0%{opacity:0;clip-path:inset(50% 0 50%)}15%,76%{opacity:1;clip-path:inset(0)}100%{opacity:0;clip-path:inset(0)}}
+@keyframes trackTransitionCard{0%{opacity:0;transform:translateY(62px) scale(.86);filter:blur(15px)}20%,74%{opacity:1;transform:none;filter:none}100%{opacity:0;transform:translateY(-38px) scale(1.035);filter:blur(8px)}}
+@keyframes trackArtOut{0%,24%{opacity:1;transform:rotateY(0) scale(1)}50%,100%{opacity:0;transform:rotateY(-16deg) scale(.86);filter:blur(7px)}}
+@keyframes trackArtIn{0%,24%{opacity:0;transform:rotateY(18deg) scale(.84);filter:blur(8px)}52%,100%{opacity:1;transform:none;filter:none}}
 @keyframes trackSceneDepart{0%{opacity:1;transform:scale(1);filter:none}48%{opacity:.18;transform:scale(.955);filter:blur(8px)}100%{opacity:1;transform:scale(1);filter:none}}
 
 #visualSceneBadge{position:absolute;z-index:7;top:76px;right:22px;display:flex;flex-direction:column;align-items:flex-end;max-width:min(340px,60vw);padding:9px 13px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(7,7,10,.72);box-shadow:0 12px 38px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .25s,transform .25s}
 #visualSceneBadge.show{opacity:1;transform:none}#visualSceneBadge small{font-size:9px;font-weight:800;letter-spacing:.17em;opacity:.48}#visualSceneBadge strong{margin-top:2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-body.director-section-changing #stage{animation:directorSectionStage .76s cubic-bezier(.18,.76,.22,1) both}
+body.director-section-changing #lines{animation:directorSectionStage .76s cubic-bezier(.18,.76,.22,1) both}
+body.director-section-changing #backdrop{animation:directorBackdropShift .9s ease both}
 body.director-section-changing #glow{animation:directorSectionGlow .76s ease-out both}
 body.director-section-changing #viewTransitionGlow{animation:directorSectionWash .76s ease-out both}
-@keyframes directorSectionStage{0%{opacity:1;filter:none;transform:scale(1)}38%{opacity:.26;filter:blur(8px);transform:scale(.975)}100%{opacity:1;filter:none;transform:scale(1)}}
+@keyframes directorSectionStage{0%{opacity:1;filter:none;scale:1}34%{opacity:.68;filter:blur(2.5px);scale:.988}100%{opacity:1;filter:none;scale:1}}
+@keyframes directorBackdropShift{0%,100%{filter:none;scale:1}38%{filter:saturate(1.18) brightness(.88);scale:1.012}}
 @keyframes directorSectionGlow{0%{opacity:.42;filter:saturate(1)}32%{opacity:.94;filter:saturate(1.65) brightness(1.18)}100%{filter:saturate(1)}}
 @keyframes directorSectionWash{0%,100%{opacity:0;transform:scale(.7)}36%{opacity:.62;transform:scale(1.08)}}
 body[data-director-section="drop"].director-section-changing #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.58),rgba(var(--glow),.44) 22%,transparent 66%)}
 body[data-director-section="quiet"].director-section-changing #viewTransitionGlow{opacity:.28}
-@media(prefers-reduced-motion:reduce){body.track-transitioning #trackTransition{animation:trackTransitionFade .65s ease both}body.track-transitioning .trackTransitionCard,body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:none}@keyframes trackTransitionFade{0%,100%{opacity:0}30%,70%{opacity:1}}}
+@media(prefers-reduced-motion:reduce){body.track-transitioning #trackTransition{animation:trackTransitionFade .65s ease both}body.track-transitioning .trackTransitionCard,body.track-transitioning .trackTransitionArtwork img,body.track-transitioning #stage,body.track-transitioning #homeScreen,body.director-section-changing #lines,body.director-section-changing #backdrop,body.director-section-changing #glow,body.director-section-changing #viewTransitionGlow{animation:none}@keyframes trackTransitionFade{0%,100%{opacity:0}30%,70%{opacity:1}}}

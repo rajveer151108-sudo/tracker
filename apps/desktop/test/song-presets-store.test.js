@@ -37,3 +37,18 @@ test("song presets can be forgotten without affecting other songs", () => {
     fs.rmSync(userData, { recursive: true, force: true });
   }
 });
+
+test("corrupt preset fields are cleaned when the store is loaded", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-presets-"));
+  try {
+    fs.writeFileSync(path.join(userData, "song-presets.json"), JSON.stringify({ presets: {
+      safe: { title: "Safe", visual: { lyricsLayout: "prism", directorMode: true } },
+      empty: { title: "Empty", visual: { directorMode: true } },
+    } }));
+    const store = createSongPresetsStore({ getPath: () => userData });
+    assert.deepEqual(store.get("safe").visual, { lyricsLayout: "prism" });
+    assert.equal(store.get("empty"), null);
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});

@@ -118,6 +118,18 @@
     return "steady";
   }
 
+  function directorSectionTiming(next = "steady", current = "steady") {
+    const stable = { drop: 0, build: 850, rapid: 1050, sustain: 1250, quiet: 1450, steady: 2100 };
+    return {
+      stableMs: Number.isFinite(stable[next]) ? stable[next] : stable.steady,
+      holdMs: next === "drop" ? 2400 : current === "drop" ? 3400 : 5200,
+    };
+  }
+
+  function directorCutAllowed({ hasLyrics = false, lineBoundary = false } = {}) {
+    return !hasLyrics || !!lineBoundary;
+  }
+
   function directorSectionScene({ section = "steady", genre = "other", baseVisual = {} } = {}) {
     const base = { ...baseVisual };
     const sectionPatches = {
@@ -132,7 +144,7 @@
         backdropOpacity: 58, lyricsDanceStyle: "bounce", motionStrength: 112,
       },
       drop: {
-        name: "Beat switch", lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch", lyricsSize: 104,
+        name: "Beat switch", lyricsLayout: genre === "rock" ? "poster" : "kinetic", lyricsMotion: "punch", lyricsSize: 86,
         glowStyle: "flowline", glowStrength: 145, glowThickness: 190,
         backdropOpacity: 68, lyricsDanceStyle: genre === "rock" ? "shake" : "snap", motionStrength: 148,
       },
@@ -152,5 +164,8 @@
     return { name, visual: { ...base, ...patch } };
   }
 
-  return { VISUAL_KEYS, extractPreset, averageWordGap, directorScene, directorSection, directorSectionScene };
+  return {
+    VISUAL_KEYS, extractPreset, averageWordGap, directorScene, directorSection,
+    directorSectionTiming, directorCutAllowed, directorSectionScene,
+  };
 });

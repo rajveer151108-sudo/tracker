@@ -143,8 +143,9 @@
 
     const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0);
     const t = now + offset;
-    if (settings.beat && beatOn && typeof updateDirectorPerformance === "function") {
-      updateDirectorPerformance({
+    if ((settings.directorMode || settings.songPresetsEnabled) && typeof updateVisualAutomationPerformance === "function") {
+      const directorLineIndex = sourceLines.length ? window.LyricTiming.activeLyricIndex(sourceLines, t) : -1;
+      updateVisualAutomationPerformance({
         energy: motionEnergy,
         vocal: motionVocal,
         phrase: motionPhrase,
@@ -153,6 +154,9 @@
         drop: dropFlash,
         impact: outLevel,
         pace: lyricWordPace,
+        audioActive: settings.beat && beatOn,
+        hasLyrics: sourceLines.length > 0,
+        lineIndex: directorLineIndex,
       }, tNow);
     }
     if (tNow - lastUiT >= 100) {
