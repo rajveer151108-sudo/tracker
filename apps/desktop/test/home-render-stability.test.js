@@ -27,3 +27,13 @@ test("a pending Home launch can be replaced by the user's next click", () => {
     assert.match(body, /if\(homeState\.slotItem\)clearHomePending\(\)/);
   }
 });
+
+test("left-rack playback acknowledges the click before its insertion animation", () => {
+  for (const launcher of ["launchHomeGame", "launchHomeVinyl", "launchHomeCd"]) {
+    const start = homeSource.indexOf(`async function ${launcher}`);
+    const body = homeSource.slice(start, homeSource.indexOf("\n}", start) + 2);
+    assert.match(body, /markHomeLaunchSource\(source\)/);
+  }
+  assert.match(homeCss, /\.homeSong\.launching/);
+  assert.match(homeSource, /clearHomeLaunchSources\(\)/);
+});

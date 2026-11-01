@@ -112,6 +112,13 @@ function homePendingTransition(pendingUri,pendingAt,pendingCommandAt,np,now=Date
   return now-pendingCommandAt<HOME_PENDING_PLAYBACK_TIMEOUT?"wait":"expired";
 }
 
+function markHomeLaunchSource(source){
+  document.querySelectorAll(".homeSong.launching,.homeCollection.launching").forEach(node=>{node.classList.remove("launching");node.removeAttribute("aria-busy");});
+  if(!source?.classList)return;
+  source.classList.add("launching");source.setAttribute("aria-busy","true");
+}
+function clearHomeLaunchSources(){document.querySelectorAll(".homeSong.launching,.homeCollection.launching").forEach(node=>{node.classList.remove("launching");node.removeAttribute("aria-busy");});}
+
 async function homePlay(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await playSpotifyUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,120);setTimeout(poll,700);}return !!result?.ok;}
 async function homePlayQueued(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await advanceSpotifyQueue(item.queueSteps||1);showToast(result?.ok?`PLAYING FROM QUEUE: ${item.title}`:`COULDN'T PLAY QUEUE: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,180);setTimeout(poll,760);}return !!result?.ok;}
 
@@ -155,6 +162,7 @@ async function launchHomeItem(item,source){
 async function launchHomeGame(item,source){
   if(!item?.uri)return;
   if(homeState.slotItem)clearHomePending();
+  markHomeLaunchSource(source);
   document.querySelectorAll(".gameCartridgePortal").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence;homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
   const heroRect=hero.getBoundingClientRect(),slotRect=hero.querySelector(".arcadeGameSlot")?.getBoundingClientRect();
@@ -168,8 +176,8 @@ async function launchHomeGame(item,source){
     {transform:"translate3d(0,0,0)",opacity:1,offset:.1},
     {transform:`translate3d(0,${Math.max(0,portalH-cartridgeH-12)}px,0)`,opacity:1,offset:.72},
     {transform:`translate3d(0,${targetY}px,0)`,opacity:1}
-  ],{duration:1000,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"});
-  await new Promise(resolve=>setTimeout(resolve,1020));
+  ],{duration:780,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"});
+  await new Promise(resolve=>setTimeout(resolve,800));
   flight.cancel();portal.remove();
   if(sequence!==homeState.loadSequence)return;
   screen.classList.remove("game-slotting");renderHomeHero();
@@ -180,6 +188,7 @@ async function launchHomeGame(item,source){
 async function launchHomeVinyl(item,source){
   if(!item?.uri)return;
   if(homeState.slotItem)clearHomePending();
+  markHomeLaunchSource(source);
   document.querySelectorAll(".homeCdFlight,.homeCdFlightSleeve").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
   homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");
@@ -199,14 +208,14 @@ async function launchHomeVinyl(item,source){
       {transform:`translate3d(${sleeveDx*.22}px,${sleeveDy*.18}px,0) scale(.96) rotate(2deg)`,opacity:1,offset:.42},
       {transform:"translate3d(0,-10px,0) scale(1.02) rotate(2deg)",opacity:1,offset:.62},
       {transform:"translate3d(-48px,14px,0) scale(.96) rotate(-9deg)",opacity:.94}
-    ],{duration:1320,easing:"cubic-bezier(.2,.78,.2,1)",fill:"forwards"});
+    ],{duration:1040,easing:"cubic-bezier(.2,.78,.2,1)",fill:"forwards"});
     const flight=disc.animate([
       {transform:`translate3d(${dx}px,${dy}px,0) scale(${Math.max(.18,startScale*.7)}) rotate(-12deg)`,opacity:1,filter:"saturate(.9)"},
       {transform:`translate3d(${dx*.58}px,${dy*.58}px,0) scale(.62) rotate(34deg)`,opacity:1,filter:"saturate(1.05)",offset:.34},
       {transform:`translate3d(${dx*.14}px,${dy*.14-38}px,0) scale(.96) rotate(226deg)`,opacity:1,filter:"saturate(1.14)",offset:.76},
       {transform:"translate3d(0,-8px,0) scale(1.02) rotate(342deg)",opacity:1,filter:"saturate(1.08)",offset:.92},
       {transform:"translate3d(0,0,0) scale(1) rotate(360deg)",opacity:1,filter:"saturate(1)"}
-    ],{duration:1320,easing:"cubic-bezier(.32,.06,.16,1)",fill:"forwards"});
+    ],{duration:1040,easing:"cubic-bezier(.32,.06,.16,1)",fill:"forwards"});
     await Promise.all([flight.finished.catch(()=>{}),sleeveFlight.finished.catch(()=>{})]);
     if(sequence===homeState.loadSequence){screen.classList.add("cd-seated");await new Promise(resolve=>requestAnimationFrame(resolve));}
     disc.remove();sleeve.remove();
@@ -223,6 +232,7 @@ async function launchHomeVinyl(item,source){
 async function launchHomeCd(item,source,playback=homePlay){
   if(!item?.uri)return;
   if(homeState.slotItem)clearHomePending();
+  markHomeLaunchSource(source);
   document.querySelectorAll(".homeStereoFlight,.homeStereoFlightCase").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
   homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);
@@ -243,14 +253,14 @@ async function launchHomeCd(item,source,playback=homePlay){
       {transform:`translate3d(${caseDx*.25}px,${caseDy*.2}px,0) scale(.98) rotate(2deg)`,opacity:1,offset:.42},
       {transform:"translate3d(0,0,0) scale(1.03) rotate(-2deg)",opacity:1,offset:.7},
       {transform:"translate3d(-22px,8px,0) scale(.94) rotate(-8deg)",opacity:.72}
-    ],{duration:1380,easing:"cubic-bezier(.2,.78,.2,1)",fill:"forwards"});
+    ],{duration:1080,easing:"cubic-bezier(.2,.78,.2,1)",fill:"forwards"});
     const flight=disc.animate([
       {transform:`translate3d(${dx}px,${dy}px,0) scale(${Math.max(.18,startScale*.58)}) rotateZ(-18deg) rotateX(0deg)`,opacity:.82,filter:"brightness(.82) saturate(.86)"},
       {transform:`translate3d(${dx*.82}px,${dy*.8-12}px,24px) scale(${Math.max(.34,startScale*.7)}) rotateZ(42deg) rotateX(10deg)`,opacity:1,filter:"brightness(1.08) saturate(1.12)",offset:.24},
       {transform:`translate3d(${dx*.52}px,${dy*.5-42}px,90px) scale(.9) rotateZ(150deg) rotateX(24deg)`,opacity:1,offset:.52},
       {transform:`translate3d(${dx*.1}px,${dy*.1-17}px,28px) scale(.96) rotateZ(315deg) rotateX(72deg)`,opacity:1,offset:.82},
       {transform:"translate3d(0,2px,0) scale(.94) rotateZ(390deg) rotateX(87deg)",opacity:1}
-    ],{duration:1380,easing:"cubic-bezier(.24,.72,.2,1)",fill:"forwards"});
+    ],{duration:1080,easing:"cubic-bezier(.24,.72,.2,1)",fill:"forwards"});
     await Promise.all([flight.finished.catch(()=>{}),caseFlight.finished.catch(()=>{})]);
     if(sequence===homeState.loadSequence){screen.classList.add("stereo-seated");await new Promise(resolve=>setTimeout(resolve,110));}
     disc.remove();flightCase.remove();
@@ -425,7 +435,7 @@ function homeNowPlayingKey(np){if(!np||!(np.state==="playing"||np.state==="pause
 function enrichHomeItem(item){if(!item?.uri)return item;const known=[...homeState.games,...homeState.recent,...homeState.queue].find(track=>track.uri===item.uri);return known?{...item,sub:known.sub||item.sub,album:known.album||item.album,img:known.img||item.img}:item;}
 function clearHomePending(render=false){
   if(!homeState.slotItem&&!homeState.pendingUri)return;
-  homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;homeState.loadSequence++;$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated","stereo-loading","stereo-seated");if(render)renderHomeHero();
+  homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;homeState.loadSequence++;clearHomeLaunchSources();$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated","stereo-loading","stereo-seated");if(render)renderHomeHero();
 }
 function updateHomeNowPlaying(np){
   const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume),previousUri=homeState.nowPlaying?.uri||"";let pendingCleared=false;

@@ -257,7 +257,7 @@
         updateCreativeLayout(idx);
         clearFit();
         const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
-        const fitLayout = impactLayout || settings.lyricsLayout === "captioncards" || settings.lyricsLayout === "poster" || settings.lyricsLayout === "scroll";
+        const fitLayout = impactLayout || settings.lyricsLayout === "captioncards" || settings.lyricsLayout === "scroll";
         if (isWordLayout() && idx >= 0) {
           const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
           wordPaceTarget = paceFromGap(gap);

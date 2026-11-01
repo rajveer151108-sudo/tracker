@@ -27,9 +27,11 @@ test("multi-word layouts size the composition instead of giving every word the w
   const uncapped = fitTextToLyricBox("on", box);
   const phraseBuilder = compositionFontCap("buildstack", 1400, 760);
   const morphStack = compositionFontCap("morphstack", 1400, 760);
+  const poster = compositionFontCap("poster", 1400, 760);
   assert.ok(uncapped > 300);
   assert.ok(phraseBuilder >= 60 && phraseBuilder <= 90);
   assert.ok(morphStack > phraseBuilder);
+  assert.ok(poster >= 90 && poster <= 130);
   assert.equal(compositionFontCap("flash", 1400, 760), Infinity);
   const lineByLine = compositionFontCap("scroll", 1400, 760);
   assert.ok(lineByLine >= 120 && lineByLine <= 170);

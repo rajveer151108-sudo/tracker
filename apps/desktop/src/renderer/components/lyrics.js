@@ -269,17 +269,24 @@
         div.classList.add("keyword");
         div.dataset.tone = l.tone;
       }
-      const timed = Array.isArray(l.words) && l.words.length > 0;
-      const words = timed ? l.words.map((w) => w.text) : (l.text || "\u266A").split(/\s+/).filter(Boolean);
+      const timedWords = window.LyricEffects.visibleTimedWords(l.words);
+      const timed = timedWords.length > 0;
+      const words = timed ? timedWords.map((w) => w.text) : (l.text || "\u266A").split(/\s+/).filter(Boolean);
+      div.dataset.wordCount = String(words.length);
+      div.dataset.wordDensity = words.length >= 8 ? "dense" : words.length >= 5 ? "medium" : "open";
       let emojiSpan = null;
-      const emojiWordIndex = l.lineEmoji ? l.emojiWordIndex : (l.emoji ? 0 : -1);
+      const requestedEmojiIndex = l.lineEmoji ? l.emojiWordIndex : (l.emoji ? 0 : -1);
+      const exactEmojiIndex = timed ? timedWords.findIndex((word) => word.sourceIndex === requestedEmojiIndex) : requestedEmojiIndex;
+      const emojiWordIndex = requestedEmojiIndex < 0 ? -1 : Math.max(0, Math.min(words.length - 1, exactEmojiIndex < 0 ? requestedEmojiIndex : exactEmojiIndex));
       const spans = words.map((w, i) => {
         const s = document.createElement("span");
         s.className = "w";
         s.style.setProperty("--word-tilt", ((i % 2 ? 1 : -1) * (1 + (i % 3))).toFixed(1) + "deg");
+        s.style.setProperty("--poster-order", String(i));
+        s.style.setProperty("--poster-drift", String((i % 2 ? 1 : -1) * (2 + i % 4)));
         s.textContent = w;
         div.appendChild(s);
-        if (l.lineEmoji && l.emoji && i === l.emojiWordIndex) {
+        if (l.lineEmoji && l.emoji && i === emojiWordIndex) {
           const emoji = document.createElement("span");
           emoji.className = "lyric-emoji line-emoji word-synced";
           emoji.textContent = l.emoji;
@@ -301,8 +308,8 @@
       }
       const W = { spans, cache: spans.map(() => -1), cur: -1, timed, revealed: spans.map(() => false), emojiSpan, emojiWordIndex };
       if (timed) {
-        W.wt = l.words.map((w) => w.t);
-        W.we = l.words.map((w) => w.end);
+        W.wt = timedWords.map((w) => w.t);
+        W.we = timedWords.map((w) => w.end);
       } else {
         const weights = words.map(wordWeight);
         const total = weights.reduce((a, b) => a + b, 0);

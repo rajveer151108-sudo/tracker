@@ -57,3 +57,14 @@ test("expressive lyric lines carry more visual weight than filler", () => {
   assert.ok(powerful >= 0.65);
   assert.ok(powerful > ordinary + 0.5);
 });
+
+test("blank provider timing cues never become visible lyric words", () => {
+  const words = effects.visibleTimedWords([
+    { text: "  ", t: 1, end: 1.1 },
+    { text: " KING ", t: 1.1, end: 1.5 },
+    { text: "", t: 1.5, end: 1.6 },
+  ]);
+  assert.deepEqual(words.map((word) => word.text), ["KING"]);
+  assert.deepEqual(words.map((word) => word.sourceIndex), [1]);
+  assert.deepEqual(words.map((word) => word.t), [1.1]);
+});

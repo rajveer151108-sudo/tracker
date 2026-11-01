@@ -52,6 +52,7 @@
       morphstack: { height: .17, width: .12 },
       prism: { height: .16, width: .12 },
       ribbon: { height: .16, width: .11 },
+      poster: { height: .14, width: .09 },
       scroll: { height: .18, width: .13 },
     };
     let profile = profiles[layout];

@@ -132,6 +132,13 @@ body[data-home-mode="vinyl"] .homeRoster{background:linear-gradient(90deg,#f7f7f
 body[data-home-mode="vinyl"] .homeSong{grid-template-columns:25px 50px minmax(0,1fr) 16px;padding:9px 7px;border-radius:10px}
 body[data-home-mode="vinyl"] .homeSong img{width:50px;height:50px;border-radius:50%;border:3px solid #151515;background:radial-gradient(circle,#f8f8f4 0 8%,#222 9% 15%,var(--cd-a) 16%,var(--cd-b) 55%,var(--cd-c));box-shadow:inset 0 0 0 4px #ffffff55,0 5px 13px #0002}
 body[data-home-mode="vinyl"] .homeSong:hover img,body[data-home-mode="vinyl"] .homeSong.selected img{transform:rotate(18deg) scale(1.06);transition:transform .22s ease}
+/* A click from the left rack receives immediate acknowledgement while its
+   physical cartridge/record/disc animation hands playback to Spotify. */
+.homeSong.launching,.homeCollection.launching{position:relative;overflow:hidden;pointer-events:none}
+.homeSong.launching:after,.homeCollection.launching:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 18%,color-mix(in srgb,var(--game-color) 34%,#fff) 47%,transparent 76%);translate:-115% 0;animation:homeLaunchSweep .72s ease-in-out infinite}
+.homeSong.launching .homeSongArrow{animation:homeLaunchArrow .5s ease-in-out infinite alternate}
+@keyframes homeLaunchSweep{to{translate:115% 0}}
+@keyframes homeLaunchArrow{to{translate:4px 0;filter:drop-shadow(0 0 7px var(--game-color))}}
 body[data-home-mode="vinyl"] .homeSongArrow{width:15px;height:15px;border-radius:50%;display:grid;place-items:center;color:#fff;background:#151515;font-size:8px;opacity:.82}
 body[data-home-mode="vinyl"] .homeHero{padding:clamp(14px,2.8vw,34px);background:radial-gradient(circle at 64% 38%,color-mix(in srgb,var(--cd-a) 22%,transparent),transparent 36%),linear-gradient(145deg,#171819,#0e0f10)}
 .homeCdScene{width:min(1040px,100%);grid-template-columns:minmax(150px,.62fr) minmax(440px,1.85fr);gap:clamp(18px,3.2vw,46px);align-self:center}

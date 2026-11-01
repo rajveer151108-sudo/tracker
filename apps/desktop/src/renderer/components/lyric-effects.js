@@ -301,6 +301,17 @@
     return String(text || "").normalize("NFKD").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
   }
 
+  // Some word-timed providers include spacer/cue entries whose text is empty.
+  // They are useful to the provider, but they must never become visible lyric
+  // nodes (Poster Cutout otherwise turns them into blank paper cards).
+  function visibleTimedWords(words) {
+    if (!Array.isArray(words)) return [];
+    return words.flatMap((word, sourceIndex) => {
+      const text = String(word?.text || "").normalize("NFKC").trim();
+      return text ? [{ ...word, text, sourceIndex }] : [];
+    });
+  }
+
   function stableScore(text) {
     let hash = 2166136261;
     for (const char of String(text)) hash = Math.imul(hash ^ char.codePointAt(0), 16777619);
@@ -375,5 +386,5 @@
     });
   }
 
-  return { cleanWord, decorateLines, decorateRows, effectForWord, expressionForText, isHighlightCandidate, selectHighlights };
+  return { cleanWord, decorateLines, decorateRows, effectForWord, expressionForText, isHighlightCandidate, selectHighlights, visibleTimedWords };
 });

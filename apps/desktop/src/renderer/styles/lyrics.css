@@ -376,13 +376,32 @@
   body[data-layout="captioncards"] .line.active .w { color: rgba(255,255,255,.42); -webkit-text-fill-color: rgba(255,255,255,.42); background: none; }
   body[data-layout="captioncards"] .line.active .w.cur { color: #151116; -webkit-text-fill-color: #151116; background: #fff4ce; box-shadow: 0 0 28px rgba(var(--glow),.5); transform: translateY(-.04em) scale(1.04); }
 
-  /* An editorial cutout poster assembled per line. */
-  body[data-layout="poster"] .line { left:50%;top:50%;width:min(88%,1120px);opacity:0;transform:translate(-50%,-50%) scale(.92);font-size:calc(var(--lyric-size) * 1.25);line-height:1.34;text-transform:uppercase;letter-spacing:-.035em; }
-  body[data-layout="poster"] .line[data-slot="0"]{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  body[data-layout="poster"] .line.active .w { padding:.03em .14em .09em;margin:.06em .015em;background:rgba(255,255,255,.94);color:#101014;-webkit-text-fill-color:#101014;box-shadow:.09em .09em 0 rgba(var(--glow),.55);transform:rotate(var(--word-tilt)); }
+  /* An editorial cutout poster assembled per line. Poster owns a bounded
+     collage instead of borrowing the one-line auto fitter: every card stays
+     on-screen, and the active word can move without resizing the composition. */
+  body[data-layout="poster"] .line {
+    left:50%;top:50%;width:min(84%,1120px);max-height:72%;display:flex;align-items:center;justify-content:center;align-content:center;flex-wrap:wrap;
+    gap:.12em .1em;overflow:visible;opacity:0;visibility:hidden;transform:translate(-50%,-50%) scale(.94);
+    font-size:min(var(--lyric-composition-cap,118px),calc(var(--lyric-size) * 1.04));line-height:1.02;text-transform:uppercase;letter-spacing:-.045em;
+  }
+  body[data-layout="poster"] .line[data-word-density="medium"]{font-size:min(var(--lyric-composition-cap,104px),calc(var(--lyric-size) * .9))}
+  body[data-layout="poster"] .line[data-word-density="dense"]{font-size:min(var(--lyric-composition-cap,88px),calc(var(--lyric-size) * .72));gap:.09em .075em}
+  body[data-layout="poster"] .line[data-slot="0"]{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);z-index:3}
+  body[data-layout="poster"] .line.creative-arrive{animation:posterCollageIn .34s cubic-bezier(.18,.82,.24,1) both}
+  body[data-layout="poster"] .line.active .w {
+    flex:0 1 auto;max-width:100%;padding:.04em .16em .1em;margin:0;background:rgba(255,255,255,.96);color:#101014;-webkit-text-fill-color:#101014;
+    box-shadow:.075em .085em 0 rgba(var(--glow),.55),0 .12em .28em #0005;rotate:var(--word-tilt);transform:none;
+    transition:translate .22s cubic-bezier(.18,.82,.24,1),scale .22s cubic-bezier(.18,.82,.24,1),rotate .25s ease,filter .22s ease,box-shadow .22s ease;
+  }
   body[data-layout="poster"] .line.active .w:nth-child(4n+1){background:rgb(var(--glow));color:#fff;-webkit-text-fill-color:#fff}
-  body[data-layout="poster"] .line.active .w.cur{transform:rotate(0) translateY(-.09em) scale(1.12);filter:brightness(1.12);box-shadow:0 0 .5em rgba(var(--glow),.85)}
-  body.word-emoji[data-layout="poster"] .lyric-emoji.word-revealed { display:inline-block; }
+  body[data-layout="poster"] .line.creative-arrive .w{animation:posterCardDeal .5s cubic-bezier(.16,.86,.2,1) calc(var(--poster-order) * 42ms) backwards}
+  body.lyrics-motion[data-layout="poster"] .line.active .w:not(.cur){translate:calc(var(--motion-sway) * var(--poster-drift) * 1px) calc(var(--motion-lift) * -3px)}
+  body[data-layout="poster"] .line.active .w.cur{translate:0 -.11em;scale:1.09;rotate:0deg;filter:brightness(1.12);box-shadow:0 0 .42em rgba(var(--glow),.82),.06em .08em 0 rgba(var(--glow),.6)}
+  body.word-emoji[data-layout="poster"] .lyric-emoji.word-revealed{display:inline-grid;place-items:center;flex:0 0 auto;font-size:.62em;padding:.09em;rotate:-6deg;filter:drop-shadow(0 .08em .12em #0008);animation:posterStickerIn .4s cubic-bezier(.18,.9,.2,1) both}
+  @keyframes posterCollageIn{from{opacity:0;transform:translate(-50%,calc(-50% + 22px)) scale(.91);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:none}}
+  @keyframes posterCardDeal{0%{opacity:0;translate:0 .55em;scale:.66;rotate:calc(var(--word-tilt) * -2);filter:blur(6px)}70%{opacity:1;translate:0 -.025em;scale:1.035;filter:blur(0)}100%{opacity:1;translate:0 0;scale:1;rotate:var(--word-tilt);filter:none}}
+  @keyframes posterStickerIn{from{opacity:0;translate:0 .45em;scale:.5;rotate:-20deg}to{opacity:1;translate:0 0;scale:1;rotate:-6deg}}
+  @media(max-height:720px){body[data-layout="poster"] .line{max-height:66%;font-size:min(var(--lyric-composition-cap,92px),calc(var(--lyric-size) * .82))}}
 
   /* Broken neon frame from the video, usable with every lyric composition. */
   #lyricEdgeFrame { display:none;position:absolute;inset:1.5%;width:97%;height:97%;z-index:4;pointer-events:none;overflow:visible; }
