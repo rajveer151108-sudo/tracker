@@ -38,6 +38,18 @@ async function routePlayback({ apiResults = [{ ok: true }], contextUri = null, n
   return { calls, result: await context.result };
 }
 
+async function advanceQueue(steps, apiResults) {
+  const calls = [];
+  const context = {
+    document: { getElementById() {}, documentElement: {} },
+    window: { tracker: { async spApi(request) { calls.push(request); return apiResults?.shift() || { ok: true }; } } },
+    setTimeout(callback) { callback(); return 1; },
+    result: null,
+  };
+  vm.runInNewContext(`${coreSource}\nresult = advanceSpotifyQueue(${steps});`, context);
+  return { calls, result: await context.result };
+}
+
 function queueFrom(response, expectedUri) {
   const context = { response, expectedUri, result: null };
   vm.runInNewContext(
@@ -60,6 +72,7 @@ test("left-rack playback uses one focus-safe Web API command when available", as
   const { calls, result } = await routePlayback();
   assert.equal(calls.api, 1);
   assert.equal(calls.desktop, 0);
+  assert.equal(calls.nowPlaying, 0);
   assert.equal(result.source, "web-api");
 });
 
@@ -96,19 +109,23 @@ test("left-rack playback uses the shielded desktop command when the API session 
   assert.equal(result.ok, true);
 });
 
-test("left-rack playback rejects a false API success and recovers through the desktop player", async () => {
-  const stopped = { state: "stopped" };
+test("an accepted Spotify command is never duplicated while now-playing catches up", async () => {
   const { calls, result } = await routePlayback({
-    apiResults: [
-      { ok: true, status: 204 },
-      { ok: true, data: { devices: [] } },
-    ],
-    nowPlayingResults: [stopped, stopped, stopped, { state: "playing", uri: "spotify:track:1234567890" }],
+    apiResults: [{ ok: true, status: 204 }],
   });
-  assert.equal(calls.api, 2);
-  assert.equal(calls.desktop, 1);
-  assert.equal(result.source, "desktop-shielded");
+  assert.equal(calls.api, 1);
+  assert.equal(calls.desktop, 0);
+  assert.equal(calls.nowPlaying, 0);
+  assert.equal(result.source, "web-api");
   assert.equal(result.ok, true);
+});
+
+test("queue selection advances the live Spotify queue instead of replacing its context", async () => {
+  const { calls, result } = await advanceQueue(3);
+  assert.equal(result.ok, true);
+  assert.equal(result.advanced, 3);
+  assert.equal(calls.length, 3);
+  assert.ok(calls.every((request) => request.path === "/me/player/next" && request.method === "POST"));
 });
 
 test("queue cards accept only the requested playback context and exclude the current song", () => {
@@ -117,8 +134,8 @@ test("queue cards accept only the requested playback context and exclude the cur
   const response = { ok: true, data: { currently_playing: current, queue: [current, ...next] } };
 
   assert.deepEqual(
-    queueFrom(response, current.uri).map((track) => track.title),
-    ["Next 1", "Next 2", "Next 3", "Next 4", "Next 5"]
+    queueFrom(response, current.uri).map((track) => [track.title, track.queueSteps]),
+    [["Next 1", 1], ["Next 2", 2], ["Next 3", 3], ["Next 4", 4], ["Next 5", 5]]
   );
   assert.equal(queueFrom(response, "spotify:track:DIFFERENT0"), null);
 });

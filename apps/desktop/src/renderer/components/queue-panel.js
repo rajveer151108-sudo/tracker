@@ -15,7 +15,7 @@ function queueTrackFrom(raw) {
   };
 }
 
-function renderQueueTrack(track, now = false) {
+function renderQueueTrack(track, now = false, queueSteps = 1) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "queueTrack";
@@ -35,11 +35,11 @@ function renderQueueTrack(track, now = false) {
   button.addEventListener("click", async () => {
     button.disabled = true;
     $("queueStatus").textContent = `Loading ${track.title}…`;
-    const result = await playSpotifyUri(track.uri);
+    const result = now ? await playSpotifyUri(track.uri) : await advanceSpotifyQueue(queueSteps);
     button.disabled = false;
     if (!result?.ok) showToast("COULDN'T PLAY QUEUED TRACK: " + (result?.error || "SPOTIFY DID NOT RESPOND"));
     else {
-      $("queueStatus").textContent = "Playing from your queue";
+      $("queueStatus").textContent = now ? "Restarting current song" : "Playing from your queue";
       setTimeout(() => { poll(); refreshQueuePanel(true); }, 450);
     }
   });
@@ -64,9 +64,9 @@ async function refreshQueuePanel(silent = false) {
     return;
   }
   const current = queueTrackFrom(response.data?.currently_playing);
-  const tracks = (response.data?.queue || []).map(queueTrackFrom).filter(Boolean);
+  const tracks = (response.data?.queue || []).map(queueTrackFrom).filter((track) => track && track.uri !== current?.uri);
   if (current) now.append(renderQueueTrack(current, true));
-  if (tracks.length) tracks.forEach((track) => list.append(renderQueueTrack(track)));
+  if (tracks.length) tracks.forEach((track, index) => list.append(renderQueueTrack(track, false, index + 1)));
   else list.innerHTML = '<div class="queueEmpty">Nothing is queued yet.<br>Add songs from the home song menu.</div>';
   $("queueStatus").textContent = "Synced with Spotify";
   $("queueCount").textContent = tracks.length ? `${tracks.length} NEXT` : "EMPTY";

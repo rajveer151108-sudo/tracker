@@ -31,6 +31,8 @@ test("multi-word layouts size the composition instead of giving every word the w
   assert.ok(phraseBuilder >= 60 && phraseBuilder <= 90);
   assert.ok(morphStack > phraseBuilder);
   assert.equal(compositionFontCap("flash", 1400, 760), Infinity);
+  const lineByLine = compositionFontCap("scroll", 1400, 760);
+  assert.ok(lineByLine >= 120 && lineByLine <= 170);
 });
 
 test("lyric stacks shrink safely when the user asks for more history rows", () => {

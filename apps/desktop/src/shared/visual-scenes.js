@@ -281,20 +281,30 @@
     },
   ]);
 
-  function directorCadenceScene({ baseVisual = {}, previousVisual = {}, sequence = 0, signal = {} } = {}) {
+  const visualSignature = (visual = {}) => `${visual.lyricsLayout || ""}:${visual.glowStyle || ""}`;
+  function variedChoice(choices, sequence, previous, recentSignatures = []) {
+    const start = Math.abs(Math.trunc(sequence)) % choices.length;
+    const recent = new Set((recentSignatures || []).slice(-7));
+    const ranked = [];
+    for (let offset = 0; offset < choices.length; offset++) {
+      const index = (start + offset) % choices.length;
+      const candidate = choices[index];
+      const repeatsPair = recent.has(visualSignature(candidate));
+      const repeatsLayout = (recentSignatures || []).slice(-4).some((entry) => String(entry).split(":")[0] === candidate.lyricsLayout);
+      const repeatsGlow = (recentSignatures || []).slice(-3).some((entry) => String(entry).split(":")[1] === candidate.glowStyle);
+      const matchesCurrent = candidate.lyricsLayout === previous.lyricsLayout || candidate.glowStyle === previous.glowStyle;
+      ranked.push({ index, score: Number(repeatsPair) * 20 + Number(matchesCurrent) * 8 + Number(repeatsLayout) * 3 + Number(repeatsGlow) * 2 + offset / 100 });
+    }
+    return ranked.sort((left, right) => left.score - right.score)[0]?.index ?? start;
+  }
+
+  function directorCadenceScene({ baseVisual = {}, previousVisual = {}, sequence = 0, signal = {}, recentSignatures = [] } = {}) {
     const pace = Math.max(0, Number(signal.pace) || 0);
     const density = Math.max(0, Number(signal.density) || 0);
     const futurePace = Math.max(0, Number(signal.nextPace) || 0, Number(signal.forecastFlow) || 0);
     const normalVerse = pace >= .12 && pace <= .72 && density <= .82;
-    let index = Math.abs(Math.trunc(sequence)) % CADENCE_VARIANTS.length;
     const previous = { ...baseVisual, ...previousVisual };
-    for (let offset = 0; offset < CADENCE_VARIANTS.length; offset++) {
-      const candidate = CADENCE_VARIANTS[(index + offset) % CADENCE_VARIANTS.length];
-      if (candidate.lyricsLayout !== previous.lyricsLayout && candidate.glowStyle !== previous.glowStyle) {
-        index = (index + offset) % CADENCE_VARIANTS.length;
-        break;
-      }
-    }
+    const index = variedChoice(CADENCE_VARIANTS, sequence, previous, recentSignatures);
     const { name, ...patch } = CADENCE_VARIANTS[index];
     return {
       name,
@@ -454,7 +464,16 @@
     return nowMs - lastLayoutChangeAt >= directorLayoutMinimumDwell(priority);
   }
 
-  function directorSectionScene({ section = "steady", genre = "other", baseVisual = {}, previousVisual = {}, cue = "beat-switch", sequence = 0 } = {}) {
+  function directorSceneMinimumDwell(priority = "normal", glowStyle = "") {
+    const base = priority === "beat-switch" ? 5200
+      : priority === "reentry" ? 6000
+      : priority === "instrument-lift" ? 6200
+      : priority === "cadence" ? 7800
+      : 7000;
+    return glowStyle === "frame" ? Math.max(base, 8500) : base;
+  }
+
+  function directorSectionScene({ section = "steady", genre = "other", baseVisual = {}, previousVisual = {}, cue = "beat-switch", sequence = 0, recentSignatures = [] } = {}) {
     const base = { ...baseVisual };
     const sectionPatches = {
       quiet: [{
@@ -479,9 +498,9 @@
         glowStyle: "comet", glowStrength: 124, glowThickness: 154,
         backdropOpacity: 60, lyricsDanceStyle: "snap", motionStrength: 124,
       }, {
-        name: "Arrangement bloom", lyricsLayout: "ribbon", lyricsHighlight: "whole", lyricsMotion: "slide",
-        glowStyle: "nebula", glowStrength: 114, glowThickness: 146,
-        backdropOpacity: 56, lyricsDanceStyle: "sway", motionStrength: 106,
+        name: "Arrangement bloom", lyricsLayout: "constellation", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "horizon", glowStrength: 114, glowThickness: 146,
+        backdropOpacity: 56, lyricsDanceStyle: "float", motionStrength: 96,
       }],
       drop: [{
         name: cue === "reentry" ? "Arrangement return" : cue === "beat-switch" ? "Beat switch" : "Production drop",
@@ -523,9 +542,9 @@
         glowStyle: "aurora", glowStrength: 104, glowThickness: 145,
         backdropOpacity: 52, lyricsDanceStyle: "float", motionStrength: 86,
       }, {
-        name: "Vocal ribbon", lyricsLayout: "ribbon", lyricsHighlight: "whole", lyricsMotion: "glide",
-        glowStyle: "eclipse", glowStrength: 100, glowThickness: 138,
-        backdropOpacity: 50, lyricsDanceStyle: "sway", motionStrength: 82,
+        name: "Vocal orbit", lyricsLayout: "morphstack", lyricsHighlight: "whole", lyricsMotion: "glide",
+        glowStyle: "rotate", glowStrength: 100, glowThickness: 138,
+        backdropOpacity: 50, lyricsDanceStyle: "float", motionStrength: 82,
       }, {
         name: "Long exposure", lyricsLayout: "captioncards", lyricsHighlight: "whole", lyricsMotion: "glide",
         glowStyle: "halo", glowStrength: 96, glowThickness: 132,
@@ -538,15 +557,8 @@
     };
     if (section === "steady" || !sectionPatches[section]) return { name: "Main scene", visual: base };
     const choices = sectionPatches[section];
-    let index = Math.abs(Math.trunc(sequence)) % choices.length;
     const previous = { ...base, ...previousVisual };
-    for (let offset = 0; offset < choices.length; offset++) {
-      const candidate = choices[(index + offset) % choices.length];
-      if (candidate.lyricsLayout !== previous.lyricsLayout && candidate.glowStyle !== previous.glowStyle) {
-        index = (index + offset) % choices.length;
-        break;
-      }
-    }
+    const index = variedChoice(choices, sequence, previous, recentSignatures);
     const { name, ...patch } = choices[index];
     return { name, visual: { ...base, ...patch } };
   }
@@ -555,7 +567,7 @@
     VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
     averageWordGap, lyricLineStats, lyricDirectorContext,
     directorScene, directorCadenceScene, directorCadenceDelay, directorDecision, directorSection,
-    directorSectionTiming, directorCutAllowed, directorLayoutMinimumDwell, directorLayoutChangeAllowed,
+    directorSectionTiming, directorCutAllowed, directorLayoutMinimumDwell, directorLayoutChangeAllowed, directorSceneMinimumDwell,
     directorSectionScene,
   };
 });

@@ -8,12 +8,14 @@ body.track-transitioning #trackTransition{visibility:visible;animation:trackTran
 body.track-transitioning .trackTransitionCard{animation:trackTransitionCard 1.7s cubic-bezier(.16,.82,.2,1) both}
 body.track-transitioning #trackTransitionFromArt{animation:trackArtOut 1.7s cubic-bezier(.2,.72,.25,1) both}
 body.track-transitioning #trackTransitionArt{animation:trackArtIn 1.7s cubic-bezier(.18,.82,.22,1) both}
-body.track-transitioning #stage,body.track-transitioning #homeScreen{animation:trackSceneDepart 1.05s cubic-bezier(.2,.72,.25,1) both}
+body.track-transitioning #stage{animation:trackSceneDepart 1.05s cubic-bezier(.2,.72,.25,1) both}
+body.track-transitioning #homeScreen{animation:homeTrackStartPulse 1.05s cubic-bezier(.2,.72,.25,1) both}
 @keyframes trackTransitionLayer{0%{opacity:0;clip-path:inset(50% 0 50%)}15%,76%{opacity:1;clip-path:inset(0)}100%{opacity:0;clip-path:inset(0)}}
 @keyframes trackTransitionCard{0%{opacity:0;transform:translateY(62px) scale(.86);filter:blur(15px)}20%,74%{opacity:1;transform:none;filter:none}100%{opacity:0;transform:translateY(-38px) scale(1.035);filter:blur(8px)}}
 @keyframes trackArtOut{0%,24%{opacity:1;transform:rotateY(0) scale(1)}50%,100%{opacity:0;transform:rotateY(-16deg) scale(.86);filter:blur(7px)}}
 @keyframes trackArtIn{0%,24%{opacity:0;transform:rotateY(18deg) scale(.84);filter:blur(8px)}52%,100%{opacity:1;transform:none;filter:none}}
 @keyframes trackSceneDepart{0%{opacity:1;transform:scale(1);filter:none}48%{opacity:.18;transform:scale(.955);filter:blur(8px)}100%{opacity:1;transform:scale(1);filter:none}}
+@keyframes homeTrackStartPulse{0%,100%{opacity:1;transform:scale(1);filter:none}42%{opacity:.9;transform:scale(.992);filter:saturate(1.16) brightness(1.08)}}
 
 #visualSceneBadge{position:absolute;z-index:7;top:76px;right:22px;display:flex;flex-direction:column;align-items:flex-end;max-width:min(340px,60vw);padding:9px 13px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(7,7,10,.72);box-shadow:0 12px 38px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .25s,transform .25s}
 #visualSceneBadge.show{opacity:1;transform:none}#visualSceneBadge small{font-size:9px;font-weight:800;letter-spacing:.17em;opacity:.48}#visualSceneBadge strong{margin-top:2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}

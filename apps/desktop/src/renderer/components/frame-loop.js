@@ -97,7 +97,7 @@
         el.classList.remove("constellation-current");
         const visible = layout === "buildstack"
           ? relative <= 0 && relative >= -3
-          : Math.abs(relative) <= (layout === "prism" || layout === "ribbon" ? 2
+          : Math.abs(relative) <= (layout === "prism" ? 2 : layout === "ribbon" ? 1
             : layout === "morphstack" || layout === "kinetic" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }
@@ -257,7 +257,7 @@
         updateCreativeLayout(idx);
         clearFit();
         const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
-        const fitLayout = impactLayout || settings.lyricsLayout === "captioncards" || settings.lyricsLayout === "poster";
+        const fitLayout = impactLayout || settings.lyricsLayout === "captioncards" || settings.lyricsLayout === "poster" || settings.lyricsLayout === "scroll";
         if (isWordLayout() && idx >= 0) {
           const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
           wordPaceTarget = paceFromGap(gap);

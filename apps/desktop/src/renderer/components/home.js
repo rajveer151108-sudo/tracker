@@ -1,5 +1,5 @@
 // Home: one music library, three genuinely different listening spaces.
-const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,queueRequest:0,queueSchedule:0,nowKey:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,pendingCommandAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
+const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,queueRequest:0,queueSchedule:0,nowKey:"",heroSignature:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,pendingCommandAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
 const HOME_PENDING_ANIMATION_TIMEOUT=5000,HOME_PENDING_PLAYBACK_TIMEOUT=9000;
 const homeImage=images=>images?.length?(images[0]?.url||images.at(-1)?.url||""):"";
 const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", ");
@@ -113,6 +113,7 @@ function homePendingTransition(pendingUri,pendingAt,pendingCommandAt,np,now=Date
 }
 
 async function homePlay(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await playSpotifyUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,120);setTimeout(poll,700);}return !!result?.ok;}
+async function homePlayQueued(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await advanceSpotifyQueue(item.queueSteps||1);showToast(result?.ok?`PLAYING FROM QUEUE: ${item.title}`:`COULDN'T PLAY QUEUE: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,180);setTimeout(poll,760);}return !!result?.ok;}
 
 async function playHomeCollection(shuffle=false){
   if(homeState.collectionLoading||!homeState.games.length){showToast("LOAD A COLLECTION FIRST");return;}
@@ -172,7 +173,7 @@ async function launchHomeGame(item,source){
   screen.classList.remove("game-slotting");renderHomeHero();
   const started=await homePlay(item);
   if(!started){homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;renderHomeHero();return;}
-  setTimeout(()=>{if(homeState.slotItem?.uri===item.uri&&homeState.nowPlaying?.uri!==item.uri)clearHomePending(true);},5000);
+  setTimeout(()=>{if(homeState.slotItem?.uri===item.uri&&homeState.nowPlaying?.uri!==item.uri)clearHomePending(true);},HOME_PENDING_PLAYBACK_TIMEOUT+1200);
 }
 async function launchHomeVinyl(item,source){
   if(!item?.uri||homeState.slotItem)return;
@@ -212,10 +213,10 @@ async function launchHomeVinyl(item,source){
   screen.classList.add("cd-seated");
   const started=await homePlay(item);
   setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("cd-loading","cd-seated");if(!started)clearHomePending();else renderHomeHero();},520);
-  setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri)clearHomePending(true);},5200);
+  setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri)clearHomePending(true);},HOME_PENDING_PLAYBACK_TIMEOUT+1200);
 }
 
-async function launchHomeCd(item,source){
+async function launchHomeCd(item,source,playback=homePlay){
   if(!item?.uri||homeState.slotItem)return;
   document.querySelectorAll(".homeStereoFlight,.homeStereoFlightCase").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
@@ -238,8 +239,8 @@ async function launchHomeCd(item,source){
       {transform:"translate3d(-22px,8px,0) scale(.94) rotate(-8deg)",opacity:.72}
     ],{duration:1380,easing:"cubic-bezier(.2,.78,.2,1)",fill:"forwards"});
     const flight=disc.animate([
-      {transform:`translate3d(${dx}px,${dy}px,0) scale(${Math.max(.18,startScale*.58)}) rotateZ(-18deg) rotateX(0deg)`,opacity:0},
-      {transform:`translate3d(${dx}px,${dy}px,0) scale(${Math.max(.18,startScale*.58)}) rotateZ(-18deg) rotateX(0deg)`,opacity:1,offset:.22},
+      {transform:`translate3d(${dx}px,${dy}px,0) scale(${Math.max(.18,startScale*.58)}) rotateZ(-18deg) rotateX(0deg)`,opacity:.82,filter:"brightness(.82) saturate(.86)"},
+      {transform:`translate3d(${dx*.82}px,${dy*.8-12}px,24px) scale(${Math.max(.34,startScale*.7)}) rotateZ(42deg) rotateX(10deg)`,opacity:1,filter:"brightness(1.08) saturate(1.12)",offset:.24},
       {transform:`translate3d(${dx*.52}px,${dy*.5-42}px,90px) scale(.9) rotateZ(150deg) rotateX(24deg)`,opacity:1,offset:.52},
       {transform:`translate3d(${dx*.1}px,${dy*.1-17}px,28px) scale(.96) rotateZ(315deg) rotateX(72deg)`,opacity:1,offset:.82},
       {transform:"translate3d(0,2px,0) scale(.94) rotateZ(390deg) rotateX(87deg)",opacity:1}
@@ -249,9 +250,9 @@ async function launchHomeCd(item,source){
     disc.remove();flightCase.remove();
   }else await new Promise(resolve=>setTimeout(resolve,650));
   if(sequence!==homeState.loadSequence)return;
-  const started=await homePlay(item);
+  const started=await playback(item);
   setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("stereo-loading","stereo-seated");if(!started)clearHomePending();else renderHomeHero();},520);
-  setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri)clearHomePending(true);},5200);
+  setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri)clearHomePending(true);},HOME_PENDING_PLAYBACK_TIMEOUT+1200);
 }
 
 function renderHomeRoster(){
@@ -343,7 +344,7 @@ function renderCdStereo(hero,item){
   const visualizer=homeElement("div","homeStereoVisualizer");for(let i=0;i<24;i++)visualizer.appendChild(homeElement("i",""));
   display.replaceChildren(media,info,visualizer);
   const queue=homeElement("div","homeStereoQueue");queue.appendChild(homeElement("span","homeStereoQueueLabel",homeState.queueLoading?"READING NEXT DISCS…":"UP NEXT // DISC CHANGER"));
-  homeState.queue.filter(Boolean).slice(0,3).forEach((card,index)=>{const tile=homeElement("button","homeStereoQueueDisc"),image=homeElement("img");image.alt="";if(card.img)image.src=card.img;tile.append(homeElement("b","",String(index+2).padStart(2,"0")),image,homeElement("span","",card.title||"Unknown track"));tile.title=`Play ${card.title||"next track"}`;tile.addEventListener("click",()=>launchHomeCd(card,tile));queue.appendChild(tile);});
+  homeState.queue.filter(Boolean).slice(0,3).forEach((card,index)=>{const tile=homeElement("button","homeStereoQueueDisc"),image=homeElement("img");image.alt="";if(card.img)image.src=card.img;tile.append(homeElement("b","",String(index+2).padStart(2,"0")),image,homeElement("span","",card.title||"Unknown track"));tile.title=`Play ${card.title||"next track"} without replacing your queue`;tile.addEventListener("click",()=>launchHomeCd(card,tile,homePlayQueued));queue.appendChild(tile);});
   if(!homeState.queueLoading&&!homeState.queue.length)queue.appendChild(homeElement("small","","Queue a song in Spotify and its jewel case will appear here."));
   const slot=homeElement("div","homeStereoSlot");slot.append(homeElement("span","",homeState.slotItem?"ACCEPTING DISC":"SLOT-IN COMPACT DISC"),homeElement("i",""));
   const seek=homeElement("div","homeStereoSeek");seek.append(homeElement("span","","TRACK 01"),homeElement("i",""),homeElement("b","","SEEK"));wireArcadeSeek(seek);
@@ -352,7 +353,9 @@ function renderCdStereo(hero,item){
   receiver.append(brand,display,queue,slot,seek,controls,volume);scene.append(speaker("left"),receiver,speaker("right"));hero.append(scene);
 }
 function renderHomeHero(){
-  const hero=$("arcadeNow");hero.innerHTML="";const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem(homeState.slotItem||homeState.nowPlaying);
+  const hero=$("arcadeNow"),mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem(homeState.slotItem||homeState.nowPlaying),signature=[mode,item?.uri,item?.title,item?.sub,item?.img,playing?"playing":"paused",homeState.slotItem?.uri,homeState.queue.map(track=>track?.uri).join("|")].join("::");
+  if(hero.childElementCount&&signature===homeState.heroSignature)return;
+  homeState.heroSignature=signature;hero.innerHTML="";
   if(mode==="arcade"){renderArcadeCabinet(hero,item);return;}
   if(mode==="vinyl"&&item){renderVinylPlayer(hero,item,copy);return;}
   if(mode==="cd"&&item){renderCdStereo(hero,item);return;}
@@ -372,23 +375,23 @@ function homeQueueFromResponse(response,expectedUri=""){
   if(!response?.ok)return null;
   const currentUri=String(response.data?.currently_playing?.uri||"");
   if(expectedUri&&currentUri!==expectedUri)return null;
-  return normaliseHomeTracks(response.data?.queue).filter(track=>track.uri!==currentUri).slice(0,5);
+  return normaliseHomeTracks(response.data?.queue).filter(track=>track.uri!==currentUri).slice(0,5).map((track,index)=>({...track,queueSteps:index+1}));
 }
 async function refreshHomeQueue(force=false,expectedUri=""){
-  if(!force&&(homeState.queueLoading||Date.now()-homeState.queueLoadedAt<12000))return;
-  const request=++homeState.queueRequest;homeState.queueLoading=true;
+  if(homeState.queueLoading||(!force&&Date.now()-homeState.queueLoadedAt<12000))return;
+  const request=++homeState.queueRequest;homeState.queueLoading=true;let changed=false;
   try{
     const response=await window.tracker.spApi("/me/player/queue");
     if(request!==homeState.queueRequest)return;
     const queue=homeQueueFromResponse(response,expectedUri);if(!queue)return;
-    homeState.queue=queue;homeState.queueLoadedAt=Date.now();
+    const previous=homeState.queue.map(track=>track?.uri).join("|"),next=queue.map(track=>track?.uri).join("|");homeState.queue=queue;homeState.queueLoadedAt=Date.now();changed=previous!==next;
   }finally{
-    if(request===homeState.queueRequest){homeState.queueLoading=false;if(["vinyl","cd"].includes(currentHomeMode()))renderHomeHero();}
+    if(request===homeState.queueRequest){homeState.queueLoading=false;if(changed&&["vinyl","cd"].includes(currentHomeMode()))renderHomeHero();}
   }
 }
 function scheduleHomeQueueRefresh(uri){
-  const schedule=++homeState.queueSchedule;homeState.queue=[];homeState.queueLoadedAt=0;if(["vinyl","cd"].includes(currentHomeMode()))renderHomeHero();
-  [200,700,1600,3200,6000].forEach(delay=>setTimeout(()=>{if(schedule===homeState.queueSchedule)refreshHomeQueue(true,uri);},delay));
+  const schedule=++homeState.queueSchedule;homeState.queueLoadedAt=0;
+  [350,1400,3600].forEach(delay=>setTimeout(()=>{if(schedule===homeState.queueSchedule)refreshHomeQueue(true,uri);},delay));
 }
 async function loadHomeCollection(collection){
   if(!collection||homeState.collectionLoading)return;

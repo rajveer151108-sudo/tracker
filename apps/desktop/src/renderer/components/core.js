@@ -24,51 +24,25 @@ const $ = (id) => document.getElementById(id);
       || null;
   }
 
-  async function confirmSpotifyPlayback(uri) {
-    let last = null;
-    for (const delay of [120, 240, 440]) {
-      await playbackWait(delay);
-      last = await window.tracker.nowPlaying()
-        .catch((error) => ({ state: "error", message: error?.message }));
-      const playingUri = String(last?.uri || last?.id || "");
-      if (last?.state === "playing" && playingUri === uri) return { ok: true, data: last };
-    }
-    return { ok: false, data: last };
-  }
-
   async function playSpotifyUri(uri, context = null) {
-    // Start with the focus-safe Web API, but trust observed desktop playback
-    // rather than Spotify's 204 response: Spotify sometimes acknowledges a
-    // request without starting any player at all.
+    // Spotify's playback API is asynchronous: a successful 204 means the
+    // command was accepted, even when now-playing has not caught up yet. Do
+    // not poll and resend that accepted command; duplicate play requests make
+    // the desktop client pause, restart, and jump back to the beginning.
     const requestPlay = (body, deviceId = "") => window.tracker.spApi({
       path: "/me/player/play" + (deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : ""),
       method: "PUT",
       body,
     }).catch((error) => ({ ok: false, status: 0, error: error?.message }));
-    const confirmed = async (result, source) => {
-      if (!result?.ok) return null;
-      const playback = await confirmSpotifyPlayback(uri);
-      return playback.ok ? { ...result, source } : null;
-    };
-    const rejectedAcknowledgement = (result) => ({
-      ...result,
-      ok: false,
-      status: 409,
-      error: "Spotify acknowledged playback but no active desktop player started",
-    });
 
     let remote = await requestPlay(spotifyPlaybackBody(uri, context));
-    let verified = await confirmed(remote, "web-api");
-    if (verified) return verified;
-    if (remote?.ok) remote = rejectedAcknowledgement(remote);
+    if (remote?.ok) return { ...remote, source: "web-api" };
 
     // A playlist can change between loading and clicking, making its offset
     // invalid even though the song itself remains playable. Retry it directly.
     if (context && /^spotify:(?:track|episode):/.test(uri)) {
       remote = await requestPlay(spotifyPlaybackBody(uri));
-      verified = await confirmed(remote, "web-api-direct");
-      if (verified) return verified;
-      if (remote?.ok) remote = rejectedAcknowledgement(remote);
+      if (remote?.ok) return { ...remote, source: "web-api-direct" };
     }
 
     // Spotify returns 404 when no player is active. Pick an existing desktop
@@ -87,9 +61,7 @@ const $ = (id) => document.getElementById(id);
           await playbackWait(180);
           remote = await requestPlay(spotifyPlaybackBody(uri, context), device.id);
           if (!remote?.ok && context) remote = await requestPlay(spotifyPlaybackBody(uri), device.id);
-          verified = await confirmed(remote, "web-api-device");
-          if (verified) return verified;
-          if (remote?.ok) remote = rejectedAcknowledgement(remote);
+          if (remote?.ok) return { ...remote, source: "web-api-device" };
         }
       }
     }
@@ -98,17 +70,12 @@ const $ = (id) => document.getElementById(id);
     // process shields Afterglow above Spotify while this desktop command runs.
     const fallback = await window.tracker.playUri(uri, context)
       .catch((error) => ({ ok: false, error: error?.message }));
-    verified = await confirmed(fallback, "desktop-shielded");
-    if (verified) return { ...verified, remoteError: remote?.error || "" };
-    // Context-aware desktop commands can also be acknowledged without taking
-    // effect when Spotify has stale playlist state. One direct retry is safe
-    // after confirmation proves that the first command never started.
+    if (fallback?.ok) return { ...fallback, source: "desktop-shielded", remoteError: remote?.error || "" };
     let directFallback = fallback;
-    if (fallback?.ok && context && /^spotify:(?:track|episode):/.test(uri)) {
+    if (context && /^spotify:(?:track|episode):/.test(uri)) {
       directFallback = await window.tracker.playUri(uri)
         .catch((error) => ({ ok: false, error: error?.message }));
-      verified = await confirmed(directFallback, "desktop-shielded-direct");
-      if (verified) return { ...verified, remoteError: remote?.error || "" };
+      if (directFallback?.ok) return { ...directFallback, source: "desktop-shielded-direct", remoteError: remote?.error || "" };
     }
     return {
       ...remote,
@@ -116,6 +83,17 @@ const $ = (id) => document.getElementById(id);
       source: "failed",
       error: directFallback?.error || remote?.error || "Spotify did not start playback",
     };
+  }
+
+  async function advanceSpotifyQueue(steps = 1) {
+    const count = Math.max(1, Math.min(50, Math.trunc(Number(steps) || 1)));
+    for (let index = 0; index < count; index++) {
+      const result = await window.tracker.spApi({ path: "/me/player/next", method: "POST" })
+        .catch((error) => ({ ok: false, status: 0, error: error?.message }));
+      if (!result?.ok) return { ...result, source: "spotify-queue", advanced: index };
+      if (index + 1 < count) await playbackWait(140);
+    }
+    return { ok: true, source: "spotify-queue", advanced: count };
   }
 
   function spotifyPagePath(next) {

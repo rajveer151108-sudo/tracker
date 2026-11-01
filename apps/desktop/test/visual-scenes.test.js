@@ -5,7 +5,7 @@ const {
   VISUAL_KEYS, extractPreset, changedVisualKeys, filterVisualPatch,
   averageWordGap, lyricDirectorContext, directorScene, directorDecision, directorSection,
   directorCadenceScene, directorCadenceDelay, directorSectionTiming, directorCutAllowed, directorSectionScene,
-  directorLayoutMinimumDwell, directorLayoutChangeAllowed,
+  directorLayoutMinimumDwell, directorLayoutChangeAllowed, directorSceneMinimumDwell,
 } = require("../src/shared/visual-scenes");
 
 test("song presets contain visual settings only", () => {
@@ -99,6 +99,12 @@ test("cadence and long sections rotate through distinct layout and glow combinat
   assert.equal(directorSectionScene({ section: "rapid", baseVisual: {}, sequence: 3 }).visual.lyricsLayout, "constellation");
   assert.equal(directorSectionScene({ section: "sustain", baseVisual: {}, sequence: 3 }).visual.lyricsLayout, "constellation");
   assert.ok(Math.max(...Array.from({ length: 8 }, (_, index) => directorCadenceDelay(index))) <= 19000);
+  const remembered = directorCadenceScene({ sequence: 4, baseVisual: {}, recentSignatures: ["poster:nebula"] }).visual;
+  assert.notEqual(`${remembered.lyricsLayout}:${remembered.glowStyle}`, "poster:nebula");
+  const sectionPairs = ["quiet", "build", "drop", "rapid", "sustain"].flatMap((section) =>
+    Array.from({ length: 4 }, (_, sequence) => directorSectionScene({ section, baseVisual: {}, sequence }).visual)
+  );
+  assert.ok(!sectionPairs.some((scene) => scene.lyricsLayout === "ribbon" && scene.glowStyle === "nebula"));
 });
 
 test("multimodal decisions combine structural, vocal and future flow signals", () => {
@@ -207,6 +213,8 @@ test("director never overlaps layout transitions or machine-guns scene changes",
     lastLayoutChangeAt: 1000, transitionUntil: 1900, priority: "normal",
   }), true);
   assert.ok(directorLayoutMinimumDwell("cadence") > directorLayoutMinimumDwell("beat-switch"));
+  assert.ok(directorSceneMinimumDwell("cadence") >= 7800);
+  assert.ok(directorSceneMinimumDwell("beat-switch", "frame") >= 8500);
 });
 
 test("section scenes keep the song's base direction while changing composition", () => {

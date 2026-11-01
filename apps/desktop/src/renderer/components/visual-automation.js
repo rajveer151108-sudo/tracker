@@ -150,15 +150,29 @@ function applyDirectorBeatSwitchEnvironment(state, decision, nowMs) {
     previousVisual: activeVisualOverlay || {},
     cue: "beat-switch",
     sequence: state.sceneSequence,
+    recentSignatures: state.recentSceneSignatures,
   });
   const environment = Object.fromEntries(Object.entries(scene.visual)
     .filter(([key]) => DIRECTOR_ENVIRONMENT_KEYS.has(key)));
+  // A production hit should light up immediately without deleting a scene the
+  // viewer has barely seen. In particular, keep Broken Frame on screen for its
+  // full hold and let the palette/strength pulse carry the hit meanwhile.
+  if (nowMs < state.sceneHoldUntil) delete environment.glowStyle;
   state.lastImmediateBeatSwitchAt = nowMs;
   state.directorName = scene.name;
   state.decision = decision;
   if (typeof window.toggleDirectorGlowPalette === "function") window.toggleDirectorGlowPalette();
   playDirectorAccent("production");
   applyVisualPatch(environment, "director-impact", scene.name);
+}
+
+function rememberDirectorScene(state, scene, priority, nowMs) {
+  const visual = scene?.visual || {};
+  const signature = `${visual.lyricsLayout || settings.lyricsLayout}:${visual.glowStyle || settings.glowStyle}`;
+  state.recentSceneSignatures.push(signature);
+  state.recentSceneSignatures = state.recentSceneSignatures.slice(-8);
+  state.lastSceneChangeAt = nowMs;
+  state.sceneHoldUntil = nowMs + window.VisualScenes.directorSceneMinimumDwell(priority, visual.glowStyle || settings.glowStyle);
 }
 
 function playDirectorSectionTransition(section) {
@@ -248,26 +262,28 @@ function applyDirectorBaseScene(state, scene, signature = JSON.stringify(scene))
   state.pendingBaseScene = null;
   state.section = "steady";
   state.sectionCandidate = "steady";
-  state.sectionCandidateSince = performance.now();
-  state.sectionChangedAt = performance.now();
+  const nowMs = performance.now();
+  state.sectionCandidateSince = nowMs;
+  state.sectionChangedAt = nowMs;
   state.queuedSection = null;
   state.queuedDecision = null;
   state.queuedUntil = 0;
   state.lastEvidenceAt = 0;
   state.cadenceIndex = state.sequenceSeed;
   state.sceneSequence = state.sequenceSeed;
-  state.nextCadenceAt = performance.now() + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, true);
+  state.nextCadenceAt = nowMs + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, true);
   state.rapidEvidence = 0;
   state.sustainEvidence = 0;
   Object.keys(state.sectionSignal).forEach((key) => { state.sectionSignal[key] = 0; });
   if (scene.visual?.lyricsLayout && scene.visual.lyricsLayout !== settings.lyricsLayout) {
-    state.lastLayoutChangeAt = performance.now();
+    state.lastLayoutChangeAt = nowMs;
     state.layoutTransitionUntil = state.lastLayoutChangeAt + 900;
     clearTimeout(visualSectionTimer);
     clearTimeout(visualAccentTimer);
     document.body.classList.remove("director-section-changing", "director-accent");
   }
   applyVisualPatch(scene.visual, "director", scene.name);
+  rememberDirectorScene(state, scene, "normal", nowMs);
   updateVisualAutomationStatus();
 }
 
@@ -363,6 +379,9 @@ function beginVisualTrack(np, key, previousKey) {
     lastImmediateBeatSwitchAt: 0,
     lastLayoutChangeAt: 0,
     layoutTransitionUntil: 0,
+    lastSceneChangeAt: 0,
+    sceneHoldUntil: 0,
+    recentSceneSignatures: [],
     sequenceSeed,
     cadenceIndex: sequenceSeed,
     sceneSequence: sequenceSeed,
@@ -412,10 +431,19 @@ function commitDirectorSection(state, section, decision, nowMs) {
     previousVisual: activeVisualOverlay || {},
     cue: decision?.priority,
     sequence: state.sceneSequence,
+    recentSignatures: state.recentSceneSignatures,
   });
   const nextLayout = scene.visual?.lyricsLayout || settings.lyricsLayout;
   const layoutChanged = nextLayout !== settings.lyricsLayout;
   const priority = decision?.priority || "normal";
+  if (nowMs < state.sceneHoldUntil) {
+    state.queuedSection = section;
+    state.queuedDecision = decision;
+    state.queuedSectionSince ||= nowMs;
+    state.queuedReadyAt = Math.max(state.queuedReadyAt || 0, state.sceneHoldUntil);
+    state.queuedUntil = Math.max(state.queuedUntil || 0, state.sceneHoldUntil + 4500);
+    return false;
+  }
   if (layoutChanged && !window.VisualScenes.directorLayoutChangeAllowed({
     currentLayout: settings.lyricsLayout,
     nextLayout,
@@ -460,6 +488,7 @@ function commitDirectorSection(state, section, decision, nowMs) {
   state.nextCadenceAt = nowMs + window.VisualScenes.directorCadenceDelay(state.cadenceIndex, false);
   const duplicateImpactBadge = nowMs - state.lastImmediateBeatSwitchAt < 6500;
   applyVisualPatch(scene.visual, "director-section", scene.name, { badge: !duplicateImpactBadge });
+  rememberDirectorScene(state, scene, priority, nowMs);
   updateVisualAutomationStatus();
   return true;
 }
@@ -470,9 +499,14 @@ function commitDirectorCadence(state, nowMs) {
     previousVisual: activeVisualOverlay || {},
     sequence: state.cadenceIndex,
     signal: state.sectionSignal,
+    recentSignatures: state.recentSceneSignatures,
   });
   const nextLayout = scene.visual?.lyricsLayout || settings.lyricsLayout;
   const layoutChanged = nextLayout !== settings.lyricsLayout;
+  if (nowMs < state.sceneHoldUntil) {
+    state.nextCadenceAt = Math.max(nowMs + 700, state.sceneHoldUntil);
+    return false;
+  }
   if (layoutChanged && !window.VisualScenes.directorLayoutChangeAllowed({
     currentLayout: settings.lyricsLayout,
     nextLayout,
@@ -511,6 +545,7 @@ function commitDirectorCadence(state, nowMs) {
     playDirectorSectionTransition("steady");
   }
   applyVisualPatch(scene.visual, "director-cadence", scene.name);
+  rememberDirectorScene(state, scene, "cadence", nowMs);
   updateVisualAutomationStatus();
   return true;
 }
