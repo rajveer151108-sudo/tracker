@@ -153,9 +153,10 @@ async function launchHomeItem(item,source){
   return homePlay(item);
 }
 async function launchHomeGame(item,source){
-  if(!item?.uri||homeState.slotItem)return;
+  if(!item?.uri)return;
+  if(homeState.slotItem)clearHomePending();
   document.querySelectorAll(".gameCartridgePortal").forEach(node=>node.remove());
-  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
+  const sequence=++homeState.loadSequence;homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.add("game-slotting");
   const heroRect=hero.getBoundingClientRect(),slotRect=hero.querySelector(".arcadeGameSlot")?.getBoundingClientRect();
   const portal=homeElement("div","gameCartridgePortal"),cartridge=homeElement("div","gameCartridgeFlight"),label=homeElement("div","gameCartridgeLabel"),art=homeElement("img");art.alt="";if(item.img)art.src=item.img;label.append(art,homeElement("strong","",item.title));cartridge.append(label);portal.append(cartridge);hero.appendChild(portal);
   const startW=Math.min(210,heroRect.width*.3),slotCenter=slotRect?slotRect.left+slotRect.width/2:heroRect.left+heroRect.width/2,startX=slotCenter-startW/2,cartridgeH=startW/1.55;
@@ -170,16 +171,19 @@ async function launchHomeGame(item,source){
   ],{duration:1000,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"});
   await new Promise(resolve=>setTimeout(resolve,1020));
   flight.cancel();portal.remove();
+  if(sequence!==homeState.loadSequence)return;
   screen.classList.remove("game-slotting");renderHomeHero();
   const started=await homePlay(item);
-  if(!started){homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;renderHomeHero();return;}
-  setTimeout(()=>{if(homeState.slotItem?.uri===item.uri&&homeState.nowPlaying?.uri!==item.uri)clearHomePending(true);},HOME_PENDING_PLAYBACK_TIMEOUT+1200);
+  if(!started){clearHomePending(true);return;}
+  setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri&&homeState.nowPlaying?.uri!==item.uri)clearHomePending(true);},HOME_PENDING_PLAYBACK_TIMEOUT+1200);
 }
 async function launchHomeVinyl(item,source){
-  if(!item?.uri||homeState.slotItem)return;
+  if(!item?.uri)return;
+  if(homeState.slotItem)clearHomePending();
   document.querySelectorAll(".homeCdFlight,.homeCdFlightSleeve").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
-  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");renderHomeHero();
+  homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");
+  if(!hero.querySelector(".homeCdScene"))renderHomeHero();
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const target=hero.querySelector(".homeCdDisc")?.getBoundingClientRect(),src=sourceRect||(hero.querySelector(".homeCdAlbumCard img")||hero).getBoundingClientRect();
   if(target){
@@ -212,16 +216,18 @@ async function launchHomeVinyl(item,source){
   if(sequence!==homeState.loadSequence)return;
   screen.classList.add("cd-seated");
   const started=await homePlay(item);
-  setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("cd-loading","cd-seated");if(!started)clearHomePending();else renderHomeHero();},520);
+  setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("cd-loading","cd-seated");if(!started)clearHomePending(true);},520);
   setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri)clearHomePending(true);},HOME_PENDING_PLAYBACK_TIMEOUT+1200);
 }
 
 async function launchHomeCd(item,source,playback=homePlay){
-  if(!item?.uri||homeState.slotItem)return;
+  if(!item?.uri)return;
+  if(homeState.slotItem)clearHomePending();
   document.querySelectorAll(".homeStereoFlight,.homeStereoFlightCase").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
   homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);
-  const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("stereo-seated");screen.classList.add("stereo-loading");renderHomeHero();
+  const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("stereo-seated");screen.classList.add("stereo-loading");
+  if(!hero.querySelector(".homeStereoScene"))renderHomeHero();
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const target=hero.querySelector(".homeStereoSlot")?.getBoundingClientRect(),src=sourceRect||hero.getBoundingClientRect();
   if(target){
@@ -251,7 +257,7 @@ async function launchHomeCd(item,source,playback=homePlay){
   }else await new Promise(resolve=>setTimeout(resolve,650));
   if(sequence!==homeState.loadSequence)return;
   const started=await playback(item);
-  setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("stereo-loading","stereo-seated");if(!started)clearHomePending();else renderHomeHero();},520);
+  setTimeout(()=>{if(sequence!==homeState.loadSequence)return;screen.classList.remove("stereo-loading","stereo-seated");if(!started)clearHomePending(true);},520);
   setTimeout(()=>{if(sequence===homeState.loadSequence&&homeState.slotItem?.uri===item.uri)clearHomePending(true);},HOME_PENDING_PLAYBACK_TIMEOUT+1200);
 }
 

@@ -12,6 +12,29 @@ const $ = (id) => document.getElementById(id);
   }
 
   const playbackWait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+  async function readSpotifySnapshot(timeoutMs = 1400) {
+    let timer = 0;
+    try {
+      return await Promise.race([
+        Promise.resolve(window.tracker.nowPlaying()).catch(() => null),
+        new Promise((resolve) => { timer = setTimeout(() => resolve(null), timeoutMs); }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  async function confirmSpotifyUri(uri) {
+    // A 204 only means Spotify accepted the request. Some desktop sessions
+    // acknowledge it but never move the player. Give the API a short window
+    // to settle, then let the native command take over exactly once.
+    for (const delay of [120, 280, 520]) {
+      await playbackWait(delay);
+      const snapshot = await readSpotifySnapshot(720);
+      const active = snapshot?.state === "playing" || snapshot?.state === "paused";
+      if (active && String(snapshot?.uri || snapshot?.id || "") === uri) return true;
+    }
+    return false;
+  }
   function playbackNeedsDevice(result) {
     return result?.status === 404 || /device|player/i.test(String(result?.error || ""));
   }
@@ -36,13 +59,25 @@ const $ = (id) => document.getElementById(id);
     }).catch((error) => ({ ok: false, status: 0, error: error?.message }));
 
     let remote = await requestPlay(spotifyPlaybackBody(uri, context));
-    if (remote?.ok) return { ...remote, source: "web-api" };
+    if (remote?.ok) {
+      if (await confirmSpotifyUri(uri)) return { ...remote, source: "web-api" };
+      const fallback = await window.tracker.playUri(uri, context)
+        .catch((error) => ({ ok: false, error: error?.message }));
+      if (fallback?.ok) return { ...fallback, source: "web-api-native-confirmation" };
+      return { ok: false, status: remote.status, source: "failed", error: fallback?.error || "Spotify accepted the song but did not start it" };
+    }
 
     // A playlist can change between loading and clicking, making its offset
     // invalid even though the song itself remains playable. Retry it directly.
     if (context && /^spotify:(?:track|episode):/.test(uri)) {
       remote = await requestPlay(spotifyPlaybackBody(uri));
-      if (remote?.ok) return { ...remote, source: "web-api-direct" };
+      if (remote?.ok) {
+        if (await confirmSpotifyUri(uri)) return { ...remote, source: "web-api-direct" };
+        const fallback = await window.tracker.playUri(uri)
+          .catch((error) => ({ ok: false, error: error?.message }));
+        if (fallback?.ok) return { ...fallback, source: "web-api-direct-native-confirmation" };
+        return { ok: false, status: remote.status, source: "failed", error: fallback?.error || "Spotify accepted the song but did not start it" };
+      }
     }
 
     // Spotify returns 404 when no player is active. Pick an existing desktop
@@ -61,7 +96,13 @@ const $ = (id) => document.getElementById(id);
           await playbackWait(180);
           remote = await requestPlay(spotifyPlaybackBody(uri, context), device.id);
           if (!remote?.ok && context) remote = await requestPlay(spotifyPlaybackBody(uri), device.id);
-          if (remote?.ok) return { ...remote, source: "web-api-device" };
+          if (remote?.ok) {
+            if (await confirmSpotifyUri(uri)) return { ...remote, source: "web-api-device" };
+            const fallback = await window.tracker.playUri(uri, context)
+              .catch((error) => ({ ok: false, error: error?.message }));
+            if (fallback?.ok) return { ...fallback, source: "web-api-device-native-confirmation" };
+            return { ok: false, status: remote.status, source: "failed", error: fallback?.error || "Spotify accepted the song but did not start it" };
+          }
         }
       }
     }

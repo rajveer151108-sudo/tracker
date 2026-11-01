@@ -583,7 +583,10 @@
     pollInFlight = true;
     try {
       const observationStartedAt = performance.now();
-      const np = await window.tracker.nowPlaying();
+      // Never let one wedged AppleScript/IPC read freeze every later poll.
+      // Keeping the last good frame is less disruptive than clearing the UI.
+      const np = await readSpotifySnapshot(2200);
+      if (!np) return;
       if (np.state === "playing" || np.state === "paused") {
         const nextTrackId = currentTrackKey(np);
         const trackChanged = nextTrackId !== trackId;

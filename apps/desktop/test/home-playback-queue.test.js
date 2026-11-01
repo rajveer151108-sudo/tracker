@@ -27,7 +27,8 @@ async function routePlayback({ apiResults = [{ ok: true }], contextUri = null, n
         },
       },
     },
-    setTimeout(callback) { callback(); return 1; },
+    setTimeout(callback) { return globalThis.setTimeout(callback, 0); },
+    clearTimeout(timer) { globalThis.clearTimeout(timer); },
     calls,
     result: null,
   };
@@ -72,7 +73,7 @@ test("left-rack playback uses one focus-safe Web API command when available", as
   const { calls, result } = await routePlayback();
   assert.equal(calls.api, 1);
   assert.equal(calls.desktop, 0);
-  assert.equal(calls.nowPlaying, 0);
+  assert.equal(calls.nowPlaying, 1);
   assert.equal(result.source, "web-api");
 });
 
@@ -109,14 +110,27 @@ test("left-rack playback uses the shielded desktop command when the API session 
   assert.equal(result.ok, true);
 });
 
-test("an accepted Spotify command is never duplicated while now-playing catches up", async () => {
+test("an accepted Spotify command is confirmed without duplicating playback", async () => {
   const { calls, result } = await routePlayback({
     apiResults: [{ ok: true, status: 204 }],
   });
   assert.equal(calls.api, 1);
   assert.equal(calls.desktop, 0);
-  assert.equal(calls.nowPlaying, 0);
+  assert.equal(calls.nowPlaying, 1);
   assert.equal(result.source, "web-api");
+  assert.equal(result.ok, true);
+});
+
+test("an accepted command that never starts gets one native fallback", async () => {
+  const stale = { state: "playing", uri: "spotify:track:OLD0000000" };
+  const { calls, result } = await routePlayback({
+    apiResults: [{ ok: true, status: 204 }],
+    nowPlayingResults: [stale, stale, stale],
+  });
+  assert.equal(calls.api, 1);
+  assert.equal(calls.nowPlaying, 3);
+  assert.equal(calls.desktop, 1);
+  assert.equal(result.source, "web-api-native-confirmation");
   assert.equal(result.ok, true);
 });
 
