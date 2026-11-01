@@ -2,6 +2,7 @@
   // Per-frame loop
   // =====================================================================
   let lastFrameT = performance.now(), lastUiT = 0;
+  let lastDirectorPerformanceT = 0;
   let edgeFramePhase = 0;
   const CONSTELLATION_SIZE = 16;
   const constellationLayouts = new Map();
@@ -59,6 +60,26 @@
     if (!Number.isFinite(gap) || gap <= 0) return 0;
     return Math.max(0, Math.min(1.5, (1 / gap - .7) / 3.8));
   }
+  function addLyricRange(indices, center, radius) {
+    if (!Number.isInteger(center) || center < 0) return;
+    for (let index = Math.max(0, center - radius); index <= Math.min(lineEls.length - 1, center + radius); index++) indices.add(index);
+  }
+  function addConstellationGroup(indices, center) {
+    if (!Number.isInteger(center) || center < 0) return;
+    const start = Math.floor(center / CONSTELLATION_SIZE) * CONSTELLATION_SIZE;
+    for (let index = start; index < Math.min(lineEls.length, start + CONSTELLATION_SIZE); index++) indices.add(index);
+  }
+  function lyricStateIndices(index, previous, layout) {
+    const indices = new Set();
+    const radius = layout === "stack" || layout === "wordstack" || layout === "buildstack" ? 7 : 5;
+    addLyricRange(indices, previous, radius);
+    addLyricRange(indices, index, radius);
+    if (layout === "constellation") {
+      addConstellationGroup(indices, previous);
+      addConstellationGroup(indices, index);
+    }
+    return indices;
+  }
   function starPath(cx, cy, outer, inner = outer * .44, points = 5) {
     const vertices = [];
     for (let i = 0; i < points * 2; i++) {
@@ -68,8 +89,9 @@
     }
     return "M" + vertices.join(" L") + " Z";
   }
-  function updateCreativeLayout(idx) {
-    const layout = settings.lyricsLayout;
+  let creativeLayoutState = { layout: "", index: -1, rows: null };
+  function updateCreativeLayout(idx, force = false) {
+    const layout = document.body.dataset.layout || settings.lyricsLayout;
     const creative = isCreativeLayout(layout);
     if (creative) $("lines").style.transform = "none";
     const constellation = layout === "constellation" && idx >= 0;
@@ -78,7 +100,13 @@
       ? lineEls.slice(groupStart, groupStart + CONSTELLATION_SIZE).map((el) => (el?.textContent || "").trim().length)
       : [];
     const template = constellation ? constellationLayout(groupStart, constellationLengths) : null;
-    lineEls.forEach((el, i) => {
+    const fullPass = force || creativeLayoutState.rows !== lineEls || creativeLayoutState.layout !== layout;
+    const affected = fullPass
+      ? new Set(lineEls.map((_, index) => index))
+      : lyricStateIndices(idx, creativeLayoutState.index, layout);
+    for (const i of affected) {
+      const el = lineEls[i];
+      if (!el) continue;
       const relative = idx < 0 ? 99 : i - idx;
       el.dataset.slot = String(Math.max(-5, Math.min(5, relative)));
       if (constellation) {
@@ -91,7 +119,7 @@
           const lyricLength = (el.textContent || "").trim().length;
           el.style.setProperty("--node-x", point[0] + "%");
           el.style.setProperty("--node-y", point[1] + "%");
-          el.style.setProperty("--node-font-scale", lyricLength > 52 ? ".25" : lyricLength > 36 ? ".29" : lyricLength > 24 ? ".33" : ".38");
+          el.style.setProperty("--node-font-scale", lyricLength > 52 ? ".29" : lyricLength > 36 ? ".33" : lyricLength > 24 ? ".38" : ".44");
         }
       } else {
         el.classList.remove("constellation-current");
@@ -101,7 +129,8 @@
             : layout === "morphstack" || layout === "kinetic" ? 1 : 0);
         el.classList.toggle("creative-hidden", creative && !visible);
       }
-    });
+    }
+    creativeLayoutState = { layout, index: idx, rows: lineEls };
 
     const path = $("constellationPath");
     const nodes = $("constellationNodes");
@@ -132,7 +161,10 @@
     // Keep full fidelity while music and the visible experience need it. A
     // paused or hidden window has no new audio/lyric information, so waking
     // the renderer 60 times a second only creates heat.
-    const fps = document.hidden ? 10 : playing ? requestedFps : Math.min(15, requestedFps);
+    const lyricsFps = settings.performanceMode === "battery" ? 24 : 60;
+    const fps = document.hidden ? 10 : playing
+      ? (document.body.dataset.view === "lyrics" ? lyricsFps : requestedFps)
+      : Math.min(15, requestedFps);
     if (tNow - lastFrameT < 1000 / fps - 1) return;
     const dt = Math.max(0.001, Math.min(0.1, (tNow - lastFrameT) / 1000));
     lastFrameT = tNow;
@@ -144,7 +176,13 @@
 
     const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0);
     const t = now + offset;
-    if ((settings.directorMode || settings.songPresetsEnabled) && typeof updateVisualAutomationPerformance === "function") {
+    // A word that starts its entrance exactly on the provider timestamp reads
+    // late because the first animation frame is still transparent. Give lyric
+    // presentation a tiny visual lead while keeping Director/audio analysis on
+    // the unmodified transport clock.
+    const lyricT = t + (isWordLayout() ? .055 : .02);
+    if (tNow - lastDirectorPerformanceT >= 50 && (settings.directorMode || settings.songPresetsEnabled) && typeof updateVisualAutomationPerformance === "function") {
+      lastDirectorPerformanceT = tNow;
       const directorLineIndex = sourceLines.length ? window.LyricTiming.activeLyricIndex(sourceLines, t) : -1;
       const lyricContext = window.VisualScenes.lyricDirectorContext(sourceLines, directorLineIndex, t, durSec);
       updateVisualAutomationPerformance({
@@ -227,19 +265,33 @@
 
     let wordLife = 0, wordAttack = 0, wordSustain = 0, timingConfidence = 0, lineEmotion = 0, wordPaceTarget = 0;
     if (document.body.dataset.view === "lyrics" && lines.length) {
-      const idx = window.LyricTiming.activeLyricIndex(lines, t);
+      const idx = window.LyricTiming.activeLyricIndex(lines, lyricT);
 
       if (idx !== activeIdx) {
         // tidy the line that was active before
-        const old = lineEls[prevActive];
+        const previousIdx = prevActive;
+        const old = lineEls[previousIdx];
         if (old && prevActive !== idx) { old._w.spans.forEach((s) => s.classList.remove("cur", "nearL", "nearR")); old._w.cur = -1; }
         activeIdx = idx;
         prevActive = idx;
         document.body.classList.toggle("lyrics-waiting", idx < 0);
-        const stackLayout = settings.lyricsLayout === "stack" || settings.lyricsLayout === "wordstack";
+        const layout = document.body.dataset.layout || settings.lyricsLayout;
+        if (isWordLayout(layout) && idx >= 0) {
+          const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
+          wordPaceTarget = paceFromGap(gap);
+          const motion = settings.lyricsMotion || "slide";
+          const factor = motion === "cube" ? 900 : motion === "glide" ? 850 : motion === "slide" ? 700 : 450;
+          const min = motion === "cube" ? 120 : motion === "glide" ? 110 : motion === "slide" ? 75 : 55;
+          const max = motion === "cube" ? 280 : motion === "glide" ? 320 : motion === "slide" ? 220 : 110;
+          root.style.setProperty("--word-step-ms", Math.round(Math.max(min, Math.min(max, gap * factor))) + "ms");
+          root.style.setProperty("--word-attack-ms", Math.round(Math.max(55, Math.min(110, gap * 320))) + "ms");
+        }
+        const stackLayout = layout === "stack" || layout === "wordstack";
         const stackLines = Math.max(2, Math.min(6, Number(settings.lyricsHistoryLines) || 4));
-        const buildStack = settings.lyricsLayout === "buildstack";
-        lineEls.forEach((el, i) => {
+        const buildStack = layout === "buildstack";
+        for (const i of lyricStateIndices(idx, previousIdx, layout)) {
+          const el = lineEls[i];
+          if (!el) continue;
           el.classList.toggle("active", i === idx);
           el.classList.toggle("stack-hidden", stackLayout && idx >= 0 && (i > idx || i <= idx - stackLines));
           el.dataset.d = idx < 0 ? "4" : String(Math.min(Math.abs(i - idx), 4));
@@ -253,30 +305,21 @@
             });
           }
           if (el._w.emojiSpan) el._w.emojiSpan.classList.toggle("word-revealed", idx >= 0 && i < idx);
-        });
+        }
         updateCreativeLayout(idx);
         clearFit();
-        const impactLayout = settings.lyricsLayout === "flash" || settings.lyricsLayout === "wordstream";
-        const fitLayout = impactLayout || settings.lyricsLayout === "captioncards" || settings.lyricsLayout === "scroll";
-        if (isWordLayout() && idx >= 0) {
-          const gap = Math.max(0.06, (lines[idx + 1]?.t || lines[idx].end || lines[idx].t + 0.25) - lines[idx].t);
-          wordPaceTarget = paceFromGap(gap);
-          const motion = settings.lyricsMotion || "slide";
-          const factor = motion === "cube" ? 900 : motion === "glide" ? 850 : motion === "slide" ? 700 : 450;
-          const min = motion === "cube" ? 120 : motion === "glide" ? 110 : motion === "slide" ? 75 : 55;
-          const max = motion === "cube" ? 280 : motion === "glide" ? 320 : motion === "slide" ? 220 : 110;
-          root.style.setProperty("--word-step-ms", Math.round(Math.max(min, Math.min(max, gap * factor))) + "ms");
-        }
+        const impactLayout = layout === "flash" || layout === "wordstream";
+        const fitLayout = layout === "wordstream";
         if (fitLayout && settings.lyricsFit && idx >= 0) {
           fitLine(lineEls[idx], lines[idx].text);
         }
-        lineEls.forEach((el) => el.classList.remove("flash", "word-hit", "line-arrive", "creative-arrive"));
+        for (const i of lyricStateIndices(idx, previousIdx, layout)) lineEls[i]?.classList.remove("flash", "word-hit", "line-arrive", "creative-arrive");
         if (idx >= 0) {
           void lineEls[idx].offsetWidth;
           lineEls[idx].classList.add(isCreativeLayout() ? "creative-arrive" : "line-arrive");
         }
         if (idx >= 0 && impactLayout) {
-          lineEls[idx].classList.add(settings.lyricsLayout === "wordstream" ? "word-hit" : "flash");
+          lineEls[idx].classList.add(layout === "wordstream" ? "word-hit" : "flash");
         }
         if (idx >= 0) {
           const focus = lineEls[idx];
@@ -299,13 +342,13 @@
         if (isWordLayout()) wordPaceTarget = paceFromGap(Math.max(.06, end - start));
         // the line "finishes" a little before the next one starts so it reads as sung
         const span = Math.max(0.4, Math.min(end - start, 8) * 0.9);
-        const p = clamp01((t - start) / span);
-        const buildStack = settings.lyricsLayout === "buildstack";
+        const p = clamp01((lyricT - start) / span);
+        const buildStack = (document.body.dataset.layout || settings.lyricsLayout) === "buildstack";
         const mode = buildStack ? "word" : (document.body.dataset.hl || settings.lyricsHighlight);
 
         let curIdx = -1;
         for (let i = 0; i < W.spans.length; i++) {
-          const rawPw = W.timed ? clamp01((t - W.wt[i]) / Math.max(0.06, W.we[i] - W.wt[i]))
+          const rawPw = W.timed ? clamp01((lyricT - W.wt[i]) / Math.max(0.06, W.we[i] - W.wt[i]))
             : clamp01((p - W.starts[i]) / (W.ends[i] - W.starts[i]));
           const pw = mode === "whole" ? 1 : rawPw;
           if (pw > 0 && pw < 1) wordLife = Math.max(wordLife, Math.sin(Math.PI * pw));

@@ -55,7 +55,9 @@
     root.style.setProperty("--tour", feel.tour + "s");
     if (typeof setAlbumTourDuration === "function") setAlbumTourDuration(feel.tour);
     root.style.setProperty("--lines-ms", feel.lines + "ms");
-    document.body.dataset.hl = (settings.genreFeel && feel.highlight) || settings.lyricsHighlight || "word";
+    document.body.dataset.hl = hasRealWordTiming()
+      ? ((settings.genreFeel && feel.highlight) || settings.lyricsHighlight || "word")
+      : "whole";
     document.body.dataset.dance = settings.lyricsDanceStyle === "auto"
       ? (GENRE_DANCES[bucket] || "subtle")
       : (settings.lyricsDanceStyle || "subtle");
@@ -130,18 +132,43 @@
 
   const WORD_LAYOUTS = new Set(["wordstream", "wordstack", "kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon"]);
   const CREATIVE_LAYOUTS = new Set(["kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "captioncards", "poster"]);
+  const LINE_LAYOUT_FALLBACKS = Object.freeze({
+    wordstream: "scroll",
+    wordstack: "stack",
+    kinetic: "captioncards",
+    morphstack: "scroll",
+    prism: "captioncards",
+    buildstack: "stack",
+    constellation: "stack",
+    ribbon: "scroll",
+  });
   const LAYOUT_LABELS = {
     wordstream: "Word stream", wordstack: "Word stack", stack: "Lyric stack",
     kinetic: "Kinetic stack", morphstack: "Morph stack", prism: "Prism roll", buildstack: "Phrase builder",
     constellation: "Constellation", ribbon: "Ribbon trail", captioncards: "Caption cards",
     poster: "Poster cutout",
   };
-  function isWordLayout(layout = settings.lyricsLayout) { return WORD_LAYOUTS.has(layout); }
-  function isCreativeLayout(layout = settings.lyricsLayout) { return CREATIVE_LAYOUTS.has(layout); }
+  function hasRealWordTiming(input = sourceLines) {
+    const lyricLines = (Array.isArray(input) ? input : []).filter((line) => String(line?.text || "").trim());
+    if (!lyricLines.length) return false;
+    const preciselyTimed = lyricLines.filter((line) => {
+      const words = Array.isArray(line?.words) ? line.words : [];
+      return words.some((word) => String(word?.text || "").trim() && Number.isFinite(Number(word?.t)) && !word?.estimated);
+    });
+    return preciselyTimed.length >= Math.max(1, Math.ceil(lyricLines.length * .35));
+  }
+  function resolveLyricsLayout(layout = settings.lyricsLayout, input = sourceLines) {
+    return WORD_LAYOUTS.has(layout) && !hasRealWordTiming(input)
+      ? (LINE_LAYOUT_FALLBACKS[layout] || "scroll")
+      : layout;
+  }
+  function currentLyricsLayout() { return document.body.dataset.layout || resolveLyricsLayout(); }
+  function isWordLayout(layout = currentLyricsLayout()) { return WORD_LAYOUTS.has(layout); }
+  function isCreativeLayout(layout = currentLyricsLayout()) { return CREATIVE_LAYOUTS.has(layout); }
 
   function updateTimingInfo() {
     $("estimate").textContent = timingInfo
-      ? timingInfo + (LAYOUT_LABELS[settings.lyricsLayout] ? " \u00b7 " + LAYOUT_LABELS[settings.lyricsLayout] : "")
+      ? timingInfo + (LAYOUT_LABELS[currentLyricsLayout()] ? " \u00b7 " + LAYOUT_LABELS[currentLyricsLayout()] : "")
       : "";
   }
 
@@ -165,27 +192,38 @@
     const chosen = visible[0];
     if (!chosen) return false;
     const { el, style, rect, opacity } = chosen;
+    const stageWidth = stageRect.width;
+    const stageHeight = stageRect.height;
+    const snapshotWidth = Math.min(Math.max(220, rect.width), stageWidth * .84);
+    const snapshotHeight = Math.min(Math.max(72, rect.height), stageHeight * .28);
+    const snapshotLeft = Math.max(stageWidth * .08, Math.min(stageWidth * .92 - snapshotWidth, rect.left - stageRect.left + (rect.width - snapshotWidth) / 2));
+    const snapshotTop = Math.max(stageHeight * .14, Math.min(stageHeight * .86 - snapshotHeight, rect.top - stageRect.top + (rect.height - snapshotHeight) / 2));
+    const snapshotFontSize = Math.min(Number.parseFloat(style.fontSize) || 64, 96, stageHeight * .13);
     const snapshot = document.createElement("div");
     snapshot.className = "lyric-transition-line";
     snapshot.textContent = el.textContent;
     const transparent = style.color === "rgba(0, 0, 0, 0)" || style.color === "transparent";
     Object.assign(snapshot.style, {
-      left: `${rect.left - stageRect.left}px`,
-      top: `${rect.top - stageRect.top}px`,
-      width: `${rect.width}px`,
-      height: `${rect.height}px`,
+      left: `${snapshotLeft}px`,
+      top: `${snapshotTop}px`,
+      width: `${snapshotWidth}px`,
+      height: `${snapshotHeight}px`,
       opacity: String(Math.min(1, opacity)),
       color: transparent ? "rgba(255,255,255,.96)" : style.color,
       fontFamily: style.fontFamily,
-      fontSize: style.fontSize,
+      fontSize: `${snapshotFontSize}px`,
       fontStyle: style.fontStyle,
       fontWeight: style.fontWeight,
       letterSpacing: style.letterSpacing,
-      lineHeight: style.lineHeight,
+      lineHeight: "1.08",
       textAlign: style.textAlign,
       textShadow: style.textShadow,
-      whiteSpace: style.whiteSpace,
+      whiteSpace: "normal",
       overflowWrap: style.overflowWrap,
+      overflow: "hidden",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: style.textAlign === "left" ? "flex-start" : style.textAlign === "right" ? "flex-end" : "center",
     });
     clearTimeout(lyricTransitionFrameTimer);
     layer.replaceChildren(snapshot);
@@ -195,7 +233,7 @@
     return true;
   }
 
-  function clearLyricTransitionFrame(delay = 620) {
+  function clearLyricTransitionFrame(delay = 820) {
     const layer = $("lyricTransitionLayer");
     clearTimeout(lyricTransitionFrameTimer);
     lyricTransitionFrameTimer = setTimeout(() => {
@@ -208,11 +246,13 @@
   // synchronously so creative layouts never paint all rows in the same slot
   // while waiting for the next animation frame.
   function primeLyricsLayout() {
-    const now = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0) + offset;
+    const baseNow = posSec + (playing ? (performance.now() - syncAt) / 1000 : 0) + offset;
+    const now = baseNow + (isWordLayout() ? .055 : .02);
     const idx = lines.length ? window.LyricTiming.activeLyricIndex(lines, now) : -1;
-    const stackLayout = settings.lyricsLayout === "stack" || settings.lyricsLayout === "wordstack";
+    const layout = currentLyricsLayout();
+    const stackLayout = layout === "stack" || layout === "wordstack";
     const stackLines = Math.max(2, Math.min(6, Number(settings.lyricsHistoryLines) || 4));
-    const buildStack = settings.lyricsLayout === "buildstack";
+    const buildStack = layout === "buildstack";
     document.body.classList.toggle("lyrics-waiting", idx < 0);
     lineEls.forEach((el, index) => {
       el.classList.toggle("active", index === idx);
@@ -228,12 +268,17 @@
       }
       if (el._w.emojiSpan) el._w.emojiSpan.classList.toggle("word-revealed", idx >= 0 && index < idx);
     });
-    if (typeof updateCreativeLayout === "function") updateCreativeLayout(idx);
+    if (typeof updateCreativeLayout === "function") updateCreativeLayout(idx, true);
   }
 
   function rebuildLyricsLayout() {
     clearFit();
-    lines = isWordLayout()
+    const layout = resolveLyricsLayout();
+    document.body.dataset.requestedLayout = settings.lyricsLayout;
+    document.body.dataset.layout = layout;
+    if (typeof syncRenderedLyricsLayout === "function") syncRenderedLyricsLayout(layout);
+    document.body.classList.toggle("line-timed-only", !hasRealWordTiming());
+    lines = isWordLayout(layout)
       ? wordStreamRows(sourceLines)
       : window.LyricEffects.decorateLines(sourceLines);
     buildLines();
@@ -244,6 +289,7 @@
   function setLyrics(nextLines, info) {
     sourceLines = Array.isArray(nextLines) ? nextLines : [];
     timingInfo = info || "";
+    applyFeel();
     rebuildLyricsLayout();
   }
 
@@ -339,8 +385,9 @@
     );
     root.style.setProperty("--lyric-box-width", metrics.width.toFixed(1) + "px");
     root.style.setProperty("--lyric-box-height", metrics.height.toFixed(1) + "px");
+    const layout = currentLyricsLayout();
     const compositionCap = window.LyricBox.compositionFontCap(
-      settings.lyricsLayout,
+      layout,
       stage.clientWidth,
       stage.clientHeight,
       { historyLines: settings.lyricsHistoryLines, immersive: immersiveNow },
@@ -350,15 +397,15 @@
     } else {
       root.style.removeProperty("--lyric-composition-cap");
     }
-    const boxLayout = settings.lyricsFit && BOX_FIT_LAYOUTS.has(settings.lyricsLayout);
+    const boxLayout = settings.lyricsFit && BOX_FIT_LAYOUTS.has(layout);
     lineEls.forEach((el) => {
       if (!boxLayout) return el.style.removeProperty("--lyric-box-font");
-      const fitMetrics = settings.lyricsLayout === "prism"
+      const fitMetrics = layout === "prism"
         ? { ...metrics, width: metrics.width * .74 }
         : metrics;
       const fontSize = window.LyricBox.fitTextToLyricBox(el.dataset.lyric || el.textContent, fitMetrics, {
         max: Math.min(immersiveNow ? 460 : 420, compositionCap),
-        lineHeight: settings.lyricsLayout === "wordstream" ? 1.12 : .96,
+        lineHeight: layout === "wordstream" ? 1.12 : .96,
       });
       el.style.setProperty("--lyric-box-font", fontSize.toFixed(1) + "px");
     });
@@ -378,12 +425,13 @@
     if (!words || !(text || "").replace(/[\u266A\s]/g, "")) return;       // empty or just a note symbol
     const stage = $("stage");
     const immersiveNow = document.body.classList.contains("immersive");
-    const cubeNow = settings.lyricsLayout === "wordstream" && settings.lyricsMotion === "cube";
+    const layout = currentLyricsLayout();
+    const cubeNow = layout === "wordstream" && settings.lyricsMotion === "cube";
     const metrics = window.LyricBox.lyricBoxMetrics(settings.lyricsSize, stage.clientWidth, stage.clientHeight, immersiveNow);
     const boxW = metrics.width;
     const boxH = metrics.height;
     const compositionCap = window.LyricBox.compositionFontCap(
-      settings.lyricsLayout,
+      layout,
       stage.clientWidth,
       stage.clientHeight,
       { historyLines: settings.lyricsHistoryLines, immersive: immersiveNow },

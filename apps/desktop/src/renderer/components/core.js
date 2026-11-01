@@ -7,6 +7,10 @@ const $ = (id) => document.getElementById(id);
   const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
 
   function spotifyPlaybackBody(uri, context = null) {
+    if (Array.isArray(context?.uris)) {
+      const uris = [...new Set(context.uris.filter((entry) => /^spotify:(?:track|episode):/.test(String(entry))))].slice(0, 100);
+      return { uris: uris.length ? uris : [uri] };
+    }
     if (context) return { context_uri: context, offset: { uri } };
     return /^spotify:(?:track|episode):/.test(uri) ? { uris: [uri] } : { context_uri: uri };
   }
@@ -58,10 +62,11 @@ const $ = (id) => document.getElementById(id);
       body,
     }).catch((error) => ({ ok: false, status: 0, error: error?.message }));
 
+    const nativeContext = typeof context === "string" ? context : null;
     let remote = await requestPlay(spotifyPlaybackBody(uri, context));
     if (remote?.ok) {
       if (await confirmSpotifyUri(uri)) return { ...remote, source: "web-api" };
-      const fallback = await window.tracker.playUri(uri, context)
+      const fallback = await window.tracker.playUri(uri, nativeContext)
         .catch((error) => ({ ok: false, error: error?.message }));
       if (fallback?.ok) return { ...fallback, source: "web-api-native-confirmation" };
       return { ok: false, status: remote.status, source: "failed", error: fallback?.error || "Spotify accepted the song but did not start it" };
@@ -98,7 +103,7 @@ const $ = (id) => document.getElementById(id);
           if (!remote?.ok && context) remote = await requestPlay(spotifyPlaybackBody(uri), device.id);
           if (remote?.ok) {
             if (await confirmSpotifyUri(uri)) return { ...remote, source: "web-api-device" };
-            const fallback = await window.tracker.playUri(uri, context)
+            const fallback = await window.tracker.playUri(uri, nativeContext)
               .catch((error) => ({ ok: false, error: error?.message }));
             if (fallback?.ok) return { ...fallback, source: "web-api-device-native-confirmation" };
             return { ok: false, status: remote.status, source: "failed", error: fallback?.error || "Spotify accepted the song but did not start it" };
@@ -109,7 +114,7 @@ const $ = (id) => document.getElementById(id);
 
     // Last resort for expired API sessions and Spotify-side outages. The main
     // process shields Afterglow above Spotify while this desktop command runs.
-    const fallback = await window.tracker.playUri(uri, context)
+    const fallback = await window.tracker.playUri(uri, nativeContext)
       .catch((error) => ({ ok: false, error: error?.message }));
     if (fallback?.ok) return { ...fallback, source: "desktop-shielded", remoteError: remote?.error || "" };
     let directFallback = fallback;

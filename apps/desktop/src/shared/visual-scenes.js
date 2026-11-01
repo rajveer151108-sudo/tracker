@@ -281,6 +281,17 @@
     },
   ]);
 
+  // Layout choreography and lighting used to be welded into fixed pairs.
+  // Shuffle the two libraries independently so every song gets a broader,
+  // repeat-resistant set of combinations without becoming non-deterministic
+  // when the renderer is rebuilt or playback is resumed.
+  const CADENCE_GLOW_VARIANTS = Object.freeze(CADENCE_VARIANTS.map((variant) => ({
+    name: variant.glowStyle,
+    glowStyle: variant.glowStyle,
+    glowStrength: variant.glowStrength,
+    glowThickness: variant.glowThickness,
+  })));
+
   const visualSignature = (visual = {}) => `${visual.lyricsLayout || ""}:${visual.glowStyle || ""}`;
   function variedChoice(choices, sequence, previous, recentSignatures = []) {
     const start = Math.abs(Math.trunc(sequence)) % choices.length;
@@ -304,11 +315,19 @@
     const futurePace = Math.max(0, Number(signal.nextPace) || 0, Number(signal.forecastFlow) || 0);
     const normalVerse = pace >= .12 && pace <= .72 && density <= .82;
     const previous = { ...baseVisual, ...previousVisual };
-    const index = variedChoice(CADENCE_VARIANTS, sequence, previous, recentSignatures);
-    const { name, ...patch } = CADENCE_VARIANTS[index];
+    const layoutIndex = variedChoice(CADENCE_VARIANTS, sequence * 11 + 3, previous, recentSignatures);
+    const glowIndex = variedChoice(CADENCE_GLOW_VARIANTS, sequence * 7 + 5, previous, recentSignatures);
+    const {
+      name: layoutName,
+      glowStyle: _pairedGlowStyle,
+      glowStrength: _pairedGlowStrength,
+      glowThickness: _pairedGlowThickness,
+      ...layoutPatch
+    } = CADENCE_VARIANTS[layoutIndex];
+    const { name: glowName, ...glowPatch } = CADENCE_GLOW_VARIANTS[glowIndex];
     return {
-      name,
-      visual: { ...baseVisual, ...patch },
+      name: `${layoutName} / ${glowName}`,
+      visual: { ...baseVisual, ...layoutPatch, ...glowPatch },
       reasons: normalVerse
         ? ["normal-paced verse", "scheduled scene evolution"]
         : futurePace > pace + .28 ? ["faster phrase ahead", "scheduled scene evolution"]

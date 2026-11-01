@@ -8,7 +8,7 @@
   body.immersive:not(.awake) { cursor: none; }
   /* Creative layouts own their scale. Applying the generic fullscreen boost to
      them makes their additional transforms compound into viewport-sized type. */
-  body.immersive[data-layout="scroll"] .line { font-size: calc(var(--lyric-size) * 1.6); }
+  body.immersive[data-layout="scroll"] .line { font-size: clamp(30px, calc(var(--lyric-size) * .7), 92px); }
   body.immersive #lines { padding: 0 8%; }
   body.immersive footer { padding-bottom: 10px; }
 

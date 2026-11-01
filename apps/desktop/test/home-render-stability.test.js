@@ -37,3 +37,10 @@ test("left-rack playback acknowledges the click before its insertion animation",
   assert.match(homeCss, /\.homeSong\.launching/);
   assert.match(homeSource, /clearHomeLaunchSources\(\)/);
 });
+
+test("Home freezes the hero DOM while a physical player animation is running", () => {
+  assert.match(homeSource, /function homeHeroRenderLocked\(\)/);
+  assert.match(homeSource, /if\(!force&&hero\.childElementCount&&homeHeroRenderLocked\(\)\)\{homeState\.heroRenderPending=true;return;\}/);
+  assert.match(homeSource, /homeStereoScene"\)\)renderHomeHero\(true\)/);
+  assert.match(homeSource, /homeCdScene"\)\)renderHomeHero\(true\)/);
+});

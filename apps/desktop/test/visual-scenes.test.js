@@ -63,14 +63,14 @@ test("lyric context exposes exact and estimated word boundaries for mid-verse pr
   assert.equal(estimated.wordIndex, 3);
 });
 
-test("scheduled cadence leads with Constellation and never leaves a whole song visually static", () => {
+test("scheduled cadence shuffles layouts and lighting independently without leaving a song static", () => {
   const scene = directorCadenceScene({
     sequence: 0,
     baseVisual: { backdropStyle: "album", lyricsFont: "round" },
     signal: { pace: .45, density: .55 },
   });
   assert.equal(scene.visual.lyricsLayout, "constellation");
-  assert.equal(scene.visual.glowStyle, "comet");
+  assert.equal(scene.visual.glowStyle, "aurora");
   assert.equal(Object.hasOwn(scene.visual, "lyricsSize"), false);
   assert.equal(Object.hasOwn(directorScene({ genre: "rap", wordGap: .2 }).visual, "lyricsSize"), false);
   for (const section of ["quiet", "build", "drop", "rapid", "sustain"]) {
@@ -80,12 +80,10 @@ test("scheduled cadence leads with Constellation and never leaves a whole song v
   assert.ok(scene.reasons.includes("normal-paced verse"));
   assert.ok(directorCadenceDelay(0, true) <= 21000);
   assert.ok(Math.max(...Array.from({ length: 8 }, (_, index) => directorCadenceDelay(index))) <= 31500);
-  const ribbon = directorCadenceScene({ sequence: 1, baseVisual: {}, signal: { pace: .4, density: .5 } });
-  assert.equal(ribbon.visual.lyricsLayout, "ribbon");
-  assert.equal(ribbon.visual.glowStyle, "eclipse");
-  const poster = directorCadenceScene({ sequence: 4, baseVisual: {}, signal: { pace: .4, density: .5 } });
-  assert.equal(poster.visual.lyricsLayout, "poster");
-  assert.equal(poster.visual.glowStyle, "nebula");
+  const second = directorCadenceScene({ sequence: 1, baseVisual: {}, signal: { pace: .4, density: .5 } });
+  assert.notEqual(second.visual.lyricsLayout, scene.visual.lyricsLayout);
+  assert.notEqual(second.visual.glowStyle, scene.visual.glowStyle);
+  assert.notEqual(`${scene.visual.lyricsLayout}:${scene.visual.glowStyle}`, "constellation:rotate");
 });
 
 test("cadence and long sections rotate through distinct layout and glow combinations", () => {
@@ -99,8 +97,10 @@ test("cadence and long sections rotate through distinct layout and glow combinat
   assert.equal(directorSectionScene({ section: "rapid", baseVisual: {}, sequence: 3 }).visual.lyricsLayout, "constellation");
   assert.equal(directorSectionScene({ section: "sustain", baseVisual: {}, sequence: 3 }).visual.lyricsLayout, "constellation");
   assert.ok(Math.max(...Array.from({ length: 8 }, (_, index) => directorCadenceDelay(index))) <= 19000);
-  const remembered = directorCadenceScene({ sequence: 4, baseVisual: {}, recentSignatures: ["poster:nebula"] }).visual;
-  assert.notEqual(`${remembered.lyricsLayout}:${remembered.glowStyle}`, "poster:nebula");
+  const rememberedBase = directorCadenceScene({ sequence: 4, baseVisual: {} }).visual;
+  const rememberedSignature = `${rememberedBase.lyricsLayout}:${rememberedBase.glowStyle}`;
+  const remembered = directorCadenceScene({ sequence: 4, baseVisual: {}, recentSignatures: [rememberedSignature] }).visual;
+  assert.notEqual(`${remembered.lyricsLayout}:${remembered.glowStyle}`, rememberedSignature);
   const sectionPairs = ["quiet", "build", "drop", "rapid", "sustain"].flatMap((section) =>
     Array.from({ length: 4 }, (_, sequence) => directorSectionScene({ section, baseVisual: {}, sequence }).visual)
   );

@@ -19,12 +19,14 @@ body[data-view="home"] #trackTransition{display:none}
 #visualSceneBadge{position:absolute;z-index:7;top:76px;right:22px;display:flex;flex-direction:column;align-items:flex-end;max-width:min(340px,60vw);padding:9px 13px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(7,7,10,.72);box-shadow:0 12px 38px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .25s,transform .25s}
 #visualSceneBadge.show{opacity:1;transform:none}#visualSceneBadge small{font-size:9px;font-weight:800;letter-spacing:.17em;opacity:.48}#visualSceneBadge strong{margin-top:2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 #lyricTransitionLayer{position:absolute;z-index:5;inset:0;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden}
-#lyricTransitionLayer.active{visibility:visible;animation:lyricSnapshotOut .62s cubic-bezier(.2,.7,.22,1) both}
+#lyricTransitionLayer.active{visibility:visible;animation:lyricSnapshotOut .82s cubic-bezier(.22,.72,.2,1) both}
 .lyric-transition-line{position:absolute;box-sizing:border-box;margin:0;padding:0;transform:none!important;translate:none!important;scale:1!important;rotate:0deg!important;filter:none!important;background:none!important;-webkit-text-fill-color:currentColor!important}
-body.lyrics-layout-switching #lines{opacity:0!important;filter:blur(9px)!important;animation:none!important;transition:none!important}
-body.lyrics-layout-entering #lines{animation:lyricLayoutReveal .62s cubic-bezier(.16,.82,.22,1) both}
-@keyframes lyricSnapshotOut{0%,22%{opacity:1;filter:none}46%,100%{opacity:0;filter:blur(9px)}}
-@keyframes lyricLayoutReveal{0%,44%{opacity:0;filter:blur(9px)}70%{opacity:.84;filter:blur(1px)}100%{opacity:1;filter:none}}
+body.lyrics-layout-switching #lines{opacity:0!important;filter:blur(5px)!important;animation:none!important;transition:none!important}
+body.lyrics-layout-entering #lines{animation:lyricLayoutReveal .82s cubic-bezier(.16,.82,.22,1) both}
+body.lyrics-layout-entering #viewTransitionGlow{animation:lyricLayoutWash .82s ease-out both}
+@keyframes lyricSnapshotOut{0%,18%{opacity:1;filter:none;transform:translateY(0) scale(1)}62%{opacity:.18;filter:blur(4px);transform:translateY(-10px) scale(.988)}100%{opacity:0;filter:blur(7px);transform:translateY(-16px) scale(.98)}}
+@keyframes lyricLayoutReveal{0%,20%{opacity:0;filter:blur(6px);transform:translateY(14px) scale(.992)}54%{opacity:.72;filter:blur(1.5px);transform:translateY(3px) scale(.998)}100%{opacity:1;filter:none;transform:none}}
+@keyframes lyricLayoutWash{0%,100%{opacity:0;transform:scale(.78)}42%{opacity:.2;transform:scale(1.04)}}
 body.director-section-changing #lines{animation:directorSectionStage .76s cubic-bezier(.18,.76,.22,1) both}
 body.director-section-changing #backdrop{animation:directorBackdropShift .9s ease both}
 body.director-section-changing #glow{animation:directorSectionGlow .76s ease-out both}

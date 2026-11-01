@@ -1,5 +1,5 @@
 // Home: one music library, three genuinely different listening spaces.
-const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,queueRequest:0,queueSchedule:0,nowKey:"",heroSignature:"",recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,pendingCommandAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
+const homeState={loadedAt:0,loading:false,collectionLoading:false,queueLoading:false,queueLoadedAt:0,queueRequest:0,queueSchedule:0,nowKey:"",heroSignature:"",heroRenderPending:false,recent:[],games:[],queue:[],playlists:[],activeCollection:null,nowPlaying:null,slotItem:null,pendingUri:"",pendingAt:0,pendingCommandAt:0,loadSequence:0,volume:50,volumeTimer:null,search:"",librarySearch:"",librarySearching:false,libraryResults:[],librarySearchError:"",librarySearchRequest:0,librarySearchTimer:null,connected:false,writeAccess:false};
 const HOME_PENDING_ANIMATION_TIMEOUT=5000,HOME_PENDING_PLAYBACK_TIMEOUT=9000;
 const homeImage=images=>images?.length?(images[0]?.url||images.at(-1)?.url||""):"";
 const homeArtists=artists=>(artists||[]).map(a=>a.name).filter(Boolean).join(", ");
@@ -119,7 +119,14 @@ function markHomeLaunchSource(source){
 }
 function clearHomeLaunchSources(){document.querySelectorAll(".homeSong.launching,.homeCollection.launching").forEach(node=>{node.classList.remove("launching");node.removeAttribute("aria-busy");});}
 
-async function homePlay(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await playSpotifyUri(item.uri,item.context||null);showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,120);setTimeout(poll,700);}return !!result?.ok;}
+function homePlaybackContext(item){
+  if(item?.context)return item.context;
+  const index=homeState.games.findIndex(track=>track?.uri===item?.uri);
+  if(index<0)return null;
+  const ordered=[...homeState.games.slice(index),...homeState.games.slice(0,index)].map(track=>track?.uri).filter(uri=>String(uri||"").startsWith("spotify:track:"));
+  return ordered.length>1?{uris:ordered.slice(0,100)}:null;
+}
+async function homePlay(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await playSpotifyUri(item.uri,homePlaybackContext(item));showToast(result?.ok?`PLAYING: ${item.title}`:`COULDN'T PLAY: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,120);setTimeout(poll,700);}return !!result?.ok;}
 async function homePlayQueued(item){if(!item?.uri)return false;if(homeState.pendingUri===item.uri)homeState.pendingCommandAt=Date.now();const result=await advanceSpotifyQueue(item.queueSteps||1);showToast(result?.ok?`PLAYING FROM QUEUE: ${item.title}`:`COULDN'T PLAY QUEUE: ${result?.error||"UNKNOWN ERROR"}`);if(result?.ok){setTimeout(poll,180);setTimeout(poll,760);}return !!result?.ok;}
 
 async function playHomeCollection(shuffle=false){
@@ -192,7 +199,7 @@ async function launchHomeVinyl(item,source){
   document.querySelectorAll(".homeCdFlight,.homeCdFlightSleeve").forEach(node=>node.remove());
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
   homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("cd-seated");screen.classList.add("cd-loading");
-  if(!hero.querySelector(".homeCdScene"))renderHomeHero();
+  if(!hero.querySelector(".homeCdScene"))renderHomeHero(true);
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const target=hero.querySelector(".homeCdDisc")?.getBoundingClientRect(),src=sourceRect||(hero.querySelector(".homeCdAlbumCard img")||hero).getBoundingClientRect();
   if(target){
@@ -237,7 +244,7 @@ async function launchHomeCd(item,source,playback=homePlay){
   const sequence=++homeState.loadSequence,sourceNode=source?.querySelector(".homeSongMedia")||source?.querySelector("img")||source,sourceRect=sourceNode?.getBoundingClientRect();
   homeState.slotItem=item;homeState.pendingUri=item.uri;homeState.pendingAt=Date.now();homeState.pendingCommandAt=0;setHomeGameColor(item);
   const screen=$("homeScreen"),hero=$("arcadeNow");screen.classList.remove("stereo-seated");screen.classList.add("stereo-loading");
-  if(!hero.querySelector(".homeStereoScene"))renderHomeHero();
+  if(!hero.querySelector(".homeStereoScene"))renderHomeHero(true);
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const target=hero.querySelector(".homeStereoSlot")?.getBoundingClientRect(),src=sourceRect||hero.getBoundingClientRect();
   if(target){
@@ -368,8 +375,16 @@ function renderCdStereo(hero,item){
   const volume=homeElement("label","homeStereoVolume"),volumeInput=homeElement("input");volumeInput.type="range";volumeInput.min="0";volumeInput.max="100";volumeInput.step="1";volumeInput.value=String(homeState.volume);volumeInput.setAttribute("aria-label","Spotify volume");volumeInput.addEventListener("input",()=>setHomeVolume(volumeInput.value));volumeInput.addEventListener("change",()=>setHomeVolume(volumeInput.value,true));volume.append(homeElement("span","","VOLUME"),volumeInput,homeElement("b","homeStereoVolumeValue",`${homeState.volume}%`));
   receiver.append(brand,display,queue,slot,seek,controls,volume);scene.append(speaker("left"),receiver,speaker("right"));hero.append(scene);
 }
-function renderHomeHero(){
-  const hero=$("arcadeNow"),mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem(homeState.slotItem||homeState.nowPlaying),signature=[mode,item?.uri,item?.title,item?.sub,item?.img,playing?"playing":"paused",homeState.slotItem?.uri,homeState.queue.map(track=>track?.uri).join("|")].join("::");
+function homeHeroRenderLocked(){
+  const screen=$("homeScreen");
+  return !!homeState.slotItem&&!!screen&&["game-slotting","cd-loading","cd-seated","stereo-loading","stereo-seated"].some(className=>screen.classList.contains(className));
+}
+function renderHomeHero(force=false){
+  const hero=$("arcadeNow");
+  if(!hero)return;
+  if(!force&&hero.childElementCount&&homeHeroRenderLocked()){homeState.heroRenderPending=true;return;}
+  homeState.heroRenderPending=false;
+  const mode=currentHomeMode(),copy=HOME_COPY[mode]||HOME_COPY.arcade,item=enrichHomeItem(homeState.slotItem||homeState.nowPlaying),signature=[mode,item?.uri,item?.title,item?.sub,item?.img,playing?"playing":"paused",homeState.slotItem?.uri,homeState.queue.map(track=>track?.uri).join("|")].join("::");
   if(hero.childElementCount&&signature===homeState.heroSignature)return;
   homeState.heroSignature=signature;hero.innerHTML="";
   if(mode==="arcade"){renderArcadeCabinet(hero,item);return;}
@@ -435,7 +450,7 @@ function homeNowPlayingKey(np){if(!np||!(np.state==="playing"||np.state==="pause
 function enrichHomeItem(item){if(!item?.uri)return item;const known=[...homeState.games,...homeState.recent,...homeState.queue].find(track=>track.uri===item.uri);return known?{...item,sub:known.sub||item.sub,album:known.album||item.album,img:known.img||item.img}:item;}
 function clearHomePending(render=false){
   if(!homeState.slotItem&&!homeState.pendingUri)return;
-  homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;homeState.loadSequence++;clearHomeLaunchSources();$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated","stereo-loading","stereo-seated");if(render)renderHomeHero();
+  homeState.slotItem=null;homeState.pendingUri="";homeState.pendingAt=0;homeState.pendingCommandAt=0;homeState.loadSequence++;homeState.heroRenderPending=false;clearHomeLaunchSources();$("homeScreen")?.classList.remove("game-slotting","cd-loading","cd-seated","stereo-loading","stereo-seated");if(render)renderHomeHero(true);
 }
 function updateHomeNowPlaying(np){
   const active=np&&(np.state==="playing"||np.state==="paused"),uri=String(np?.uri||np?.id||""),key=homeNowPlayingKey(np),volume=Number(np?.volume),previousUri=homeState.nowPlaying?.uri||"";let pendingCleared=false;

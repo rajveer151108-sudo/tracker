@@ -35,6 +35,18 @@
   .line[data-d="4"] { filter: blur(4px); opacity: .22; }
   body.noblur .line { filter: none !important; }
 
+  /* Line timing gets a stable reading measure. The size control remains an
+     expressive preference, but it no longer turns a full sentence into a
+     viewport-sized billboard. */
+  body[data-layout="scroll"] #lines { padding-inline: clamp(28px, 8vw, 150px); }
+  body[data-layout="scroll"] .line {
+    width: min(82vw, 1180px); margin-inline: auto;
+    font-size: clamp(26px, calc(var(--lyric-size) * .58), 78px);
+    line-height: 1.12; padding: .34em 0;
+  }
+  body[data-layout="scroll"] .line[data-word-density="medium"] { font-size: clamp(25px, calc(var(--lyric-size) * .52), 70px); }
+  body[data-layout="scroll"] .line[data-word-density="dense"] { font-size: clamp(23px, calc(var(--lyric-size) * .46), 62px); }
+
   /* lyric stack: the current line lands last; completed lines rise and fade above it */
   body:is([data-layout="stack"], [data-layout="wordstack"]) #stage {
     -webkit-mask-image: linear-gradient(transparent 4%, #000 20%, #000 88%, transparent 100%);
@@ -63,8 +75,8 @@
   body:is([data-layout="stack"], [data-layout="wordstack"]) .line[data-side="next"],
   body:is([data-layout="stack"], [data-layout="wordstack"]) .line.stack-hidden { opacity: 0 !important; pointer-events: none; }
   body.noblur:is([data-layout="stack"], [data-layout="wordstack"]) .line { filter: none !important; }
-  body[data-layout="stack"] .line { font-size: min(var(--lyric-size), var(--lyric-composition-cap, 170px)); }
-  body.immersive[data-layout="stack"] .line { font-size: min(calc(var(--lyric-size) * 1.35), var(--lyric-composition-cap, 190px)); }
+  body[data-layout="stack"] .line { font-size: clamp(26px, calc(var(--lyric-size) * .56), 76px); line-height: 1.1; }
+  body.immersive[data-layout="stack"] .line { font-size: clamp(30px, calc(var(--lyric-size) * .68), 90px); }
   body[data-layout="wordstack"] .line {
     padding: .18em 0;
     width: min(var(--lyric-box-width), 90vw);
@@ -78,12 +90,12 @@
 
   /* flash layout: the current line is huge and pops in; the lines either side are small and faint */
   body[data-layout="flash"] #lines { transition-duration: calc(var(--lines-ms, 550ms) * .4); }
-  body[data-layout="flash"] .line { font-size: calc(var(--lyric-size) * .7); opacity: 0; filter: none; transform: scale(1);
+  body[data-layout="flash"] .line { font-size: clamp(22px, calc(var(--lyric-size) * .42), 48px); opacity: 0; filter: none; transform: scale(1);
                                     transition: opacity .2s, color .2s; }
   body[data-layout="flash"] .line[data-d="1"] { opacity: .2; filter: blur(.6px); }
-  body[data-layout="flash"] .line[data-d="0"] { font-size: calc(var(--lyric-size) * 1.6); opacity: 1; line-height: 1.12; }
-  body.immersive[data-layout="flash"] .line { font-size: calc(var(--lyric-size) * .8); }
-  body.immersive[data-layout="flash"] .line[data-d="0"] { font-size: calc(var(--lyric-size) * 2.2); }
+  body[data-layout="flash"] .line[data-d="0"] { font-size: clamp(34px, calc(var(--lyric-size) * .78), 94px); opacity: 1; line-height: 1.08; }
+  body.immersive[data-layout="flash"] .line { font-size: clamp(24px, calc(var(--lyric-size) * .48), 54px); }
+  body.immersive[data-layout="flash"] .line[data-d="0"] { font-size: clamp(40px, calc(var(--lyric-size) * .9), 108px); }
   @keyframes flashIn {
     0%   { opacity: 0; transform: scale(.72); filter: brightness(2.4) blur(8px); }
     55%  { opacity: 1; transform: scale(1.1); filter: brightness(1.7) blur(0); }
@@ -265,7 +277,7 @@
   }
   body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="ribbon"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-hidden { opacity: 0 !important; pointer-events: none; }
   body:is([data-layout="kinetic"], [data-layout="morphstack"], [data-layout="prism"], [data-layout="buildstack"], [data-layout="constellation"], [data-layout="ribbon"], [data-layout="captioncards"], [data-layout="poster"]) .line.creative-arrive {
-    animation: creativeSpawn .26s cubic-bezier(.18,.82,.24,1) both;
+    animation: creativeSpawn var(--word-attack-ms, 150ms) cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
     from { opacity: 0; scale: .72; filter: blur(7px) brightness(1.45); }
@@ -294,7 +306,7 @@
   body[data-layout="morphstack"] .line[data-slot="2"]{top:50%;opacity:0;transform:translate(-50%,-50%) scale(.78);filter:blur(9px)}
   body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .22em rgba(var(--glow),.42)}
   body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .07em}
-  body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-step-ms,210ms) cubic-bezier(.14,.88,.2,1) both}
+  body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-attack-ms,150ms) cubic-bezier(.14,.88,.2,1) both}
   @keyframes morphStackSwap{0%{opacity:0;transform:translate(-50%,-50%) scale(.74);filter:blur(10px) brightness(1.25)}76%{opacity:1;transform:translate(-50%,-50%) scale(1.015);filter:blur(.5px)}100%{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
   /* Silk ribbon — a restrained three-word path. The current lyric stays
@@ -306,7 +318,7 @@
   body[data-layout="ribbon"] .line[data-slot="0"]{left:50%;top:50%;z-index:3;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .16em rgba(255,255,255,.16),0 0 .5em rgba(var(--glow),.48);filter:none}
   body[data-layout="ribbon"] .line[data-slot="1"]{left:82%;top:54%;opacity:.2;transform:translate(-50%,-50%) scale(.42);filter:blur(2.4px)}
   body[data-layout="ribbon"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none}
-  body[data-layout="ribbon"] .line.creative-arrive{animation:ribbonArrive .34s cubic-bezier(.16,.84,.2,1) both}
+  body[data-layout="ribbon"] .line.creative-arrive{animation:ribbonArrive var(--word-attack-ms,150ms) cubic-bezier(.16,.84,.2,1) both}
   @keyframes ribbonArrive{from{opacity:.08;transform:translate(-54%,-50%) scale(.88);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
   body[data-layout="ribbon"] .lyric-emoji{display:none!important}
@@ -345,10 +357,10 @@
   body[data-layout="buildstack"] .line:nth-child(5n+4) .w{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-weight:780;font-style:normal;letter-spacing:-.06em}
   body[data-layout="buildstack"] .line:nth-child(5n) .w{font-family:ui-serif,"Iowan Old Style",Georgia,serif;font-weight:800;font-style:normal;letter-spacing:-.045em}
   body[data-layout="buildstack"] .line .w.revealed{opacity:1;transform:translate(0,0);filter:none}
-  body[data-layout="buildstack"] .line .w.build-enter{animation:buildWordIn .34s cubic-bezier(.14,.88,.2,1) both}
+  body[data-layout="buildstack"] .line .w.build-enter{animation:buildWordIn var(--word-attack-ms,150ms) cubic-bezier(.14,.88,.2,1) both}
   body[data-layout="buildstack"] .line.active,body.lyrics-motion[data-layout="buildstack"] .line.active{translate:0 0;scale:1;filter:none;text-shadow:none}
   body[data-layout="buildstack"] .line.active .w,body[data-layout="buildstack"] .line.active .w.cur{color:#fff;-webkit-text-fill-color:#fff;background:none;box-shadow:none;text-shadow:0 0 .28em rgba(var(--glow),.48);filter:none;translate:0 0;scale:1;transform:none}
-  body[data-layout="buildstack"] .line.creative-arrive{animation:buildStackRise .36s cubic-bezier(.14,.88,.2,1) both}
+  body[data-layout="buildstack"] .line.creative-arrive{animation:buildStackRise var(--word-attack-ms,150ms) cubic-bezier(.14,.88,.2,1) both}
   @keyframes buildWordIn{0%{opacity:0;transform:translate(var(--build-x),var(--build-y));filter:blur(10px) brightness(1.5)}65%{opacity:1;transform:translate(0,-.05em);filter:blur(0) brightness(1.16)}100%{opacity:1;transform:translate(0,0);filter:none}}
   @keyframes buildStackRise{from{opacity:0;transform:translate(-50%,calc(-50% + 48px));filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
   body[data-layout="buildstack"]:is([data-phrase-accents="cards"],[data-phrase-accents="editorial"]) :is(.line:nth-child(5n+2),.line:nth-child(7n+4)) .w.revealed{
@@ -364,13 +376,14 @@
   #constellationMap .constellation-star { fill: rgb(var(--glow)); opacity: .74; transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 3px rgba(var(--glow),.62)); }
   #constellationMap .constellation-star.current { fill:#fff;opacity:1;animation:constellationPulse 1.15s ease-in-out infinite;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px rgba(var(--glow),.7)); }
   body[data-layout="constellation"] #constellationMap { display: block; }
-  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 21%; white-space: normal; overflow-wrap: break-word; font-size: clamp(13px, calc(var(--lyric-size) * var(--node-font-scale,.4)), min(30px,2.2vw,3.6vh)); line-height: 1.05; font-weight: 650; letter-spacing: .015em; color: rgba(255,255,255,.4); opacity: .56; transform: translate(-50%,-50%); transition: opacity .22s, color .22s, text-shadow .22s, filter .22s, transform .22s; }
+  body[data-layout="constellation"] .line { left: var(--node-x,50%); top: var(--node-y,50%); width: max-content; max-width: 21%; white-space: normal; overflow-wrap: break-word; font-size: clamp(14px, calc(var(--lyric-size) * var(--node-font-scale,.44)), min(36px,2.65vw,4.2vh)); line-height: 1.05; font-weight: 650; letter-spacing: .015em; color: rgba(255,255,255,.4); opacity: .56; transform: translate(-50%,-50%); transition: opacity var(--word-attack-ms,120ms), color var(--word-attack-ms,120ms), text-shadow var(--word-attack-ms,120ms), filter var(--word-attack-ms,120ms), transform var(--word-attack-ms,120ms); }
+  body[data-layout="constellation"] .line.creative-arrive { animation-duration: var(--word-attack-ms,120ms); }
   body[data-layout="constellation"] .line.constellation-current { z-index: 2; opacity: 1; color: #fff; filter:brightness(1.18);transform: translate(-50%,-50%) scale(1.26);font-weight:840; letter-spacing: -.015em; text-shadow:0 0 3px #fff,0 0 8px rgba(var(--glow),.68); }
   body[data-layout="constellation"] .line.constellation-current .w { color: #fff; -webkit-text-fill-color: #fff; background: none; }
   @keyframes constellationPulse { 50% { transform:scale(1.28);opacity:.86; } }
 
   /* 03 — stacked subtitles with a live highlight card. */
-  body[data-layout="captioncards"] .line { left: 50%; top: 50%; width: min(78%, 980px); padding: .55em .7em .64em; font-family: ui-serif, "New York", Georgia, serif; font-size: calc(var(--lyric-size) * 1.08); line-height: 1.3; opacity: 0; transform: translate(-50%,-50%) scale(.96); border: 1px solid rgba(255,255,255,.13); border-radius: .28em; background: linear-gradient(125deg,rgba(10,10,15,.78),rgba(var(--glow),.13)); box-shadow: 0 22px 70px rgba(0,0,0,.28), inset 0 0 35px rgba(var(--glow),.06); }
+  body[data-layout="captioncards"] .line { left: 50%; top: 50%; width: min(78%, 980px); padding: .55em .7em .64em; font-family: ui-serif, "New York", Georgia, serif; font-size: clamp(28px, calc(var(--lyric-size) * .58), 76px); line-height: 1.18; opacity: 0; transform: translate(-50%,-50%) scale(.96); border: 1px solid rgba(255,255,255,.13); border-radius: .28em; background: linear-gradient(125deg,rgba(10,10,15,.78),rgba(var(--glow),.13)); box-shadow: 0 22px 70px rgba(0,0,0,.28), inset 0 0 35px rgba(var(--glow),.06); }
   body[data-layout="captioncards"] .line[data-slot="0"] { opacity: 1; transform: translate(-50%,-50%) scale(1); }
   body[data-layout="captioncards"] .line .w { padding: .04em .08em .09em; margin: 0 -.01em; border-radius: .05em; }
   body[data-layout="captioncards"] .line.active .w { color: rgba(255,255,255,.42); -webkit-text-fill-color: rgba(255,255,255,.42); background: none; }

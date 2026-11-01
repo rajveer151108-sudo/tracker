@@ -218,6 +218,7 @@
   let appliedLyricsLayout = null;
   let appliedBackdropZoom = null;
   let lyricsLayoutTransition = 0;
+  function syncRenderedLyricsLayout(layout) { appliedLyricsLayout = layout || null; }
   function applySettings() {
     for (const def of SETTINGS_UI) if (def.key && controlsByKey[def.key]) controlsByKey[def.key](settings[def.key]);
 
@@ -238,15 +239,20 @@
     document.body.dataset.homeMode = nextHomeMode;
     if (typeof renderHome === "function") renderHome();
     if(previousHomeMode&&typeof onHomeModeChange==="function")onHomeModeChange(previousHomeMode,nextHomeMode);
-    const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== settings.lyricsLayout;
+    const requestedLyricsLayout = settings.lyricsLayout;
+    const renderedLyricsLayout = typeof resolveLyricsLayout === "function"
+      ? resolveLyricsLayout(requestedLyricsLayout)
+      : requestedLyricsLayout;
+    const layoutChanged = appliedLyricsLayout !== null && appliedLyricsLayout !== renderedLyricsLayout;
     if (layoutChanged) {
       if (typeof captureLyricTransitionFrame === "function") captureLyricTransitionFrame();
       document.body.classList.remove("lyrics-layout-entering", "director-section-changing", "director-accent");
       document.body.classList.add("lyrics-layout-switching");
     }
-    document.body.dataset.layout = settings.lyricsLayout;
+    document.body.dataset.requestedLayout = requestedLyricsLayout;
+    document.body.dataset.layout = renderedLyricsLayout;
     document.body.dataset.glowStyle = settings.glowStyle || "steady";
-    appliedLyricsLayout = settings.lyricsLayout;
+    appliedLyricsLayout = renderedLyricsLayout;
     root.style.setProperty("--lyric-size", settings.lyricsSize + "px");
     root.style.setProperty("--lyric-box-control", String(settings.lyricsSize));
     if (typeof refreshLyricBoxSizing === "function") refreshLyricBoxSizing();
@@ -261,7 +267,7 @@
         if (typeof clearLyricTransitionFrame === "function") clearLyricTransitionFrame();
         setTimeout(() => {
           if (transition === lyricsLayoutTransition) document.body.classList.remove("lyrics-layout-entering");
-        }, 650);
+        }, 820);
       });
     }
     activeIdx = -2;                   // re-measure and re-centre the current line after a layout change

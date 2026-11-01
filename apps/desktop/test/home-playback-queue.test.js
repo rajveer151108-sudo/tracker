@@ -102,6 +102,19 @@ test("left-rack playback retries a stale playlist item directly", async () => {
   assert.deepEqual(JSON.parse(JSON.stringify(calls.requests[1].body)), { uris: ["spotify:track:1234567890"] });
 });
 
+test("left-rack collections keep their remaining songs in Spotify's playback request", async () => {
+  const collection = {
+    uris: [
+      "spotify:track:1234567890",
+      "spotify:track:ABCDEFGHIJ",
+      "spotify:track:KLMNOPQRST",
+    ],
+  };
+  const { calls, result } = await routePlayback({ contextUri: collection });
+  assert.equal(result.ok, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls.requests[0].body)), collection);
+});
+
 test("left-rack playback uses the shielded desktop command when the API session is unavailable", async () => {
   const { calls, result } = await routePlayback({ apiResults: [{ ok: false, status: 401, error: "Not connected" }] });
   assert.equal(calls.api, 1);
