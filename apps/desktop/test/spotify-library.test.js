@@ -19,6 +19,9 @@ test("Spotify API proxy keeps existing read-only library routes", () => {
 
 test("Spotify API proxy allows only the required song write actions", () => {
   assert.equal(normaliseApiRequest({ path: `/me/player/queue?uri=${encodeURIComponent(TRACK)}`, method: "POST" }, isSpotifyUri)?.method, "POST");
+  assert.deepEqual(normaliseApiRequest({ path: "/me/player/next", method: "POST" }, isSpotifyUri), {
+    path: "/me/player/next", method: "POST", body: null,
+  });
   assert.equal(normaliseApiRequest({ path: `/me/library?uris=${encodeURIComponent(TRACK)}`, method: "PUT" }, isSpotifyUri)?.method, "PUT");
   assert.deepEqual(normaliseApiRequest({ path: "/me/player/play", method: "PUT", body: { context_uri: PLAYLIST, offset: { uri: TRACK } } }, isSpotifyUri)?.body, {
     context_uri: PLAYLIST, offset: { uri: TRACK },
@@ -37,6 +40,7 @@ test("Spotify API proxy rejects arbitrary hosts, routes and malformed writes", (
   assert.equal(normaliseApiRequest("//example.com/me", isSpotifyUri), null);
   assert.equal(normaliseApiRequest("/me/following", isSpotifyUri), null);
   assert.equal(normaliseApiRequest({ path: "/me/player/queue?uri=https://example.com", method: "POST" }, isSpotifyUri), null);
+  assert.equal(normaliseApiRequest({ path: "/me/player/next?device_id=untrusted", method: "POST" }, isSpotifyUri), null);
   assert.equal(normaliseApiRequest({ path: "/me/player/play", method: "PUT", body: { uris: [] } }, isSpotifyUri), null);
   assert.equal(normaliseApiRequest({ path: "/me/player/play?device_id=bad%20id", method: "PUT", body: { uris: [TRACK] } }, isSpotifyUri), null);
   assert.equal(normaliseApiRequest({ path: "/me/player", method: "PUT", body: { device_ids: [], play: false } }, isSpotifyUri), null);

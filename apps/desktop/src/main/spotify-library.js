@@ -69,6 +69,9 @@ function normaliseApiRequest(input, isSpotifyUri) {
   if (method === "POST" && parsed.pathname === "/me/player/queue") {
     return isSpotifyUri(parsed.searchParams.get("uri")) ? { path: requestPath, method, body: null } : null;
   }
+  if (method === "POST" && parsed.pathname === "/me/player/next" && !parsed.search) {
+    return { path: requestPath, method, body: null };
+  }
   if (method === "PUT" && parsed.pathname === "/me/library") {
     const uris = String(parsed.searchParams.get("uris") || "").split(",").filter(Boolean);
     return uris.length > 0 && uris.length <= 40 && uris.every(isSpotifyUri) ? { path: requestPath, method, body: null } : null;
