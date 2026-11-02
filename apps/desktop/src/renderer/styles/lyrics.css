@@ -88,36 +88,36 @@
   body.immersive[data-layout="wordstack"] .line { font-size: min(var(--lyric-box-font, calc(var(--lyric-size) * 1.8)), var(--lyric-composition-cap, 190px)); }
   body[data-layout="wordstack"] .w { padding: .08em .04em .18em; margin: -.08em -.04em -.18em; }
 
-  /* flash layout: the current line is huge and pops in; the lines either side are small and faint */
-  body[data-layout="flash"] #lines { transition-duration: calc(var(--lines-ms, 550ms) * .4); }
-  body[data-layout="flash"] .line { font-size: clamp(22px, calc(var(--lyric-size) * .42), 48px); opacity: 0; filter: none; transform: scale(1);
-                                    transition: opacity .2s, color .2s; }
-  body[data-layout="flash"] .line[data-d="1"] { opacity: .2; filter: blur(.6px); }
-  body[data-layout="flash"] .line[data-d="0"] { font-size: clamp(34px, calc(var(--lyric-size) * .78), 94px); opacity: 1; line-height: 1.08; }
-  body.immersive[data-layout="flash"] .line { font-size: clamp(24px, calc(var(--lyric-size) * .48), 54px); }
-  body.immersive[data-layout="flash"] .line[data-d="0"] { font-size: clamp(40px, calc(var(--lyric-size) * .9), 108px); }
+  /* Flash is a fixed stage, not a scrolling list. Every line keeps one reading
+     size so activation never changes document flow or kicks the text vertically. */
+  body[data-layout="flash"] #lines { inset: 0; padding: 0; transform: none; transition: opacity .2s ease; }
+  body[data-layout="flash"] .line { position: absolute; left: 50%; top: 50%; width: min(84vw, 1180px); margin: 0; padding: 0;
+                                    font-size: clamp(34px, calc(var(--lyric-size) * .72), 88px); line-height: 1.08;
+                                    opacity: 0; filter: none; transform: translate(-50%,-50%) scale(.985);
+                                    transition: opacity .22s ease, color .22s ease, transform .28s cubic-bezier(.2,.72,.24,1); }
+  body[data-layout="flash"] .line[data-d="1"] { opacity: 0; }
+  body[data-layout="flash"] .line[data-d="0"] { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  body.immersive[data-layout="flash"] .line { font-size: clamp(40px, calc(var(--lyric-size) * .82), 102px); }
   @keyframes flashIn {
-    0%   { opacity: 0; transform: scale(.72); filter: brightness(2.4) blur(8px); }
-    55%  { opacity: 1; transform: scale(1.1); filter: brightness(1.7) blur(0); }
-    100% { transform: scale(1); filter: brightness(1) blur(0); }
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(.96); }
+    100% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
   }
-  body[data-layout="flash"] .line.flash { animation: flashIn .4s cubic-bezier(.2,.9,.3,1); }
+  body[data-layout="flash"] .line.flash { animation: flashIn .3s cubic-bezier(.2,.72,.24,1); }
 
   /* word stream: one timed word per row, snapping through fast verses like kinetic type */
-  body[data-layout="wordstream"] #lines { transition-property: transform, opacity; transition-duration: var(--word-step-ms, 160ms), .25s; }
-  body[data-layout="wordstream"] .line { padding: .22em 0 .3em; width:min(var(--lyric-box-width),90vw);max-width:90vw;font-size:min(var(--lyric-box-font,calc(var(--lyric-size) * .9)),var(--lyric-composition-cap,170px));opacity: .08;
-                                         line-height: 1.12; overflow: visible; filter: blur(3px); transform: scale(.72);
+  body[data-layout="wordstream"] #lines { inset: 0; padding: 0; transform: none; transition: opacity .25s ease; }
+  body[data-layout="wordstream"] .line { position:absolute;left:50%;top:50%;margin:0;padding:.22em 0 .3em;width:min(var(--lyric-box-width),90vw);max-width:90vw;font-size:min(var(--lyric-box-font,calc(var(--lyric-size) * .9)),var(--lyric-composition-cap,170px));opacity: 0;
+                                         line-height: 1.12; overflow: visible; filter: blur(3px); transform:translate(-50%,-50%) scale(.88);
                                          transition: color var(--word-step-ms, 160ms), filter var(--word-step-ms, 160ms),
                                                      opacity var(--word-step-ms, 160ms), transform var(--word-step-ms, 160ms); }
-  body[data-layout="wordstream"] .line[data-d="1"] { opacity: .28; filter: blur(1.5px); transform: scale(.82); }
-  body[data-layout="wordstream"] .line[data-d="0"] { opacity: 1; filter: none; transform: scale(1); }
+  body[data-layout="wordstream"] .line[data-d="1"] { opacity: 0; filter: blur(1.5px); transform:translate(-50%,-50%) scale(.92); }
+  body[data-layout="wordstream"] .line[data-d="0"] { opacity: 1; filter: none; transform:translate(-50%,-50%) scale(1); }
   body.immersive[data-layout="wordstream"] .line[data-d="0"] { font-size: min(var(--lyric-box-font, calc(var(--lyric-size) * 2.6)), var(--lyric-composition-cap, 190px)); }
   body[data-layout="wordstream"] .w { padding: .08em .04em .2em; margin: -.08em -.04em -.2em; }
 
   @keyframes wordHit {
-    0% { opacity: 0; transform: translateY(24px) scale(.68); filter: blur(10px) brightness(2.2); }
-    60% { opacity: 1; transform: translateY(-2px) scale(1.06); filter: blur(0) brightness(1.5); }
-    100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }
+    0% { opacity: 0; transform: translate(-50%,-50%) scale(.9); filter: blur(5px); }
+    100% { opacity: 1; transform: translate(-50%,-50%) scale(1); filter: none; }
   }
   body[data-layout="wordstream"][data-motion="punch"] .line.word-hit { animation: wordHit 180ms cubic-bezier(.16,.85,.28,1); }
 
@@ -126,7 +126,7 @@
 
   body[data-layout="wordstream"][data-motion="glide"] #lines,
   body[data-layout="wordstream"][data-motion="glide"] .line { transition-timing-function: cubic-bezier(.22,.65,.3,1); }
-  body[data-layout="wordstream"] .line.active { transform: scale(calc(1 + var(--lyrics-pulse, 0) * .045)); }
+  body[data-layout="wordstream"] .line.active { transform: translate(-50%,-50%) scale(1); }
 
   /* Invisible cube: squash each word toward its shared edge instead of drawing/skewing a 3D face. */
   body[data-layout="wordstream"][data-motion="cube"] #lines {
@@ -197,9 +197,8 @@
                  transition: color .4s, filter .4s, opacity .4s; }
   .line.line-arrive { animation: lyricLineArrive .52s cubic-bezier(.16,.78,.22,1); }
   @keyframes lyricLineArrive {
-    0% { opacity: 0; transform: translateY(.38em) scale(.95); filter: blur(8px) brightness(1.45); }
-    62% { opacity: 1; transform: translateY(-.035em) scale(1.018); filter: blur(0) brightness(1.12); }
-    100% { opacity: 1; }
+    0% { opacity: 0; transform: scale(.985); filter: blur(4px); }
+    100% { opacity: 1; filter: none; }
   }
   body.lyrics-motion .line.active {
     translate: calc(var(--motion-sway) * 7px) calc((var(--motion-lift) * var(--word-life) + var(--motion-phrase) * .48 + var(--motion-emotion) * .7) * -9px);
@@ -216,7 +215,7 @@
                                          color: inherit; filter: none; }
   body[data-hl="whole"] .line.active { color: #fff; text-shadow: 0 0 22px rgba(var(--glow), .7);
                                        transition: color .9s ease, filter .4s, opacity .4s, transform .4s; }
-  body[data-layout="flash"] .line.active { transform: scale(calc(1 + var(--lyrics-pulse, 0) * .035)); }
+  body[data-layout="flash"] .line.active { transform: translate(-50%,-50%) scale(1); }
   .line.active .w { --p: 0%;
     background: linear-gradient(90deg, #fff var(--p), rgba(255,255,255,.3) var(--p));
     -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -261,6 +260,16 @@
     translate: calc(var(--motion-sway) * 4px) calc(var(--motion-lift) * var(--word-life) * -5px);
     scale: calc(1 + var(--motion-energy) * .018 + var(--motion-emotion) * .035);
   }
+  /* Line-reading layouts react through glow and restrained scale, never by
+     hopping above and below their baseline on every syllable or bass hit. */
+  body.lyrics-motion:is([data-layout="scroll"], [data-layout="stack"], [data-layout="flash"], [data-layout="wordstream"]) .line.active {
+    translate: calc(var(--motion-sway) * 3px) 0;
+    scale: calc(1 + var(--motion-energy) * .012 + var(--motion-drop) * .028);
+    rotate: 0deg;
+  }
+  body.lyrics-motion:is([data-layout="scroll"], [data-layout="stack"], [data-layout="flash"], [data-layout="wordstream"]) .line.active .w.cur,
+  body.line-timed-only .line.active .w.cur { translate: 0 0; }
+  body.line-timed-only.lyrics-motion .line.active { translate: 0 0; }
   body.word-keywords[data-layout="wordstream"][data-motion="cube"] .line.keyword[data-d="0"] .w {
     padding: .08em .04em .2em; margin: -.08em -.04em -.2em; border-radius: 0;
     background: none; background-clip: border-box; -webkit-background-clip: border-box;
@@ -328,7 +337,7 @@
   body[data-layout="prism"] #stage{--prism-depth:190px;perspective:820px;perspective-origin:50% 50%}
   body[data-layout="prism"] #lines{transform-style:preserve-3d}
   body[data-layout="prism"] .line{left:50%;top:50%;width:max-content;max-width:min(var(--lyric-box-width),74vw);font-size:min(var(--lyric-box-font,min(calc(var(--lyric-size) * 1.12),14vw,18vh)),var(--lyric-composition-cap,170px));font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:900;line-height:.92;letter-spacing:-.055em;color:rgba(255,255,255,.2);transform-origin:50% 50%;transform-style:preserve-3d;backface-visibility:hidden;transition:transform var(--word-step-ms,210ms) cubic-bezier(.16,.82,.2,1),opacity .24s ease,filter .24s ease,color .2s ease,text-shadow .2s ease}
-  body[data-layout="prism"] .line.creative-hidden{display:none}
+  body[data-layout="prism"] .line.creative-hidden{visibility:hidden}
   body[data-layout="prism"] .line[data-slot="-3"]{opacity:.025;transform:translate(-50%,-50%) rotateX(118deg) translateZ(var(--prism-depth));filter:blur(8px)}
   body[data-layout="prism"] .line[data-slot="-2"]{opacity:.12;transform:translate(-50%,-50%) rotateX(82deg) translateZ(var(--prism-depth));filter:blur(4.5px)}
   body[data-layout="prism"] .line[data-slot="-1"]{opacity:.38;transform:translate(-50%,-50%) rotateX(43deg) translateZ(var(--prism-depth));filter:blur(1.4px)}
@@ -337,7 +346,7 @@
   body[data-layout="prism"] .line[data-slot="2"]{opacity:.12;transform:translate(-50%,-50%) rotateX(-82deg) translateZ(var(--prism-depth));filter:blur(4.5px)}
   body[data-layout="prism"] .line[data-slot="3"]{opacity:.025;transform:translate(-50%,-50%) rotateX(-118deg) translateZ(var(--prism-depth));filter:blur(8px)}
   body[data-layout="prism"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .06em}
-  body.lyrics-motion[data-layout="prism"] .line[data-slot="0"]{scale:calc(1 + var(--motion-vocal) * .035 + var(--motion-drop) * .055)}
+  body.lyrics-motion[data-layout="prism"] .line[data-slot="0"]{scale:calc(1 + var(--motion-vocal) * .012 + var(--motion-drop) * .022)}
   body[data-layout="prism"] .line.creative-arrive{animation:none}
   @media(max-height:720px){body[data-layout="prism"] #stage{--prism-depth:150px}body[data-layout="prism"] .line{font-size:min(var(--lyric-box-font,calc(var(--lyric-size) * .96)),var(--lyric-composition-cap,170px))}}
 

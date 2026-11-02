@@ -33,3 +33,18 @@ test("creative words use gap-aware attacks and a small presentation lead", () =>
   assert.match(frameSource, /Math\.max\(55, Math\.min\(110, gap \* 320\)\)/);
   assert.match(lyricCss, /animation: creativeSpawn var\(--word-attack-ms, 150ms\)/);
 });
+
+test("line-reading layouts keep a fixed baseline and a single entrance", () => {
+  assert.match(frameSource, /const fixedFocusLayout = isCreativeLayout\(\) \|\| layout === "flash" \|\| layout === "wordstream"/);
+  assert.match(frameSource, /const arrivalClass = layout === "prism" \|\| impactLayout/);
+  assert.match(lyricCss, /body\[data-layout="flash"\] #lines \{ inset: 0; padding: 0; transform: none/);
+  assert.match(lyricCss, /body\[data-layout="flash"\] \.line\.active \{ transform: translate\(-50%,-50%\) scale\(1\)/);
+  assert.match(lyricCss, /body\[data-layout="wordstream"\] #lines \{ inset: 0; padding: 0; transform: none/);
+  assert.match(lyricCss, /body\.line-timed-only\.lyrics-motion \.line\.active \{ translate: 0 0/);
+});
+
+test("prism rows stay mounted so their roll can interpolate continuously", () => {
+  assert.match(lyricCss, /body\[data-layout="prism"\] \.line\.creative-hidden\{visibility:hidden\}/);
+  assert.doesNotMatch(lyricCss, /body\[data-layout="prism"\] \.line\.creative-hidden\{display:none\}/);
+  assert.match(frameSource, /layout === "prism" \|\| impactLayout\s*\? ""/);
+});

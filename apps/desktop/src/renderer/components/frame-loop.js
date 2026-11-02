@@ -307,14 +307,15 @@
         updateCreativeLayout(idx);
         clearFit();
         const impactLayout = layout === "flash" || layout === "wordstream";
-        const fitLayout = layout === "wordstream";
-        if (fitLayout && settings.lyricsFit && idx >= 0) {
-          fitLine(lineEls[idx], lines[idx].text);
-        }
+        const fixedFocusLayout = isCreativeLayout() || layout === "flash" || layout === "wordstream";
+        if (fixedFocusLayout) $("lines").style.transform = "none";
         for (const i of lyricStateIndices(idx, previousIdx, layout)) lineEls[i]?.classList.remove("flash", "word-hit", "line-arrive", "creative-arrive");
+        const arrivalClass = layout === "prism" || impactLayout
+          ? ""
+          : isCreativeLayout() ? "creative-arrive" : "line-arrive";
         if (idx >= 0) {
-          void lineEls[idx].offsetWidth;
-          lineEls[idx].classList.add(isCreativeLayout() ? "creative-arrive" : "line-arrive");
+          if (arrivalClass || impactLayout) void lineEls[idx].offsetWidth;
+          if (arrivalClass) lineEls[idx].classList.add(arrivalClass);
         }
         if (idx >= 0 && impactLayout) {
           lineEls[idx].classList.add(layout === "wordstream" ? "word-hit" : "flash");
@@ -323,7 +324,7 @@
           const focus = lineEls[idx];
           const stageH = $("stage").clientHeight;
           const focusY = stackLayout ? stageH * 0.7 : stageH / 2;
-          if (!isCreativeLayout()) {
+          if (!fixedFocusLayout) {
             $("lines").style.transform =
               "translateY(" + (focusY - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
           }
