@@ -14,6 +14,17 @@
     window.tracker.setSettings({ lyricsCustomBackground: "", ...(settings.backdropStyle === "custom" ? { backdropStyle: "blur" } : {}) });
     showToast("CUSTOM LYRICS BACKGROUND CLEARED");
   }
+  const LYRIC_LAYOUT_OPTIONS = [
+    ["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"],
+    ["wordstream", "Word stream"], ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["prism", "Prism roll"],
+    ["buildstack", "Phrase builder"], ["constellation", "Constellation"], ["ribbon", "Ribbon trail"],
+    ["captioncards", "Caption cards"], ["poster", "Poster cutout"],
+  ];
+  const GLOW_STYLE_OPTIONS = [
+    ["steady", "Steady"], ["rotate", "Rotating"], ["comet", "Comet"], ["frame", "Broken frame"],
+    ["flowline", "Flow streak"], ["aurora", "Aurora curtains"], ["halo", "Halo bloom"],
+    ["prism", "Prism facets"], ["horizon", "Horizon beams"], ["eclipse", "Eclipse rings"], ["nebula", "Nebula corners"],
+  ];
   const SETTINGS_UI = [
     { type: "heading", label: "Home" },
     { key: "homeMode", label: "Home style", type: "choice",
@@ -31,10 +42,7 @@
       options: [["word", "Word by word"], ["sweep", "Sweep"], ["whole", "Whole line"]] },
     { key: "lyricsLayout", label: "Layout", type: "choice",
       hint: "Classic views, both lyric transitions from your newest reference, and Afterglow's creative layouts.",
-      options: [["scroll", "Scrolling"], ["stack", "Lyric stack"], ["wordstack", "Word stack"], ["flash", "Flash line"], ["wordstream", "Word stream"],
-        ["kinetic", "Kinetic stack"], ["morphstack", "Morph stack"], ["prism", "Prism roll"], ["buildstack", "Phrase builder"],
-        ["constellation", "Constellation"], ["ribbon", "Ribbon trail"],
-        ["captioncards", "Caption cards"], ["poster", "Poster cutout"]] },
+      options: LYRIC_LAYOUT_OPTIONS },
     { key: "phraseAccents", label: "Phrase builder accents", type: "choice",
       hint: "Optional editorial contrast for Phrase builder. Cards highlights selected words; Editorial also adds a restrained type tilt.",
       options: [["off", "Clean"], ["cards", "Cards"], ["editorial", "Cards + tilt"]] },
@@ -69,6 +77,12 @@
       hint: "Choreographs artwork, colour and typography when the actual song changes. Seeking and pausing do not trigger it." },
     { key: "directorMode", label: "Director Mode", type: "toggle", status: true,
       hint: "Scores vocals, loudness, bass, instruments, drum pattern, harmonic colour, beat confidence, timbre, WPM, flow, emotion and upcoming lyrics. Normal scenes land between lines; verified production pivots can cut on the next word, and a cadence timer keeps the look evolving. A manual change locks only that control." },
+    { key: "directorLyricsLayouts", label: "Director lyric styles", type: "multi",
+      hint: "Director will only use the white styles. Tap a style to include or exclude it; at least one always stays enabled.",
+      options: LYRIC_LAYOUT_OPTIONS },
+    { key: "directorGlowStyles", label: "Director glow styles", type: "multi",
+      hint: "Director will only use the white glow animations. Your manual glow choice still works independently.",
+      options: GLOW_STYLE_OPTIONS },
     { type: "button", label: "Reset Director",
       hint: "Unlocks every visual control, clears queued scene changes and learned section evidence, then directs the current song again from a clean slate.",
       button: "Reset & unlock", action: () => resetDirectorMode() },
@@ -94,10 +108,7 @@
     { key: "glow", label: "Screen glow", hint: "Lights the edges of your screen", type: "toggle" },
     { key: "glowStyle", label: "Animation", type: "choice",
       hint: "Choose a distinct light language: drifting Aurora, a soft Halo, faceted Prism, a rising Horizon, orbital Eclipse rings, Nebula corners, or the original edge treatments.",
-      options: [["steady", "Steady"], ["rotate", "Rotating"], ["comet", "Comet"], ["frame", "Broken frame"],
-        ["flowline", "Flow streak"], ["aurora", "Aurora curtains"], ["halo", "Halo bloom"],
-        ["prism", "Prism facets"], ["horizon", "Horizon beams"],
-        ["eclipse", "Eclipse rings"], ["nebula", "Nebula corners"]] },
+      options: GLOW_STYLE_OPTIONS },
     { key: "glowStrength", label: "Glow level", type: "range", min: 10, max: 200, step: 10, unit: "%" },
     { key: "glowThickness", label: "Thickness", type: "range", min: 40, max: 400, step: 10, unit: "%" },
     { key: "glowOverride", label: "Use my own colours", hint: "Otherwise the glow takes two colours from the album cover.", type: "toggle" },
@@ -184,6 +195,28 @@
         });
         row.appendChild(seg);
         controlsByKey[def.key] = (v) => btns.forEach(([val, b]) => b.classList.toggle("active", val === v));
+      } else if (def.type === "multi") {
+        const seg = document.createElement("div"); seg.className = "seg multi";
+        const btns = def.options.map(([val, text]) => {
+          const b = document.createElement("button"); b.textContent = text;
+          b.addEventListener("click", () => {
+            const selected = new Set(Array.isArray(settings[def.key]) ? settings[def.key] : def.options.map(([option]) => option));
+            if (selected.has(val)) {
+              if (selected.size === 1) return showToast("DIRECTOR NEEDS AT LEAST ONE OPTION");
+              selected.delete(val);
+            } else selected.add(val);
+            const next = def.options.map(([option]) => option).filter((option) => selected.has(option));
+            settings = { ...settings, [def.key]: next };
+            controlsByKey[def.key]?.(next);
+            window.tracker.setSettings({ [def.key]: next });
+          });
+          seg.appendChild(b); return [val, b];
+        });
+        row.appendChild(seg);
+        controlsByKey[def.key] = (v) => {
+          const selected = new Set(Array.isArray(v) ? v : []);
+          btns.forEach(([val, b]) => b.classList.toggle("active", selected.has(val)));
+        };
       } else if (def.type === "color") {
         const input = document.createElement("input"); input.type = "color"; input.className = "colorIn";
         input.addEventListener("input", () => {

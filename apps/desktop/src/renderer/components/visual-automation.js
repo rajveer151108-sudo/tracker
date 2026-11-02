@@ -30,6 +30,13 @@ function visualSnapshot() {
   return window.VisualScenes.extractPreset(settings || {});
 }
 
+function directorStyleSelection() {
+  return {
+    allowedLayouts: settings?.directorLyricsLayouts,
+    allowedGlows: settings?.directorGlowStyles,
+  };
+}
+
 function sameVisualValue(a, b) {
   return typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < .001 : a === b;
 }
@@ -103,11 +110,14 @@ function updateVisualAutomationStatus() {
   if (directorStatus) {
     const locked = visualTrackState?.manualLocks?.length || 0;
     const manualNote = locked ? ` · respecting ${locked} manual choice${locked === 1 ? "" : "s"}` : "";
+    const layoutCount = settings?.directorLyricsLayouts?.length || window.VisualScenes.DIRECTOR_LAYOUTS.length;
+    const glowCount = settings?.directorGlowStyles?.length || window.VisualScenes.DIRECTOR_GLOWS.length;
+    const selectionNote = ` · ${layoutCount} lyric style${layoutCount === 1 ? "" : "s"} + ${glowCount} glow${glowCount === 1 ? "" : "s"}`;
     directorStatus.textContent = !settings?.directorMode
       ? "Off — your normal settings stay in control."
       : visualTrackState?.preset ? "A saved song look has priority."
-      : !settings?.beat ? `Directing from lyric flow${visualTrackState?.directorName ? `: ${visualTrackState.directorName}` : ""}${manualNote}. Turn on Listen and react for full audio analysis.`
-      : visualTrackState?.directorName ? `Directing: ${visualTrackState.directorName}${visualTrackState.decision?.reasons?.length ? ` · ${visualTrackState.decision.reasons.join(" + ")}` : ""}${manualNote}.`
+      : !settings?.beat ? `Directing from lyric flow${visualTrackState?.directorName ? `: ${visualTrackState.directorName}` : ""}${selectionNote}${manualNote}. Turn on Listen and react for full audio analysis.`
+      : visualTrackState?.directorName ? `Directing: ${visualTrackState.directorName}${visualTrackState.decision?.reasons?.length ? ` · ${visualTrackState.decision.reasons.join(" + ")}` : ""}${selectionNote}${manualNote}.`
       : "Waiting for the song's genre and lyric pace.";
   }
 }
@@ -151,6 +161,7 @@ function applyDirectorBeatSwitchEnvironment(state, decision, nowMs) {
     cue: "beat-switch",
     sequence: state.sceneSequence,
     recentSignatures: state.recentSceneSignatures,
+    ...directorStyleSelection(),
   });
   const environment = Object.fromEntries(Object.entries(scene.visual)
     .filter(([key]) => DIRECTOR_ENVIRONMENT_KEYS.has(key)));
@@ -245,7 +256,11 @@ function maybeApplyDirector() {
     updateVisualAutomationStatus();
     return;
   }
-  const scene = window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap });
+  const scene = window.VisualScenes.directorScene({
+    genre: state.genre || "other", wordGap: state.wordGap,
+    previousVisual: activeVisualOverlay || {}, sequence: state.sceneSequence,
+    recentSignatures: state.recentSceneSignatures, ...directorStyleSelection(),
+  });
   const signature = JSON.stringify(scene);
   if (signature === state.directorSignature) return;
   if (!state.contextSettled) return;
@@ -334,7 +349,11 @@ function resetDirectorMode() {
   }
 
   state.contextSettled = true;
-  const scene = window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap });
+  const scene = window.VisualScenes.directorScene({
+    genre: state.genre || "other", wordGap: state.wordGap,
+    previousVisual: activeVisualOverlay || {}, sequence: state.sceneSequence,
+    recentSignatures: state.recentSceneSignatures, ...directorStyleSelection(),
+  });
   applyDirectorBaseScene(state, scene, JSON.stringify(scene));
   showToast("DIRECTOR RESET — ALL CONTROLS UNLOCKED");
 }
@@ -432,6 +451,7 @@ function commitDirectorSection(state, section, decision, nowMs) {
     cue: decision?.priority,
     sequence: state.sceneSequence,
     recentSignatures: state.recentSceneSignatures,
+    ...directorStyleSelection(),
   });
   const nextLayout = scene.visual?.lyricsLayout || settings.lyricsLayout;
   const layoutChanged = nextLayout !== settings.lyricsLayout;
@@ -473,7 +493,9 @@ function commitDirectorSection(state, section, decision, nowMs) {
   state.queuedUntil = 0;
   state.decision = decision;
   state.directorName = section === "steady"
-    ? (state.activeSteadyName || window.VisualScenes.directorScene({ genre: state.genre || "other", wordGap: state.wordGap }).name)
+    ? (state.activeSteadyName || window.VisualScenes.directorScene({
+      genre: state.genre || "other", wordGap: state.wordGap, ...directorStyleSelection(),
+    }).name)
     : scene.name;
   if (layoutChanged) {
     state.lastLayoutChangeAt = nowMs;
@@ -500,6 +522,7 @@ function commitDirectorCadence(state, nowMs) {
     sequence: state.cadenceIndex,
     signal: state.sectionSignal,
     recentSignatures: state.recentSceneSignatures,
+    ...directorStyleSelection(),
   });
   const nextLayout = scene.visual?.lyricsLayout || settings.lyricsLayout;
   const layoutChanged = nextLayout !== settings.lyricsLayout;
@@ -798,6 +821,7 @@ function onVisualAutomationSettingsApplied() {
   const toggles = {
     songPresetsEnabled: !!settings.songPresetsEnabled,
     directorMode: !!settings.directorMode,
+    directorStyles: `${(settings.directorLyricsLayouts || []).join("|")}::${(settings.directorGlowStyles || []).join("|")}`,
   };
   const previousToggles = automationToggleSnapshot;
   automationToggleSnapshot = toggles;
@@ -818,6 +842,13 @@ function onVisualAutomationSettingsApplied() {
       maybeApplyDirector();
     } else if (previousToggles.directorMode && !toggles.directorMode && !visualTrackState.preset) {
       restoreUserVisualBaseline();
+    }
+    if (previousToggles.directorStyles !== toggles.directorStyles && toggles.directorMode && !visualTrackState.preset) {
+      visualTrackState.directorSignature = "";
+      visualTrackState.pendingBaseScene = null;
+      visualTrackState.queuedSection = null;
+      visualTrackState.queuedDecision = null;
+      maybeApplyDirector();
     }
   }
   updateVisualAutomationStatus();

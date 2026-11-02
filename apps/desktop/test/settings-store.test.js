@@ -180,3 +180,36 @@ test("the old combined dance switch migrates to both new controls", () => {
     fs.rmSync(userData, { recursive: true, force: true });
   }
 });
+
+test("Director style and glow allow-lists persist and discard unknown options", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    store.update({
+      directorLyricsLayouts: ["constellation", "scroll", "constellation", "not-a-layout"],
+      directorGlowStyles: ["aurora", "eclipse", "not-a-glow"],
+    });
+    assert.deepEqual(store.get().directorLyricsLayouts, ["constellation", "scroll"]);
+    assert.deepEqual(store.get().directorGlowStyles, ["aurora", "eclipse"]);
+
+    const settings = createSettingsStore({ getPath: () => userData }).load();
+    assert.deepEqual(settings.directorLyricsLayouts, ["constellation", "scroll"]);
+    assert.deepEqual(settings.directorGlowStyles, ["aurora", "eclipse"]);
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});
+
+test("Director always keeps at least one available style and glow", () => {
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "afterglow-settings-"));
+  try {
+    const store = createSettingsStore({ getPath: () => userData });
+    store.load();
+    store.update({ directorLyricsLayouts: [], directorGlowStyles: [] });
+    assert.ok(store.get().directorLyricsLayouts.length > 1);
+    assert.ok(store.get().directorGlowStyles.length > 1);
+  } finally {
+    fs.rmSync(userData, { recursive: true, force: true });
+  }
+});

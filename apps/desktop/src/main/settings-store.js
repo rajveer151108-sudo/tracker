@@ -1,6 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 
+const LYRIC_LAYOUTS = Object.freeze([
+  "scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack",
+  "prism", "buildstack", "constellation", "ribbon", "captioncards", "poster",
+]);
+const GLOW_STYLES = Object.freeze([
+  "steady", "rotate", "comet", "frame", "flowline", "aurora", "halo", "prism",
+  "horizon", "eclipse", "nebula",
+]);
+
 const DEFAULTS = {
   showLyrics: true,
   lyricsHighlight: "word",
@@ -21,6 +30,8 @@ const DEFAULTS = {
   songPresetsEnabled: true,
   cinematicTransitions: true,
   directorMode: false,
+  directorLyricsLayouts: [...LYRIC_LAYOUTS],
+  directorGlowStyles: [...GLOW_STYLES],
   automationNotifications: true,
   backdrop: true,
   backdropStyle: "blur",
@@ -61,14 +72,14 @@ const LIMITS = {
 
 const ENUMS = {
   lyricsHighlight: ["word", "sweep", "whole"],
-  lyricsLayout: ["scroll", "stack", "wordstack", "flash", "wordstream", "kinetic", "morphstack", "prism", "buildstack", "constellation", "ribbon", "captioncards", "poster"],
+  lyricsLayout: LYRIC_LAYOUTS,
   phraseAccents: ["off", "cards", "editorial"],
   lyricsMotion: ["punch", "slide", "glide", "cube"],
   lyricsAlign: ["center", "left"],
   lyricsFont: ["sans", "serif", "round"],
   backdropStyle: ["blur", "album", "canvas", "custom", "black"],
   backdropTourFocus: ["smart", "center", "corners"],
-  glowStyle: ["steady", "rotate", "comet", "frame", "flowline", "aurora", "halo", "prism", "horizon", "eclipse", "nebula"],
+  glowStyle: GLOW_STYLES,
   glowScope: ["everywhere", "tracker"],
   glowDisplays: ["all", "main"],
   lyricsDanceStyle: ["auto", "float", "punch", "sway", "shake", "bounce", "snap", "subtle"],
@@ -76,7 +87,18 @@ const ENUMS = {
   homeMode: ["arcade", "vinyl", "cd"],
 };
 
+const LISTS = {
+  directorLyricsLayouts: LYRIC_LAYOUTS,
+  directorGlowStyles: GLOW_STYLES,
+};
+
 function clean(key, value) {
+  if (LISTS[key]) {
+    if (!Array.isArray(value)) return undefined;
+    const allowed = LISTS[key];
+    const cleaned = [...new Set(value.filter((entry) => allowed.includes(entry)))];
+    return cleaned.length ? cleaned : [...DEFAULTS[key]];
+  }
   if (typeof value !== typeof DEFAULTS[key]) return undefined;
   if (typeof value === "number") {
     const [lo, hi] = LIMITS[key] || [0, 1000];

@@ -157,14 +157,12 @@
 
   function frame(tNow) {
     requestAnimationFrame(frame);
-    const requestedFps = settings.performanceMode === "smooth" ? 60 : settings.performanceMode === "battery" ? 20 : 30;
-    // Keep full fidelity while music and the visible experience need it. A
-    // paused or hidden window has no new audio/lyric information, so waking
-    // the renderer 60 times a second only creates heat.
-    const lyricsFps = settings.performanceMode === "battery" ? 24 : 60;
-    const fps = document.hidden ? 10 : playing
-      ? (document.body.dataset.view === "lyrics" ? lyricsFps : requestedFps)
-      : Math.min(15, requestedFps);
+    // Presentation is always fluid while music is moving. Heavy audio analysis
+    // is independently throttled in beat.js, so Balanced no longer makes Home,
+    // lyric transitions, or fast verses look like a 30 FPS video.
+    const activeFps = settings.performanceMode === "battery" ? 30 : 60;
+    const idleFps = settings.performanceMode === "battery" ? 12 : 20;
+    const fps = document.hidden ? 8 : playing ? activeFps : idleFps;
     if (tNow - lastFrameT < 1000 / fps - 1) return;
     const dt = Math.max(0.001, Math.min(0.1, (tNow - lastFrameT) / 1000));
     lastFrameT = tNow;

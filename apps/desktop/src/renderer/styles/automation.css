@@ -1,5 +1,5 @@
 #trackTransition{position:absolute;inset:0;z-index:8;display:grid;place-items:center;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden;background:radial-gradient(circle at 50% 46%,rgba(var(--glow),.18),rgba(5,5,8,.92) 58%,#050507 100%)}
-#trackTransition:before,#trackTransition:after{content:"";position:absolute;inset:-25%;background:conic-gradient(from 80deg,transparent,rgba(var(--glow),.22),transparent 24%,transparent 68%,rgba(255,255,255,.08),transparent);filter:blur(34px);transform:scale(.7) rotate(-18deg)}
+#trackTransition:before,#trackTransition:after{content:"";position:absolute;inset:-16%;background:conic-gradient(from 80deg,transparent,rgba(var(--glow),.22),transparent 24%,transparent 68%,rgba(255,255,255,.08),transparent);filter:blur(18px);transform:scale(.7) rotate(-18deg)}
 #trackTransition:after{transform:scale(.75) rotate(125deg);opacity:.58}
 .trackTransitionCard{position:relative;z-index:1;display:grid;grid-template-columns:minmax(96px,15vw) minmax(0,1fr);align-items:center;gap:clamp(18px,3vw,42px);width:min(76vw,860px);padding:clamp(18px,3vw,38px);border:1px solid rgba(255,255,255,.14);border-radius:28px;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.035));box-shadow:0 40px 120px rgba(0,0,0,.5),inset 0 0 50px rgba(var(--glow),.08);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
 .trackTransitionArtwork{position:relative;width:min(15vw,180px);aspect-ratio:1;perspective:700px}.trackTransitionArtwork img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:18px;box-shadow:0 22px 55px rgba(0,0,0,.48),0 0 40px rgba(var(--glow),.24);backface-visibility:hidden}#trackTransitionFromArt{z-index:1}#trackTransitionArt{z-index:2;opacity:0}
@@ -14,26 +14,26 @@ body[data-view="home"] #trackTransition{display:none}
 @keyframes trackTransitionCard{0%{opacity:0;transform:translateY(62px) scale(.86);filter:blur(15px)}20%,74%{opacity:1;transform:none;filter:none}100%{opacity:0;transform:translateY(-38px) scale(1.035);filter:blur(8px)}}
 @keyframes trackArtOut{0%,24%{opacity:1;transform:rotateY(0) scale(1)}50%,100%{opacity:0;transform:rotateY(-16deg) scale(.86);filter:blur(7px)}}
 @keyframes trackArtIn{0%,24%{opacity:0;transform:rotateY(18deg) scale(.84);filter:blur(8px)}52%,100%{opacity:1;transform:none;filter:none}}
-@keyframes trackSceneDepart{0%{opacity:1;transform:scale(1);filter:none}48%{opacity:.18;transform:scale(.955);filter:blur(8px)}100%{opacity:1;transform:scale(1);filter:none}}
+@keyframes trackSceneDepart{0%{opacity:1;transform:scale(1)}48%{opacity:.18;transform:scale(.955)}100%{opacity:1;transform:scale(1)}}
 
 #visualSceneBadge{position:absolute;z-index:7;top:76px;right:22px;display:flex;flex-direction:column;align-items:flex-end;max-width:min(340px,60vw);padding:9px 13px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(7,7,10,.72);box-shadow:0 12px 38px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .25s,transform .25s}
 #visualSceneBadge.show{opacity:1;transform:none}#visualSceneBadge small{font-size:9px;font-weight:800;letter-spacing:.17em;opacity:.48}#visualSceneBadge strong{margin-top:2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 #lyricTransitionLayer{position:absolute;z-index:5;inset:0;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden}
 #lyricTransitionLayer.active{visibility:visible;animation:lyricSnapshotOut .82s cubic-bezier(.22,.72,.2,1) both}
 .lyric-transition-line{position:absolute;box-sizing:border-box;margin:0;padding:0;transform:none!important;translate:none!important;scale:1!important;rotate:0deg!important;filter:none!important;background:none!important;-webkit-text-fill-color:currentColor!important}
-body.lyrics-layout-switching #lines{opacity:0!important;filter:blur(5px)!important;animation:none!important;transition:none!important}
+body.lyrics-layout-switching #lines{opacity:0!important;animation:none!important;transition:none!important}
 body.lyrics-layout-entering #lines{animation:lyricLayoutReveal .82s cubic-bezier(.16,.82,.22,1) both}
 body.lyrics-layout-entering #viewTransitionGlow{animation:lyricLayoutWash .82s ease-out both}
 @keyframes lyricSnapshotOut{0%,18%{opacity:1;filter:none;transform:translateY(0) scale(1)}62%{opacity:.18;filter:blur(4px);transform:translateY(-10px) scale(.988)}100%{opacity:0;filter:blur(7px);transform:translateY(-16px) scale(.98)}}
-@keyframes lyricLayoutReveal{0%,20%{opacity:0;filter:blur(6px);transform:translateY(14px) scale(.992)}54%{opacity:.72;filter:blur(1.5px);transform:translateY(3px) scale(.998)}100%{opacity:1;filter:none;transform:none}}
+@keyframes lyricLayoutReveal{0%,20%{opacity:0;transform:translateY(14px) scale(.992)}54%{opacity:.72;transform:translateY(3px) scale(.998)}100%{opacity:1;transform:none}}
 @keyframes lyricLayoutWash{0%,100%{opacity:0;transform:scale(.78)}42%{opacity:.2;transform:scale(1.04)}}
 body.director-section-changing #lines{animation:directorSectionStage .76s cubic-bezier(.18,.76,.22,1) both}
 body.director-section-changing #backdrop{animation:directorBackdropShift .9s ease both}
 body.director-section-changing #glow{animation:directorSectionGlow .76s ease-out both}
 body.director-section-changing #viewTransitionGlow{animation:directorSectionWash .76s ease-out both}
-@keyframes directorSectionStage{0%{opacity:1;filter:none;scale:1}34%{opacity:.68;filter:blur(2.5px);scale:.988}100%{opacity:1;filter:none;scale:1}}
-@keyframes directorBackdropShift{0%,100%{filter:none;scale:1}38%{filter:saturate(1.18) brightness(.88);scale:1.012}}
-@keyframes directorSectionGlow{0%{opacity:.42;filter:saturate(1)}32%{opacity:.94;filter:saturate(1.65) brightness(1.18)}100%{filter:saturate(1)}}
+@keyframes directorSectionStage{0%{opacity:1;scale:1}34%{opacity:.68;scale:.988}100%{opacity:1;scale:1}}
+@keyframes directorBackdropShift{0%,100%{opacity:1;scale:1}38%{opacity:.86;scale:1.012}}
+@keyframes directorSectionGlow{0%{opacity:.42;transform:scale(.985)}32%{opacity:.94;transform:scale(1.018)}100%{transform:none}}
 @keyframes directorSectionWash{0%,100%{opacity:0;transform:scale(.7)}36%{opacity:.62;transform:scale(1.08)}}
 body[data-director-section="drop"].director-section-changing #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.58),rgba(var(--glow),.44) 22%,transparent 66%)}
 body[data-director-section="drop"].director-section-changing #glow{animation:directorDropSectionGlow .86s cubic-bezier(.12,.82,.2,1) both}
@@ -50,12 +50,12 @@ body[data-director-accent="production"].director-accent #lines{animation:none}
 body[data-director-accent="production"].director-accent #glow{animation:directorDropAccentGlow .86s cubic-bezier(.12,.82,.2,1) both}
 body[data-director-accent="production"].director-accent #viewTransitionGlow{background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.76),rgba(var(--glow),.62) 18%,rgba(var(--glow),.18) 42%,transparent 68%);animation:directorDropAccentWash .86s cubic-bezier(.12,.82,.2,1) both}
 body[data-director-accent="production"].director-accent #backdrop{animation:directorDropAccentBackdrop .86s cubic-bezier(.12,.82,.2,1) both}
-@keyframes directorBeatAccent{0%,100%{scale:1;filter:none}30%{scale:1.012;filter:brightness(1.1)}}
-@keyframes directorAccentGlow{0%,100%{filter:none}30%{filter:saturate(1.35) brightness(1.2)}}
-@keyframes directorStructureAccent{0%,100%{scale:1;filter:none}38%{scale:1.018;filter:saturate(1.24) contrast(1.08)}}
-@keyframes directorDropSectionGlow{0%,100%{opacity:.46;filter:saturate(1) brightness(1);transform:scale(1)}16%{opacity:1;filter:saturate(2.15) brightness(1.62);transform:scale(1.035)}48%{opacity:.76;filter:saturate(1.55) brightness(1.28);transform:scale(1.012)}}
-@keyframes directorDropAccentStage{0%,100%{scale:1;filter:none}14%{scale:1.022;filter:brightness(1.18)}44%{scale:1.006;filter:brightness(1.06)}}
-@keyframes directorDropAccentGlow{0%,100%{opacity:.44;filter:saturate(1) brightness(1);transform:scale(1)}13%{opacity:1;filter:saturate(2.3) brightness(1.78);transform:scale(1.048)}42%{opacity:.82;filter:saturate(1.62) brightness(1.32);transform:scale(1.016)}}
-@keyframes directorDropAccentWash{0%{opacity:0;transform:scale(.5);filter:blur(18px)}14%{opacity:.94;transform:scale(.88);filter:blur(5px)}48%{opacity:.46;transform:scale(1.06);filter:blur(1px)}100%{opacity:0;transform:scale(1.24);filter:blur(4px)}}
-@keyframes directorDropAccentBackdrop{0%,100%{scale:1;filter:none}16%{scale:1.018;filter:saturate(1.42) brightness(1.12) contrast(1.08)}52%{scale:1.008;filter:saturate(1.18) brightness(1.04)}}
+@keyframes directorBeatAccent{0%,100%{scale:1;opacity:1}30%{scale:1.012;opacity:.92}}
+@keyframes directorAccentGlow{0%,100%{opacity:.48;transform:scale(1)}30%{opacity:.92;transform:scale(1.018)}}
+@keyframes directorStructureAccent{0%,100%{scale:1;opacity:1}38%{scale:1.018;opacity:.9}}
+@keyframes directorDropSectionGlow{0%,100%{opacity:.46;transform:scale(1)}16%{opacity:1;transform:scale(1.035)}48%{opacity:.76;transform:scale(1.012)}}
+@keyframes directorDropAccentStage{0%,100%{scale:1;opacity:1}14%{scale:1.022;opacity:.94}44%{scale:1.006;opacity:.98}}
+@keyframes directorDropAccentGlow{0%,100%{opacity:.44;transform:scale(1)}13%{opacity:1;transform:scale(1.048)}42%{opacity:.82;transform:scale(1.016)}}
+@keyframes directorDropAccentWash{0%{opacity:0;transform:scale(.5)}14%{opacity:.94;transform:scale(.88)}48%{opacity:.46;transform:scale(1.06)}100%{opacity:0;transform:scale(1.24)}}
+@keyframes directorDropAccentBackdrop{0%,100%{opacity:1;scale:1}16%{opacity:.92;scale:1.018}52%{opacity:.97;scale:1.008}}
 @media(prefers-reduced-motion:reduce){#lyricTransitionLayer{display:none!important}body.lyrics-layout-switching #lines{opacity:1!important;filter:none!important}body.lyrics-layout-entering #lines{animation:none!important}body.track-transitioning #trackTransition{animation:trackTransitionFade .65s ease both}body.track-transitioning .trackTransitionCard,body.track-transitioning .trackTransitionArtwork img,body.track-transitioning #stage,body.track-transitioning #homeScreen,body.director-section-changing #lines,body.director-section-changing #backdrop,body.director-section-changing #glow,body.director-section-changing #viewTransitionGlow,body.director-accent #lines,body.director-accent #backdrop,body.director-accent #glow,body.director-accent #viewTransitionGlow{animation:none}@keyframes trackTransitionFade{0%,100%{opacity:0}30%,70%{opacity:1}}}

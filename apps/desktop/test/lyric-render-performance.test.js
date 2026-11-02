@@ -6,6 +6,7 @@ const test = require("node:test");
 const frameSource = fs.readFileSync(path.join(__dirname, "../src/renderer/components/frame-loop.js"), "utf8");
 const lyricSource = fs.readFileSync(path.join(__dirname, "../src/renderer/components/lyrics.js"), "utf8");
 const lyricCss = fs.readFileSync(path.join(__dirname, "../src/renderer/styles/lyrics.css"), "utf8");
+const beatSource = fs.readFileSync(path.join(__dirname, "../src/renderer/components/beat.js"), "utf8");
 
 test("word changes update a bounded lyric neighbourhood instead of the whole song", () => {
   assert.match(frameSource, /function lyricStateIndices\(index, previous, layout\)/);
@@ -14,9 +15,17 @@ test("word changes update a bounded lyric neighbourhood instead of the whole son
   assert.match(lyricSource, /updateCreativeLayout\(idx, true\)/);
 });
 
-test("active lyrics keep a responsive frame rate without doubling Director work", () => {
-  assert.match(frameSource, /const lyricsFps = settings\.performanceMode === "battery" \? 24 : 60/);
+test("all active views keep a responsive frame rate without doubling Director work", () => {
+  assert.match(frameSource, /const activeFps = settings\.performanceMode === "battery" \? 30 : 60/);
+  assert.match(frameSource, /document\.hidden \? 8 : playing \? activeFps : idleFps/);
   assert.match(frameSource, /tNow - lastDirectorPerformanceT >= 50/);
+});
+
+test("expensive audio analysis is cached below the visual frame rate", () => {
+  assert.match(beatSource, /tNow - lastVoiceAnalysis >= 30/);
+  assert.match(beatSource, /tNow - lastProductionAnalysis >= 45/);
+  assert.match(beatSource, /if \(productionDue\) \{\s*const structure = audioStructureDetector\.update/);
+  assert.match(beatSource, /tNow - lastSend > 45/);
 });
 
 test("creative words use gap-aware attacks and a small presentation lead", () => {

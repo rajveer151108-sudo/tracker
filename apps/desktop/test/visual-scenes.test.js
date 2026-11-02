@@ -86,6 +86,33 @@ test("scheduled cadence shuffles layouts and lighting independently without leav
   assert.notEqual(`${scene.visual.lyricsLayout}:${scene.visual.glowStyle}`, "constellation:rotate");
 });
 
+test("every Director path obeys the selected lyric and glow allow-lists", () => {
+  const only = { allowedLayouts: ["constellation"], allowedGlows: ["eclipse"] };
+  const scenes = [
+    directorScene({ genre: "rap", wordGap: .2, ...only }),
+    directorCadenceScene({ baseVisual: {}, sequence: 7, ...only }),
+    directorSectionScene({ section: "drop", genre: "rock", baseVisual: {}, sequence: 2, ...only }),
+    directorSectionScene({ section: "steady", baseVisual: { lyricsLayout: "poster", glowStyle: "frame" }, ...only }),
+  ];
+  for (const scene of scenes) {
+    assert.equal(scene.visual.lyricsLayout, "constellation");
+    assert.equal(scene.visual.glowStyle, "eclipse");
+  }
+
+  const allowedLayouts = new Set(["scroll", "flash", "prism"]);
+  const allowedGlows = new Set(["steady", "halo", "aurora"]);
+  const varied = Array.from({ length: 18 }, (_, sequence) => directorCadenceScene({
+    sequence,
+    baseVisual: {},
+    allowedLayouts: [...allowedLayouts],
+    allowedGlows: [...allowedGlows],
+  }).visual);
+  assert.ok(varied.every((visual) => allowedLayouts.has(visual.lyricsLayout)));
+  assert.ok(varied.every((visual) => allowedGlows.has(visual.glowStyle)));
+  assert.ok(new Set(varied.map((visual) => visual.lyricsLayout)).size > 1);
+  assert.ok(new Set(varied.map((visual) => visual.glowStyle)).size > 1);
+});
+
 test("cadence and long sections rotate through distinct layout and glow combinations", () => {
   const cadence = Array.from({ length: 15 }, (_, sequence) => directorCadenceScene({ sequence, baseVisual: {} }).visual);
   assert.equal(new Set(cadence.map((scene) => `${scene.lyricsLayout}:${scene.glowStyle}`)).size, 15);

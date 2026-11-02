@@ -17,6 +17,10 @@
   let audioDrumChange = 0, audioHarmonyChange = 0, audioProductionAgreement = 0, audioTonality = 0, audioOnsetDensity = 0;
   let lyricMotionLife = 0, lyricMotionEmotion = 0, lyricWordPace = 0;
   let lyricWordAttack = 0, lyricWordSustain = 0, lyricTimingConfidence = 0;
+  let lastVoiceAnalysis = 0, lastProductionAnalysis = 0, pendingProductionBeatHit = false;
+  let cachedRms = 0, cachedCentroid = 180;
+  let cachedVoice = { raw: 0, flux: 0, presence: 0, air: 0 };
+  let cachedProduction = { chroma: Array(12).fill(0), tonality: 0, drums: { kick: 0, snare: 0, hat: 0, onset: 0 } };
   const motionStyleCache = new Map();
   function setMotionStyle(name, value) {
     if (motionStyleCache.get(name) === value) return;
@@ -48,6 +52,12 @@
     structureLowActivity = structureQuietHold = structureQuietConfidence = structureReentry = 0;
     audioLoudnessTrend = audioVocalTrend = audioBeatConfidence = audioBpm = audioBassLevel = audioFluxLevel = 0;
     audioDrumChange = audioHarmonyChange = audioProductionAgreement = audioTonality = audioOnsetDensity = 0;
+    lastVoiceAnalysis = lastProductionAnalysis = 0;
+    pendingProductionBeatHit = false;
+    cachedRms = 0;
+    cachedCentroid = 180;
+    cachedVoice = { raw: 0, flux: 0, presence: 0, air: 0 };
+    cachedProduction = { chroma: Array(12).fill(0), tonality: 0, drums: { kick: 0, snare: 0, hat: 0, onset: 0 } };
     productionSpectrumReady = false;
     if (previousSpectrum) previousSpectrum.fill(0);
     if (productionSpectrum) productionSpectrum.fill(0);
@@ -302,13 +312,30 @@
       return;
     }
     analyser.getByteFrequencyData(freq);
-    analyser.getByteTimeDomainData(wave);
     const binHz = audioCtx.sampleRate / analyser.fftSize;
     const bass = bandLevel(38, 170, binHz);
-    const voice = vocalFeatures(binHz, bass);
-    let squareSum = 0;
-    for (const sample of wave) { const x = (sample - 128) / 128; squareSum += x * x; }
-    const rms = Math.sqrt(squareSum / Math.max(1, wave.length));
+    // The display can stay at 60 FPS without rerunning the expensive 2,048
+    // sample voice/RMS pass at 60 FPS. Cached targets are interpolated by the
+    // motion followers below, so the result moves smoothly rather than stepping.
+    if (!lastVoiceAnalysis || tNow - lastVoiceAnalysis >= 30) {
+      analyser.getByteTimeDomainData(wave);
+      cachedVoice = vocalFeatures(binHz, bass);
+      let squareSum = 0;
+      for (const sample of wave) { const x = (sample - 128) / 128; squareSum += x * x; }
+      cachedRms = Math.sqrt(squareSum / Math.max(1, wave.length));
+      const centLo = Math.max(1, Math.floor(180 / binHz));
+      const centHi = Math.min(freq.length - 1, Math.ceil(5200 / binHz));
+      let weighted = 0, magnitude = 0;
+      for (let i = centLo; i <= centHi; i++) {
+        const value = freq[i] / 255;
+        weighted += i * binHz * value;
+        magnitude += value;
+      }
+      cachedCentroid = magnitude > 0.01 ? weighted / magnitude : 180;
+      lastVoiceAnalysis = tNow;
+    }
+    const voice = cachedVoice;
+    const rms = cachedRms;
     lastBass = bass;
 
     peak = Math.max(bass, peak * Math.exp(-dt / 5));             // adaptive bass ceiling
@@ -318,12 +345,22 @@
     let beatHit = false;
     if (rise > 0.10 && norm > 0.5 && tNow - lastBeat > 160) { pulse = 1; lastBeat = tNow; beatHit = true; }
     pulse *= Math.exp(-dt / 0.16);                                // each hit fades out over ~0.16s
-    const production = productionFeatures(binHz, beatHit);
+    pendingProductionBeatHit ||= beatHit;
+    const productionDue = !lastProductionAnalysis || tNow - lastProductionAnalysis >= 45;
+    const productionDt = lastProductionAnalysis
+      ? Math.max(.001, Math.min(.12, (tNow - lastProductionAnalysis) / 1000))
+      : dt;
+    if (productionDue) {
+      cachedProduction = productionFeatures(binHz, pendingProductionBeatHit);
+      pendingProductionBeatHit = false;
+      lastProductionAnalysis = tNow;
+    }
+    const production = cachedProduction;
 
     const profile = motionProfile();
     const k = (settings.beatStrength || 100) / 100 * feel.beat;
     outLevel = Math.min(1.4, (pulse * 0.9 + Math.max(0, rise) * 0.8) * k);
-    root.style.setProperty("--pulse", (outLevel * profile.impact).toFixed(3));
+    setMotionStyle("--pulse", (outLevel * profile.impact).toFixed(3));
 
     energyPeak = Math.max(rms, energyPeak * Math.exp(-dt / 6));
     vocalFloor = follow(vocalFloor, voice.raw, voice.raw < vocalFloor ? .45 : 8, voice.raw < vocalFloor ? .45 : 8, dt);
@@ -341,52 +378,43 @@
     const sibilanceRaw = voice.presence * .68 + voice.air * .32;
     const sibilanceTarget = clamp01(sibilanceRaw / Math.max(.035, vocalPeak * 1.22)) * vocalTarget;
 
-    // A brightness centroid over the vocal/melodic range follows upward and
-    // downward movement in the whole mix without pretending to isolate vocals.
-    const centLo = Math.max(1, Math.floor(180 / binHz));
-    const centHi = Math.min(freq.length - 1, Math.ceil(5200 / binHz));
-    let weighted = 0, magnitude = 0;
-    for (let i = centLo; i <= centHi; i++) {
-      const value = freq[i] / 255;
-      weighted += i * binHz * value;
-      magnitude += value;
+    const liftTarget = Math.max(0, Math.min(1, (cachedCentroid - 450) / 2400)) * vocalTarget;
+    if (productionDue) {
+      const structure = audioStructureDetector.update({
+        bands: [bass, bandLevel(170, 520, binHz), bandLevel(520, 1800, binHz), bandLevel(1800, 5200, binHz), bandLevel(5200, 10000, binHz)],
+        loudness: energyTarget,
+        rawLoudness: rms,
+        vocal: vocalTarget,
+        beat: production.drums.kick > .68,
+        chroma: production.chroma,
+        tonality: production.tonality,
+        drums: production.drums,
+      }, tNow, productionDt);
+      structureContrast = structure.contrast;
+      structureTimbreShift = structure.timbreShift;
+      structureSwitchUp = structure.switchUp;
+      structureSwitchDown = structure.switchDown;
+      structureProductionSwitch = structure.productionSwitch;
+      structureSwitchConfidence = structure.switchConfidence;
+      structureArrangementLift = structure.arrangementLift;
+      structureTimbreEvidence = structure.timbreEvidence;
+      structureLoudnessEvidence = structure.loudnessEvidence;
+      structureLowActivity = structure.lowActivity;
+      structureQuietHold = structure.quietHold;
+      structureQuietConfidence = structure.quietConfidence;
+      structureReentry = structure.reentry;
+      audioLoudnessTrend = structure.loudnessTrend;
+      audioVocalTrend = structure.vocalTrend;
+      audioBeatConfidence = structure.beatConfidence;
+      audioBpm = structure.bpm;
+      audioDrumChange = structure.drumChange;
+      audioHarmonyChange = structure.harmonyChange;
+      audioProductionAgreement = structure.productionAgreement;
+      audioTonality = structure.tonality;
+      audioOnsetDensity = structure.onsetDensity;
     }
-    const centroid = magnitude > 0.01 ? weighted / magnitude : 180;
-    const liftTarget = Math.max(0, Math.min(1, (centroid - 450) / 2400)) * vocalTarget;
-    const structure = audioStructureDetector.update({
-      bands: [bass, bandLevel(170, 520, binHz), bandLevel(520, 1800, binHz), bandLevel(1800, 5200, binHz), bandLevel(5200, 10000, binHz)],
-      loudness: energyTarget,
-      rawLoudness: rms,
-      vocal: vocalTarget,
-      beat: beatHit,
-      chroma: production.chroma,
-      tonality: production.tonality,
-      drums: production.drums,
-    }, tNow, dt);
-    structureContrast = structure.contrast;
-    structureTimbreShift = structure.timbreShift;
-    structureSwitchUp = structure.switchUp;
-    structureSwitchDown = structure.switchDown;
-    structureProductionSwitch = structure.productionSwitch;
-    structureSwitchConfidence = structure.switchConfidence;
-    structureArrangementLift = structure.arrangementLift;
-    structureTimbreEvidence = structure.timbreEvidence;
-    structureLoudnessEvidence = structure.loudnessEvidence;
-    structureLowActivity = structure.lowActivity;
-    structureQuietHold = structure.quietHold;
-    structureQuietConfidence = structure.quietConfidence;
-    structureReentry = structure.reentry;
-    audioLoudnessTrend = structure.loudnessTrend;
-    audioVocalTrend = structure.vocalTrend;
-    audioBeatConfidence = structure.beatConfidence;
-    audioBpm = structure.bpm;
     audioBassLevel = norm;
     audioFluxLevel = syllableTarget;
-    audioDrumChange = structure.drumChange;
-    audioHarmonyChange = structure.harmonyChange;
-    audioProductionAgreement = structure.productionAgreement;
-    audioTonality = structure.tonality;
-    audioOnsetDensity = structure.onsetDensity;
     motionEnergy = follow(motionEnergy, energyTarget, 0.045, 0.22, dt);
     motionVocal = follow(motionVocal, vocalTarget, 0.07, 0.28, dt);
     motionLift = follow(motionLift, liftTarget, 0.09, 0.3, dt);
@@ -436,7 +464,7 @@
       sway,
       shake,
     });
-    if (tNow - lastSend > 33) { lastSend = tNow; window.tracker.sendBeat(motion); }
+    if (tNow - lastSend > 45) { lastSend = tNow; window.tracker.sendBeat(motion); }
   }
 
 

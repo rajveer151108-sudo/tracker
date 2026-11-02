@@ -23,6 +23,10 @@
   .seg button { border: 0; background: transparent; padding: 6px 10px; border-radius: 7px; font-size: 12px; cursor: pointer; opacity: .7; white-space: nowrap; }
   .seg button.active { background: rgba(255,255,255,.9); color: #000; opacity: 1; }
   .row[data-setting="lyricsLayout"] .seg,.row[data-setting="backdropStyle"] .seg { flex-wrap: wrap; justify-content: flex-end; max-width: 500px; gap: 2px; }
+  .row[data-setting="directorLyricsLayouts"],.row[data-setting="directorGlowStyles"] { align-items: flex-start; }
+  .seg.multi { flex-wrap: wrap; justify-content: flex-end; gap: 5px; max-width: min(560px, 58vw); background: transparent; padding: 0; }
+  .seg.multi button { border: 1px solid rgba(255,255,255,.14); background: transparent; color: rgba(255,255,255,.48); opacity: 1; }
+  .seg.multi button.active { border-color: #fff; background: #fff; color: #000; box-shadow: 0 0 18px rgba(255,255,255,.12); }
   .rng { display: flex; align-items: center; gap: 10px; flex: none; }
   .rng input { width: 130px; accent-color: rgb(var(--glow)); }
   .rng span { width: 46px; text-align: right; font-size: 13px; opacity: .7; }
