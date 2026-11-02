@@ -59,8 +59,25 @@ function updateArcadeDialogue(line,nextLine,index,allLines){
   if(!box||!text)return;
   const artistText=box.dataset.artists||"",currentLine=window.DialogueSpeaker.parseLine(line,artistText),nextParsed=window.DialogueSpeaker.parseLine(nextLine,artistText),current=currentLine.text,upcoming=nextParsed.text,currentSpeaker=window.DialogueSpeaker.speakerFor(allLines||[],index,artistText,box.dataset.defaultSpeaker||""),key=current+"|"+upcoming+"|"+currentSpeaker;
   if(box.dataset.key===key)return;
-  box.dataset.key=key;box.dataset.length=current.length>115?"extra":current.length>64?"long":"normal";text.textContent=current||"LISTENING FOR DIALOGUE…";if(next)next.textContent=upcoming?`NEXT  ${upcoming}`:"";if(speaker)speaker.textContent=currentSpeaker.toUpperCase();
+  box.dataset.key=key;box.dataset.length=current.length>115?"extra":current.length>64?"long":"normal";text.textContent=current||((allLines||[]).length?"MUSIC INTRO…":"LISTENING FOR DIALOGUE…");if(next)next.textContent=upcoming?`NEXT  ${upcoming}`:"";if(speaker)speaker.textContent=currentSpeaker.toUpperCase();
   box.classList.remove("talking");void box.offsetWidth;box.classList.add("talking");
+}
+
+function arcadeDialogueIndexAtTime(allLines,time){
+  if(!allLines?.length)return-1;
+  const active=window.LyricTiming.activeLyricIndex(allLines,time);
+  if(active>=0)return active;
+  // Dialogue boxes should hold the line that was just spoken through the
+  // timestamp gap before the next line, rather than looking as if lyrics were
+  // lost. This is presentation-only; the actual lyric clock is unchanged.
+  let previous=-1;
+  for(let i=0;i<allLines.length;i++){
+    const start=Number(allLines[i]?.t);
+    if(!Number.isFinite(start))continue;
+    if(start>time)break;
+    previous=i;
+  }
+  return previous;
 }
 
 function wireArcadeSeek(control){
@@ -466,6 +483,24 @@ function updateHomeNowPlaying(np){
 }
 function onHomeModeChange(previous,next){if(previous!==next&&["vinyl","cd"].includes(next))scheduleHomeQueueRefresh(homeState.nowPlaying?.uri||"");}
 let viewTransitionTimer=0;
+let viewNavigationBlockedUntil=0;
+globalThis.window?.addEventListener("resize",()=>{viewNavigationBlockedUntil=performance.now()+650;},{passive:true});
+function windowGeometryClickBlocked(event){return event.detail>0&&performance.now()<viewNavigationBlockedUntil;}
+function guardWindowGeometryClicks(host){
+  host?.addEventListener("click",event=>{
+    if(!windowGeometryClickBlocked(event))return;
+    event.preventDefault();event.stopImmediatePropagation();
+  },true);
+}
+function bindViewNavigation(button,view){
+  button.addEventListener("click",event=>{
+    // Releasing a macOS title-bar drag after snapping/maximising can land over
+    // a nav button after the window moves. Ignore only that synthetic pointer
+    // click; keyboard shortcuts and deliberate clicks remain available.
+    if(windowGeometryClickBlocked(event)){event.preventDefault();return;}
+    setAppView(view);
+  });
+}
 function setAppView(view){
   const wanted=["lyrics","vault"].includes(view)?view:"home",previous=document.body.dataset.view||"home";
   try{sessionStorage.setItem("afterglow-view",wanted);}catch{}
@@ -481,4 +516,4 @@ function setAppView(view){
   if(wanted==="home")refreshArcadeHome();else if(wanted==="lyrics")activeIdx=-2;else if(typeof refreshVault==="function")refreshVault();
   viewTransitionTimer=setTimeout(()=>document.body.classList.remove(`view-enter-${wanted}`),900);
 }
-function initHome(){$("homeBtn").addEventListener("click",()=>setAppView("home"));$("lyricsBtn").addEventListener("click",()=>setAppView("lyrics"));$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openAccountPanel();}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeQueueShortcut").addEventListener("click",openQueuePanel);$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);window.tracker.onAuthRestored?.(()=>{homeState.loadedAt=0;refreshArcadeHome(true);});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();let initialView="home";try{initialView=sessionStorage.getItem("afterglow-view")||"home";}catch{}setAppView(initialView);}
+function initHome(){guardWindowGeometryClicks($("headerActions"));guardWindowGeometryClicks(document.querySelector(".homeThemeBar"));bindViewNavigation($("homeBtn"),"home");bindViewNavigation($("lyricsBtn"),"lyrics");$("homeLikedShortcut").addEventListener("click",()=>{const liked=homeState.playlists.find(item=>item.kind==="liked");if(liked)loadHomeCollection(liked);else{showToast("CONNECT SPOTIFY TO OPEN LIKED SONGS");openAccountPanel();}});$("homePlayCollection").addEventListener("click",()=>playHomeCollection(false));$("homeShuffleCollection").addEventListener("click",()=>playHomeCollection(true));$("homeQueueShortcut").addEventListener("click",openQueuePanel);$("homeSongSearch").addEventListener("input",event=>{homeState.search=event.target.value;renderHomeRoster();});$("homeLibrarySearch").addEventListener("input",event=>{const query=event.target.value;clearTimeout(homeState.librarySearchTimer);homeState.librarySearch=query.trim();homeState.librarySearchError="";if(!homeState.librarySearch){searchHomeLibrary("");return;}homeState.librarySearching=true;renderHomeCollections();homeState.librarySearchTimer=setTimeout(()=>searchHomeLibrary(query),320);});document.addEventListener("click",event=>{if(!event.target.closest("#homeTrackMenu,.homeSongMenuButton"))closeHomeTrackMenu();});window.addEventListener("blur",closeHomeTrackMenu);window.tracker.onAuthRestored?.(()=>{homeState.loadedAt=0;refreshArcadeHome(true);});document.querySelectorAll("[data-home-theme]").forEach(b=>b.addEventListener("click",()=>window.tracker.setSettings({homeMode:b.dataset.homeTheme})));renderHome();let initialView="home";try{initialView=sessionStorage.getItem("afterglow-view")||"home";}catch{}setAppView(initialView);}

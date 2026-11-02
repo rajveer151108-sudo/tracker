@@ -62,3 +62,19 @@ test("Arcade titles wrap only between words at narrow widths", () => {
   assert.match(homeCss, /@media\(max-width:850px\)\{body\[data-home-mode="arcade"\] \.homeLayout/);
   assert.doesNotMatch(homeCss, /\.arcadeScreenInfo h2\{[^}]*overflow-wrap:anywhere/);
 });
+
+test("Arcade dialogue holds synced lyrics through inter-line timing gaps", () => {
+  assert.match(homeSource, /function arcadeDialogueIndexAtTime\(allLines,time\)/);
+  assert.match(homeSource, /if\(active>=0\)return active/);
+  assert.match(homeSource, /text\.textContent=current\|\|\(\(allLines\|\|\[\]\)\.length\?"MUSIC INTRO…":"LISTENING FOR DIALOGUE…"\)/);
+});
+
+test("macOS window snapping cannot click the adjacent view tab", () => {
+  assert.match(homeSource, /addEventListener\("resize",\(\)=>\{viewNavigationBlockedUntil=performance\.now\(\)\+650/);
+  assert.match(homeSource, /function windowGeometryClickBlocked\(event\)/);
+  assert.match(homeSource, /event\.preventDefault\(\);event\.stopImmediatePropagation\(\)/);
+  assert.match(homeSource, /guardWindowGeometryClicks\(\$\("headerActions"\)\)/);
+  assert.match(homeSource, /guardWindowGeometryClicks\(document\.querySelector\("\.homeThemeBar"\)\)/);
+  assert.match(homeSource, /bindViewNavigation\(\$\("homeBtn"\),"home"\)/);
+  assert.match(homeSource, /bindViewNavigation\(\$\("lyricsBtn"\),"lyrics"\)/);
+});

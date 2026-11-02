@@ -271,7 +271,7 @@
           homeProgress.setAttribute("aria-valuetext", fmt(Math.max(0, now)) + " of " + fmt(durSec));
         });
       if (document.body.dataset.view === "home" && typeof updateArcadeDialogue === "function") {
-        const dialogueIndex = sourceLines.length ? window.LyricTiming.activeLyricIndex(sourceLines, t) : -1;
+        const dialogueIndex = typeof arcadeDialogueIndexAtTime === "function" ? arcadeDialogueIndexAtTime(sourceLines, t) : -1;
         updateArcadeDialogue(sourceLines[dialogueIndex], sourceLines[dialogueIndex + 1], dialogueIndex, sourceLines);
       }
     }
