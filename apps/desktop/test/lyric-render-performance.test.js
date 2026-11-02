@@ -48,3 +48,16 @@ test("prism rows stay mounted so their roll can interpolate continuously", () =>
   assert.doesNotMatch(lyricCss, /body\[data-layout="prism"\] \.line\.creative-hidden\{display:none\}/);
   assert.match(frameSource, /layout === "prism" \|\| impactLayout\s*\? ""/);
 });
+
+test("window resizing reflows the active lyric without replaying its entrance", () => {
+  assert.match(frameSource, /function positionActiveLyrics\(idx = activeIdx\)/);
+  assert.match(frameSource, /refreshLyricBoxSizing\(\);\s*positionActiveLyrics\(\);/);
+  assert.doesNotMatch(frameSource, /addEventListener\("resize", \(\) => \{ activeIdx = -2/);
+});
+
+test("music motion uses depth instead of vertical lyric bouncing", () => {
+  assert.match(lyricCss, /\.w\.cur \{ transform: scale\(1\.08\)/);
+  for (const style of ["float", "punch", "sway", "shake", "bounce", "snap", "subtle"]) {
+    assert.match(lyricCss, new RegExp(`data-dance="${style}"\\] \\.line\\.active \\{\\s*translate: 0 0`));
+  }
+});

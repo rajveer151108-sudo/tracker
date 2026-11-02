@@ -58,12 +58,23 @@ const glow = createGlowManager({
 });
 const trackerSync = createTrackerSync({ app, safeStorage, getWindow: () => mainWindow });
 
+function windowIsImmersive() {
+  if (!mainWindow || mainWindow.isDestroyed()) return false;
+  return process.platform === "darwin" ? mainWindow.isSimpleFullScreen() : mainWindow.isFullScreen();
+}
+
+function broadcastImmersive(on = windowIsImmersive()) {
+  immersive = !!on;
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("fullscreen", immersive);
+}
+
 function setImmersive(on) {
-  if (!mainWindow || mainWindow.isDestroyed() || on === immersive) return;
-  immersive = on;
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (!!on === windowIsImmersive()) return broadcastImmersive(on);
+  immersive = !!on;
   if (process.platform === "darwin") mainWindow.setSimpleFullScreen(on);
   else mainWindow.setFullScreen(on);
-  mainWindow.webContents.send("fullscreen", on);
+  broadcastImmersive(on);
 }
 
 function createWindow(loadContent = true) {
@@ -97,6 +108,9 @@ function createWindow(loadContent = true) {
     }
   });
   if (loadContent) mainWindow.loadFile(path.join(rootDir, "index.html"));
+  for (const eventName of ["enter-full-screen", "leave-full-screen", "enter-html-full-screen", "leave-html-full-screen"]) {
+    mainWindow.on(eventName, () => broadcastImmersive());
+  }
   mainWindow.on("closed", playbackPower.dispose);
   mainWindow.webContents.on("render-process-gone", playbackPower.dispose);
   glow.setMainWindow(mainWindow);
@@ -186,6 +200,7 @@ function registerIpc() {
   });
 
   ipcMain.handle("settings-get", settingsStore.get);
+  ipcMain.handle("fullscreen-state", () => windowIsImmersive());
   ipcMain.handle("song-preset-get", (_event, key) => songPresets.get(key));
   ipcMain.handle("song-preset-set", (_event, payload) => songPresets.set(payload));
   ipcMain.handle("song-preset-remove", (_event, key) => songPresets.remove(key));
@@ -213,7 +228,7 @@ function registerIpc() {
       glow.beat(motion);
     }
   });
-  ipcMain.on("fullscreen-toggle", () => setImmersive(!immersive));
+  ipcMain.on("fullscreen-toggle", () => setImmersive(!windowIsImmersive()));
   ipcMain.on("win-minimize", () => {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
   });

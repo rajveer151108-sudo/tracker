@@ -190,7 +190,7 @@
   }
 
   .w { display: inline-block; transition: transform .22s ease; }
-  .w.cur { transform: translateY(-4px) scale(1.08); }
+  .w.cur { transform: scale(1.08); }
   .w.nearL { transform: translateX(-.07em) scale(.93); }   /* neighbours shrink and step back so the words don't blur together */
   .w.nearR { transform: translateX(.07em) scale(.93); }
   .line.active { transform: scale(calc(1 + var(--lyrics-pulse, 0) * .028));
@@ -201,12 +201,12 @@
     100% { opacity: 1; filter: none; }
   }
   body.lyrics-motion .line.active {
-    translate: calc(var(--motion-sway) * 7px) calc((var(--motion-lift) * var(--word-life) + var(--motion-phrase) * .48 + var(--motion-emotion) * .7) * -9px);
+    translate: 0 0;
     scale: calc(1 + var(--motion-energy) * .025 + var(--motion-vocal) * var(--word-life) * .03 + var(--motion-syllable) * .018 + var(--motion-build) * .025 + var(--motion-drop) * .075 + var(--motion-emotion) * .08);
     opacity: calc(1 - var(--motion-duck) * .24);
   }
   body.lyrics-motion .line.active .w.cur {
-    translate: 0 calc((var(--motion-syllable) * 4px + var(--motion-word) * 3px) * -1);
+    translate: 0 0;
     scale: calc(1.08 + var(--motion-syllable) * .055 + var(--motion-word) * .06 + var(--motion-vocal) * .02);
     filter: brightness(calc(1 + var(--motion-syllable) * .16 + var(--motion-word) * .14)) drop-shadow(0 0 calc(7px + var(--motion-syllable) * 12px + var(--motion-word) * 13px) rgba(var(--glow),.62));
   }
@@ -225,45 +225,43 @@
   /* Each genre gets a different physical language. Auto-by-genre selects
      these data-dance values; users can override the style in Settings. */
   body.lyrics-motion[data-dance="float"] .line.active {
-    translate: calc(var(--motion-sway) * 5px)
-      calc((var(--motion-lift) * var(--word-life) * 1.2 + var(--motion-emotion)) * -11px);
+    translate: 0 0;
     scale: calc(1 + var(--motion-energy) * .015 + var(--motion-vocal) * var(--word-life) * .04 + var(--motion-emotion) * .065);
     rotate: calc(var(--motion-sway) * .24deg);
   }
   body.lyrics-motion[data-dance="punch"] .line.active {
-    translate: calc(var(--motion-sway) * 2px) calc((var(--lyrics-pulse, 0) * 6px + var(--motion-drop) * 12px) * -1);
+    translate: 0 0;
     scale: calc(1 + var(--lyrics-pulse, 0) * .055 + var(--motion-drop) * .095 + var(--motion-emotion) * .035);
     rotate: calc(var(--motion-sway) * -.3deg);
   }
   body.lyrics-motion[data-dance="sway"] .line.active {
-    translate: calc(var(--motion-sway) * 13px) calc(var(--motion-lift) * var(--word-life) * -5px);
+    translate: 0 0;
     scale: calc(1 + var(--motion-energy) * .018 + var(--motion-emotion) * .045);
     rotate: calc(var(--motion-sway) * .9deg);
     transition-timing-function: cubic-bezier(.25,.7,.3,1);
   }
   body.lyrics-motion[data-dance="shake"] .line.active {
-    translate: calc(var(--motion-shake) * 9px) calc(var(--lyrics-pulse, 0) * -5px);
+    translate: 0 0;
     scale: calc(1 + var(--motion-energy) * .05 + var(--motion-drop) * .1);
     rotate: calc(var(--motion-shake) * 1.15deg);
   }
   body.lyrics-motion[data-dance="bounce"] .line.active {
-    translate: calc(var(--motion-sway) * 4px)
-      calc((var(--lyrics-pulse, 0) * 6px + var(--motion-lift) * var(--word-life) * 6px) * -1);
+    translate: 0 0;
     scale: calc(1 + var(--lyrics-pulse, 0) * .04 + var(--motion-energy) * .025 + var(--motion-emotion) * .05);
   }
   body.lyrics-motion[data-dance="snap"] .line.active {
-    translate: calc(var(--motion-shake) * 4px) calc((var(--motion-drop) * 14px + var(--lyrics-pulse, 0) * 5px) * -1);
+    translate: 0 0;
     scale: calc(1 + var(--motion-build) * .025 + var(--motion-drop) * .13);
     rotate: calc(var(--motion-shake) * .45deg);
   }
   body.lyrics-motion[data-dance="subtle"] .line.active {
-    translate: calc(var(--motion-sway) * 4px) calc(var(--motion-lift) * var(--word-life) * -5px);
+    translate: 0 0;
     scale: calc(1 + var(--motion-energy) * .018 + var(--motion-emotion) * .035);
   }
   /* Line-reading layouts react through glow and restrained scale, never by
      hopping above and below their baseline on every syllable or bass hit. */
   body.lyrics-motion:is([data-layout="scroll"], [data-layout="stack"], [data-layout="flash"], [data-layout="wordstream"]) .line.active {
-    translate: calc(var(--motion-sway) * 3px) 0;
+    translate: 0 0;
     scale: calc(1 + var(--motion-energy) * .012 + var(--motion-drop) * .028);
     rotate: 0deg;
   }
@@ -289,7 +287,7 @@
     animation: creativeSpawn var(--word-attack-ms, 150ms) cubic-bezier(.18,.82,.24,1) both;
   }
   @keyframes creativeSpawn {
-    from { opacity: 0; scale: .72; filter: blur(7px) brightness(1.45); }
+    from { opacity: 0; scale: .9; filter: blur(4px) brightness(1.18); }
     to { filter: none; }
   }
 
@@ -316,7 +314,7 @@
   body[data-layout="morphstack"] .line[data-slot="0"]{top:50%;z-index:2;opacity:1;transform:translate(-50%,-50%);color:#fff;text-shadow:0 0 .22em rgba(var(--glow),.42)}
   body[data-layout="morphstack"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none;padding:0 .07em}
   body[data-layout="morphstack"] .line.creative-arrive{animation:morphStackSwap var(--word-attack-ms,150ms) cubic-bezier(.14,.88,.2,1) both}
-  @keyframes morphStackSwap{0%{opacity:0;transform:translate(-50%,-50%) scale(.74);filter:blur(10px) brightness(1.25)}76%{opacity:1;transform:translate(-50%,-50%) scale(1.015);filter:blur(.5px)}100%{opacity:1;transform:translate(-50%,-50%);filter:none}}
+  @keyframes morphStackSwap{from{opacity:0;transform:translate(-50%,-50%) scale(.86);filter:blur(6px) brightness(1.12)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
   /* Silk ribbon — a restrained three-word path. The current lyric stays
      anchored and readable while its neighbours trace a shallow musical wave. */
@@ -328,7 +326,7 @@
   body[data-layout="ribbon"] .line[data-slot="1"]{left:82%;top:54%;opacity:.2;transform:translate(-50%,-50%) scale(.42);filter:blur(2.4px)}
   body[data-layout="ribbon"] .line[data-slot="0"] .w{color:#fff;-webkit-text-fill-color:#fff;background:none}
   body[data-layout="ribbon"] .line.creative-arrive{animation:ribbonArrive var(--word-attack-ms,150ms) cubic-bezier(.16,.84,.2,1) both}
-  @keyframes ribbonArrive{from{opacity:.08;transform:translate(-54%,-50%) scale(.88);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
+  @keyframes ribbonArrive{from{opacity:.08;transform:translate(-50%,-50%) scale(.92);filter:blur(5px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
 
   body[data-layout="ribbon"] .lyric-emoji{display:none!important}
 
@@ -370,8 +368,8 @@
   body[data-layout="buildstack"] .line.active,body.lyrics-motion[data-layout="buildstack"] .line.active{translate:0 0;scale:1;filter:none;text-shadow:none}
   body[data-layout="buildstack"] .line.active .w,body[data-layout="buildstack"] .line.active .w.cur{color:#fff;-webkit-text-fill-color:#fff;background:none;box-shadow:none;text-shadow:0 0 .28em rgba(var(--glow),.48);filter:none;translate:0 0;scale:1;transform:none}
   body[data-layout="buildstack"] .line.creative-arrive{animation:buildStackRise var(--word-attack-ms,150ms) cubic-bezier(.14,.88,.2,1) both}
-  @keyframes buildWordIn{0%{opacity:0;transform:translate(var(--build-x),var(--build-y));filter:blur(10px) brightness(1.5)}65%{opacity:1;transform:translate(0,-.05em);filter:blur(0) brightness(1.16)}100%{opacity:1;transform:translate(0,0);filter:none}}
-  @keyframes buildStackRise{from{opacity:0;transform:translate(-50%,calc(-50% + 48px));filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%);filter:none}}
+  @keyframes buildWordIn{from{opacity:0;transform:scale(.9);filter:blur(6px) brightness(1.18)}to{opacity:1;transform:scale(1);filter:none}}
+  @keyframes buildStackRise{from{opacity:0;transform:translate(-50%,-50%) scale(.96);filter:blur(5px)}to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:none}}
   body[data-layout="buildstack"]:is([data-phrase-accents="cards"],[data-phrase-accents="editorial"]) :is(.line:nth-child(5n+2),.line:nth-child(7n+4)) .w.revealed{
     color:#101014;-webkit-text-fill-color:#101014;background:#fff;padding:.03em .15em .1em;border-radius:.06em;
     box-shadow:.075em .075em 0 rgba(var(--glow),.68),0 0 .36em rgba(var(--glow),.34);text-shadow:none;
@@ -396,7 +394,7 @@
   body[data-layout="captioncards"] .line[data-slot="0"] { opacity: 1; transform: translate(-50%,-50%) scale(1); }
   body[data-layout="captioncards"] .line .w { padding: .04em .08em .09em; margin: 0 -.01em; border-radius: .05em; }
   body[data-layout="captioncards"] .line.active .w { color: rgba(255,255,255,.42); -webkit-text-fill-color: rgba(255,255,255,.42); background: none; }
-  body[data-layout="captioncards"] .line.active .w.cur { color: #151116; -webkit-text-fill-color: #151116; background: #fff4ce; box-shadow: 0 0 28px rgba(var(--glow),.5); transform: translateY(-.04em) scale(1.04); }
+  body[data-layout="captioncards"] .line.active .w.cur { color: #151116; -webkit-text-fill-color: #151116; background: #fff4ce; box-shadow: 0 0 28px rgba(var(--glow),.5); transform: scale(1.04); }
 
   /* An editorial cutout poster assembled per line. Poster owns a bounded
      collage instead of borrowing the one-line auto fitter: every card stays
@@ -417,11 +415,11 @@
   }
   body[data-layout="poster"] .line.active .w:nth-child(4n+1){background:rgb(var(--glow));color:#fff;-webkit-text-fill-color:#fff}
   body[data-layout="poster"] .line.creative-arrive .w{animation:posterCardDeal .5s cubic-bezier(.16,.86,.2,1) calc(var(--poster-order) * 42ms) backwards}
-  body.lyrics-motion[data-layout="poster"] .line.active .w:not(.cur){translate:calc(var(--motion-sway) * var(--poster-drift) * 1px) calc(var(--motion-lift) * -3px)}
-  body[data-layout="poster"] .line.active .w.cur{translate:0 -.11em;scale:1.09;rotate:0deg;filter:brightness(1.12);box-shadow:0 0 .42em rgba(var(--glow),.82),.06em .08em 0 rgba(var(--glow),.6)}
+  body.lyrics-motion[data-layout="poster"] .line.active .w:not(.cur){translate:0 0}
+  body[data-layout="poster"] .line.active .w.cur{translate:0 0;scale:1.09;rotate:0deg;filter:brightness(1.12);box-shadow:0 0 .42em rgba(var(--glow),.82),.06em .08em 0 rgba(var(--glow),.6)}
   body.word-emoji[data-layout="poster"] .lyric-emoji.word-revealed{display:inline-grid;place-items:center;flex:0 0 auto;font-size:.62em;padding:.09em;rotate:-6deg;filter:drop-shadow(0 .08em .12em #0008);animation:posterStickerIn .4s cubic-bezier(.18,.9,.2,1) both}
-  @keyframes posterCollageIn{from{opacity:0;transform:translate(-50%,calc(-50% + 22px)) scale(.91);filter:blur(7px)}to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:none}}
-  @keyframes posterCardDeal{0%{opacity:0;translate:0 .55em;scale:.66;rotate:calc(var(--word-tilt) * -2);filter:blur(6px)}70%{opacity:1;translate:0 -.025em;scale:1.035;filter:blur(0)}100%{opacity:1;translate:0 0;scale:1;rotate:var(--word-tilt);filter:none}}
+  @keyframes posterCollageIn{from{opacity:0;transform:translate(-50%,-50%) scale(.94);filter:blur(5px)}to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:none}}
+  @keyframes posterCardDeal{from{opacity:0;translate:0 0;scale:.86;rotate:calc(var(--word-tilt) * -1.25);filter:blur(4px)}to{opacity:1;translate:0 0;scale:1;rotate:var(--word-tilt);filter:none}}
   @keyframes posterStickerIn{from{opacity:0;translate:0 .45em;scale:.5;rotate:-20deg}to{opacity:1;translate:0 0;scale:1;rotate:-6deg}}
   @media(max-height:720px){body[data-layout="poster"] .line{max-height:66%;font-size:min(var(--lyric-composition-cap,92px),calc(var(--lyric-size) * .82))}}
 

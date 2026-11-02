@@ -77,8 +77,17 @@
       if (!$("settings").classList.contains("open")) document.body.classList.remove("awake");
     }, 2500);
   }
+  function applyFullscreenState(on) {
+    document.body.classList.toggle("immersive", !!on);
+    requestAnimationFrame(() => {
+      if (typeof refreshLyricBoxSizing === "function") refreshLyricBoxSizing();
+      if (typeof positionActiveLyrics === "function") positionActiveLyrics();
+    });
+    wake();
+  }
   window.addEventListener("mousemove", wake);
-  window.tracker.onFullscreen((on) => { document.body.classList.toggle("immersive", on); activeIdx = -2; wake(); });
+  window.tracker.onFullscreen(applyFullscreenState);
+  window.tracker.getFullscreen?.().then(applyFullscreenState).catch(() => {});
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {

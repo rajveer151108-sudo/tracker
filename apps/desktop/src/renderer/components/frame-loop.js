@@ -155,6 +155,21 @@
     }));
   }
 
+  function positionActiveLyrics(idx = activeIdx) {
+    if (idx < 0 || !lineEls[idx]) return;
+    const layout = document.body.dataset.layout || settings.lyricsLayout;
+    const fixedFocusLayout = isCreativeLayout() || layout === "flash" || layout === "wordstream";
+    if (fixedFocusLayout) {
+      $("lines").style.transform = "none";
+      return;
+    }
+    const focus = lineEls[idx];
+    const stackLayout = layout === "stack" || layout === "wordstack";
+    const stageH = $("stage").clientHeight;
+    const focusY = stackLayout ? stageH * 0.7 : stageH / 2;
+    $("lines").style.transform = "translateY(" + (focusY - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
+  }
+
   function frame(tNow) {
     requestAnimationFrame(frame);
     // Presentation is always fluid while music is moving. Heavy audio analysis
@@ -320,15 +335,7 @@
         if (idx >= 0 && impactLayout) {
           lineEls[idx].classList.add(layout === "wordstream" ? "word-hit" : "flash");
         }
-        if (idx >= 0) {
-          const focus = lineEls[idx];
-          const stageH = $("stage").clientHeight;
-          const focusY = stackLayout ? stageH * 0.7 : stageH / 2;
-          if (!fixedFocusLayout) {
-            $("lines").style.transform =
-              "translateY(" + (focusY - (focus.offsetTop + focus.offsetHeight / 2)) + "px)";
-          }
-        }
+        positionActiveLyrics(idx);
       }
 
       if (idx >= 0) {
@@ -391,6 +398,13 @@
     root.style.setProperty("--line-emotion", lineEmotion.toFixed(3));
   }
 
-  window.addEventListener("resize", () => { activeIdx = -2; refreshLyricBoxSizing(); });
+  let lyricResizeFrame = 0;
+  window.addEventListener("resize", () => {
+    cancelAnimationFrame(lyricResizeFrame);
+    lyricResizeFrame = requestAnimationFrame(() => {
+      refreshLyricBoxSizing();
+      positionActiveLyrics();
+    });
+  });
 
 

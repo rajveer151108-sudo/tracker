@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld("tracker", {
   previewGlow: (p) => ipcRenderer.send("glow-preview", p),
   sendBeat: (v) => ipcRenderer.send("beat", v),
   toggleFullscreen: () => ipcRenderer.send("fullscreen-toggle"),
+  getFullscreen: () => ipcRenderer.invoke("fullscreen-state"),
   playUri: (uri, ctx) => ipcRenderer.invoke("play-uri", uri, ctx),
   historyGet: () => ipcRenderer.invoke("history-get"),
   historyAdd: (t) => ipcRenderer.send("history-add", t),
